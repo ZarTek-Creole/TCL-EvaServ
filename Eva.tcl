@@ -66,28 +66,50 @@ source [eva:scriptdir]Eva.conf
 # Eva Fichier #
 ###############
 if { [file isdirectory "[eva:scriptdir]db"] } { file mkdir "[eva:scriptdir]db" }
-if { ![file exists "[eva:scriptdir]db/gestion.db"] } { set c_gestion	[open "[eva:scriptdir]db/gestion.db" a+];
-close $c_gestion }
-if { ![file exists "[eva:scriptdir]db/chan.db"] } { set c_chan		[open "[eva:scriptdir]db/chan.db" a+];
-close $c_chan }
-if { ![file exists "[eva:scriptdir]db/client.db"] } { set c_client	[open "[eva:scriptdir]db/client.db" a+];
-close $c_client }
-if { ![file exists "[eva:scriptdir]db/secu.db"] } { set c_secu		[open "[eva:scriptdir]db/secu.db" a+];
-close $c_secu }
-if { ![file exists "[eva:scriptdir]db/close.db"] } { set c_close		[open "[eva:scriptdir]db/close.db" a+];
-close $c_close }
-if { ![file exists "[eva:scriptdir]db/salon.db"] } { set c_salon		[open "[eva:scriptdir]db/salon.db" a+];
-close $c_salon }
-if { ![file exists "[eva:scriptdir]db/ident.db"] } { set c_ident		[open "[eva:scriptdir]db/ident.db" a+];
-close $c_ident }
-if { ![file exists "[eva:scriptdir]db/real.db"] } { set c_real		[open "[eva:scriptdir]db/real.db" a+];
-close $c_real }
-if { ![file exists "[eva:scriptdir]db/host.db"] } { set c_host		[open "[eva:scriptdir]db/host.db" a+];
-close $c_host }
-if { ![file exists "[eva:scriptdir]db/nick.db"] } { set c_nick		[open "[eva:scriptdir]db/nick.db" a+];
-close $c_nick }
-if { ![file exists "[eva:scriptdir]db/trust.db"] } { set c_trust		[open "[eva:scriptdir]db/trust.db" a+];
-close $c_trust }
+if { ![file exists "[eva:scriptdir]db/gestion.db"] } {
+	set c_gestion	[open "[eva:scriptdir]db/gestion.db" a+];
+	close $c_gestion
+}
+if { ![file exists "[eva:scriptdir]db/chan.db"] } {
+	set c_chan		[open "[eva:scriptdir]db/chan.db" a+];
+	close $c_chan
+}
+if { ![file exists "[eva:scriptdir]db/client.db"] } {
+	set c_client	[open "[eva:scriptdir]db/client.db" a+];
+	close $c_client
+}
+if { ![file exists "[eva:scriptdir]db/secu.db"] } {
+	set c_secu		[open "[eva:scriptdir]db/secu.db" a+];
+	close $c_secu
+}
+if { ![file exists "[eva:scriptdir]db/close.db"] } {
+	set c_close		[open "[eva:scriptdir]db/close.db" a+];
+	close $c_close
+}
+if { ![file exists "[eva:scriptdir]db/salon.db"] } {
+	set c_salon		[open "[eva:scriptdir]db/salon.db" a+];
+	close $c_salon
+}
+if { ![file exists "[eva:scriptdir]db/ident.db"] } {
+	set c_ident		[open "[eva:scriptdir]db/ident.db" a+];
+	close $c_ident
+}
+if { ![file exists "[eva:scriptdir]db/real.db"] } {
+	set c_real		[open "[eva:scriptdir]db/real.db" a+];
+	close $c_real
+}
+if { ![file exists "[eva:scriptdir]db/host.db"] } {
+	set c_host		[open "[eva:scriptdir]db/host.db" a+];
+	close $c_host
+}
+if { ![file exists "[eva:scriptdir]db/nick.db"] } {
+	set c_nick		[open "[eva:scriptdir]db/nick.db" a+];
+	close $c_nick
+}
+if { ![file exists "[eva:scriptdir]db/trust.db"] } {
+	set c_trust		[open "[eva:scriptdir]db/trust.db" a+];
+	close $c_trust
+}
 
 #################
 # Eva Commandes #
@@ -4803,200 +4825,204 @@ proc eva:cmds { arg } {
 			set new		[lindex $arg 2]
 			set vuser		[string tolower [string trim [lindex $arg 0] :]]
 			set vnew		[string tolower [lindex $arg 2]]
-			if { [info exists ueva($vuser)] && $vuser!=$vnew } { set ueva($vnew)		on;
-			unset ueva($vuser)		}
-			if { [info exists vhost($vuser)] && $vuser!=$vnew } { set vhost($vnew)		$vhost($vuser);
-			unset vhost($vuser)		}
-			if { [info exists admins($vuser)] && $vuser!=$vnew } { set admins($vnew)		$admins($vuser);
-			unset admins($vuser)		}
-			if { [info exists netadmin($vuser)] && $vuser!=$vnew } { set netadmin($vnew)		on;
-			unset netadmin($vuser)		}
-			if { [eva:console 3]=="ok" && $eva(init)==0 } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Nick <c>$eva(console_deco):<c>$eva(console_txt) $user change son pseudo en $new"
-			}
-			if {
-				![info exists ueva($vnew)] && \
-					![info exists admins($vnew)] && \
-					[eva:protection $vnew $eva(protection)]!="ok"
-			} {
-				catch { open [eva:scriptdir]db/nick.db r } liste
-				while { ![eof $liste] } {
-					gets $liste verif
-					if { [string match $verif $vnew] && $verif!="" } {
-						if { [eva:console 3]=="ok" && $eva(init)==0 } {
-							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kill <c>$eva(console_deco):<c>$eva(console_txt) $new a été killé : $eva(ruser)"
+			if { [info exists ueva($vuser)] && $vuser!=$vnew } {
+				set ueva($vnew)		on;
+				unset ueva($vuser)		}
+				if { [info exists vhost($vuser)] && $vuser!=$vnew } {
+					set vhost($vnew)		$vhost($vuser);
+					unset vhost($vuser)		}
+					if { [info exists admins($vuser)] && $vuser!=$vnew } {
+						set admins($vnew)		$admins($vuser);
+						unset admins($vuser)		}
+						if { [info exists netadmin($vuser)] && $vuser!=$vnew } {
+							set netadmin($vnew)		on;
+							unset netadmin($vuser)		}
+							if { [eva:console 3]=="ok" && $eva(init)==0 } {
+								eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Nick <c>$eva(console_deco):<c>$eva(console_txt) $user change son pseudo en $new"
+							}
+							if {
+								![info exists ueva($vnew)] && \
+									![info exists admins($vnew)] && \
+									[eva:protection $vnew $eva(protection)]!="ok"
+							} {
+								catch { open [eva:scriptdir]db/nick.db r } liste
+								while { ![eof $liste] } {
+									gets $liste verif
+									if { [string match $verif $vnew] && $verif!="" } {
+										if { [eva:console 3]=="ok" && $eva(init)==0 } {
+											eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kill <c>$eva(console_deco):<c>$eva(console_txt) $new a été killé : $eva(ruser)"
+										}
+										eva:sent2socket $eva(idx) ":$eva(server_id) KILL $vnew $eva(ruser)";
+										break;
+										eva:refresh $vnew
+									}
+								}
+								catch { close $liste }
+							}
 						}
-						eva:sent2socket $eva(idx) ":$eva(server_id) KILL $vnew $eva(ruser)";
-						break;
-						eva:refresh $vnew
+						"TOPIC" {
+							set user		[string trim [lindex $arg 0] :]
+							set chan		[lindex $arg 2]
+							set vchan		[string tolower $chan]
+							set topic		[join [string trim [lrange $arg 5 end] :]]
+							if {
+								[eva:console 3]=="ok" && \
+									$vchan!=[string tolower $eva(salon)] && \
+									$eva(init)==0
+							} {
+								eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Topic <c>$eva(console_deco):<c>$eva(console_txt) $user change le topic sur $chan : $topic<c>"
+							}
+						}
+						"KICK" {
+							set user		[string trim [lindex $arg 0] :]
+							set pseudo		[lindex $arg 3]
+							set chan		[lindex $arg 2]
+							set vchan		[string tolower [lindex $arg 2]]
+							set raison		[join [string trim [lrange $arg 4 end] :]]
+							if {
+								[eva:console 3]=="ok" && \
+									$vchan!=[string tolower $eva(salon)] && \
+									$eva(init)==0
+							} {
+								eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kick <c>$eva(console_deco):<c>$eva(console_txt) $pseudo a été kické par $user sur $chan : $raison<c>"
+							}
+						}
+						"KILL" {
+							set pseudo		[lindex $arg 2]
+							set vpseudo		[string tolower [lindex $arg 2]]
+							set text		[join [string trim [lrange $arg 2 end] :]]
+							eva:refresh $vpseudo
+							if { [eva:console 1]=="ok" && $eva(init)==0 } {
+								eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kill <c>$eva(console_deco):<c>$eva(console_txt) $pseudo : $text<c>"
+							}
+							if { $vpseudo==[string tolower $eva(pseudo)] } {
+								eva:gestion;
+								eva:sent2socket $eva(idx) ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+								foreach kill [utimers] {
+									if { [lindex $kill 1]=="eva:verif" } { killutimer [lindex $kill 2] }
+								}
+								if { [info exists eva(idx)] } { unset eva(idx)		}
+								set eva(counter)		0;
+								if { [eva:config]!="ok" } { utimer 1 eva:connexion
+							}
+						}
 					}
-				}
-				catch { close $liste }
-			}
-		}
-		"TOPIC" {
-			set user		[string trim [lindex $arg 0] :]
-			set chan		[lindex $arg 2]
-			set vchan		[string tolower $chan]
-			set topic		[join [string trim [lrange $arg 5 end] :]]
-			if {
-				[eva:console 3]=="ok" && \
-					$vchan!=[string tolower $eva(salon)] && \
-					$eva(init)==0
-			} {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Topic <c>$eva(console_deco):<c>$eva(console_txt) $user change le topic sur $chan : $topic<c>"
-			}
-		}
-		"KICK" {
-			set user		[string trim [lindex $arg 0] :]
-			set pseudo		[lindex $arg 3]
-			set chan		[lindex $arg 2]
-			set vchan		[string tolower [lindex $arg 2]]
-			set raison		[join [string trim [lrange $arg 4 end] :]]
-			if {
-				[eva:console 3]=="ok" && \
-					$vchan!=[string tolower $eva(salon)] && \
-					$eva(init)==0
-			} {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kick <c>$eva(console_deco):<c>$eva(console_txt) $pseudo a été kické par $user sur $chan : $raison<c>"
-			}
-		}
-		"KILL" {
-			set pseudo		[lindex $arg 2]
-			set vpseudo		[string tolower [lindex $arg 2]]
-			set text		[join [string trim [lrange $arg 2 end] :]]
-			eva:refresh $vpseudo
-			if { [eva:console 1]=="ok" && $eva(init)==0 } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kill <c>$eva(console_deco):<c>$eva(console_txt) $pseudo : $text<c>"
-			}
-			if { $vpseudo==[string tolower $eva(pseudo)] } {
-				eva:gestion;
-				eva:sent2socket $eva(idx) ":$eva(link) SQUIT $eva(link) :$eva(raison)"
-				foreach kill [utimers] {
-					if { [lindex $kill 1]=="eva:verif" } { killutimer [lindex $kill 2] }
-				}
-				if { [info exists eva(idx)] } { unset eva(idx)		}
-				set eva(counter)		0;
-				if { [eva:config]!="ok" } { utimer 1 eva:connexion
-			}
-		}
-	}
-	"GLOBOPS" {
-		set user		[string trim [lindex $arg 0] :]
-		set vuser		[string tolower [string trim [lindex $arg 0] :]]
-		set text		[join [string trim [lrange $arg 2 end] :]]
-		if {
-			[eva:console 3]=="ok" && \
-				$eva(init)==0 && \
-				![info exists ueva($vuser)]
-		} {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Globops <c>$eva(console_deco):<c>$eva(console_txt) $user : $text<c>"
-		}
-	}
-	"CHGIDENT" {
-		set user		[string trim [lindex $arg 0] :]
-		set pseudo		[lindex $arg 2]
-		set ident		[lindex $arg 3]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chgident <c>$eva(console_deco):<c>$eva(console_txt) $user change l'ident de $pseudo en $ident"
-		}
-	}
-	"CHGHOST" {
-		set user		[string trim [lindex $arg 0] :]
-		set pseudo		[lindex $arg 2]
-		set host		[lindex $arg 3]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chghost <c>$eva(console_deco):<c>$eva(console_txt) $user change l'host de $pseudo en $host"
-		}
-	}
-	"CHGNAME" {
-		set user		[string trim [lindex $arg 0] :]
-		set pseudo		[lindex $arg 2]
-		set real		[join [string trim [lrange $arg 3 end] :]]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chgname <c>$eva(console_deco):<c>$eva(console_txt) $user change le realname de $pseudo en $real"
-		}
-	}
-	"SETHOST" {
-		set user		[string trim [lindex $arg 0] :]
-		set host		[lindex $arg 2]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Sethost <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'host de $user en $host"
-		}
-	}
-	"SETIDENT" {
-		set user		[string trim [lindex $arg 0] :]
-		set ident		[lindex $arg 2]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setident <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'ident de $user en $ident"
-		}
-	}
-	"SETNAME" {
-		set user		[string trim [lindex $arg 0] :]
-		set real		[join [string trim [lrange $arg 2 end] :]]
-		if { [eva:console 3]=="ok" && $eva(init)==0 } {
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setname <c>$eva(console_deco):<c>$eva(console_txt) Changement du realname de $user en $real"
-		}
-	}
-	"JOIN" {
-		set user		[string trim [lindex $arg 0] :]
-		set vuser		[string tolower $user]
-		set chan		[string trim [lindex $arg 2] :]
-		set vchan		[string tolower $chan]
-		if {
-			[eva:console 3]=="ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init)==0 } {
-					eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Join <c>$eva(console_deco):<c>$eva(console_txt) $user entre sur $chan"
-			}
-			catch { open "[eva:scriptdir]db/salon.db" r } liste
-			while { ![eof $liste] } {
-				gets $liste verif
-				if {
-					$verif!="" && \
-						[string match *[string trimleft $verif #]* [string trimleft $vchan #]] && \
-						$vuser!=[string tolower $eva(pseudo)] && \
-						![info exists ueva($vuser)] && \
-						![info exists admins($vuser)] && \
-						[eva:protection $vuser $eva(protection)]!="ok"
-				} {
-					set eva(cmd)		"badchan";
-					eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan";
-					eva:FCT:SENT:MODE $vchan "+ntsio" $eva(pseudo)
-					eva:FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [eva:duree [unixtime]]";
-					eva:sent2socket $eva(idx) ":$eva(link) NAMES $vchan"
-					if { [eva:console 3]=="ok" && $eva(init)==0 } {
-						eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan : Salon Interdit"
-						};
-						break
+					"GLOBOPS" {
+						set user		[string trim [lindex $arg 0] :]
+						set vuser		[string tolower [string trim [lindex $arg 0] :]]
+						set text		[join [string trim [lrange $arg 2 end] :]]
+						if {
+							[eva:console 3]=="ok" && \
+								$eva(init)==0 && \
+								![info exists ueva($vuser)]
+						} {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Globops <c>$eva(console_deco):<c>$eva(console_txt) $user : $text<c>"
+						}
 					}
-				}
-				catch { close $liste }
-			}
-			"PART" {
-				set user		[string trim [lindex $arg 0] :]
-				set chan		[string trim [lindex $arg 2] :]
-				set vchan		[string tolower $chan]
-				if {
-					[eva:console 3]=="ok" && \
-						$vchan!=[string tolower $eva(salon)] && \
-						$eva(init)==0
-				} {
-					eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan"
-				}
-			}
-			"QUIT" {
-				set user		[string trim [lindex $arg 0] :]
-				set vuser		[string tolower [string trim [lindex $arg 0] :]]
-				set text		[join [string trim [lrange $arg 2 end] :]]
-				eva:refresh $vuser
-				if { [eva:console 2]=="ok" && $eva(init)==0 } {
-					if { $text!="" } {
-						eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC : $text"
-					} else {
-						eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC"
+					"CHGIDENT" {
+						set user		[string trim [lindex $arg 0] :]
+						set pseudo		[lindex $arg 2]
+						set ident		[lindex $arg 3]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chgident <c>$eva(console_deco):<c>$eva(console_txt) $user change l'ident de $pseudo en $ident"
+						}
 					}
-				}
-			}
-		}
-	}
+					"CHGHOST" {
+						set user		[string trim [lindex $arg 0] :]
+						set pseudo		[lindex $arg 2]
+						set host		[lindex $arg 3]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chghost <c>$eva(console_deco):<c>$eva(console_txt) $user change l'host de $pseudo en $host"
+						}
+					}
+					"CHGNAME" {
+						set user		[string trim [lindex $arg 0] :]
+						set pseudo		[lindex $arg 2]
+						set real		[join [string trim [lrange $arg 3 end] :]]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chgname <c>$eva(console_deco):<c>$eva(console_txt) $user change le realname de $pseudo en $real"
+						}
+					}
+					"SETHOST" {
+						set user		[string trim [lindex $arg 0] :]
+						set host		[lindex $arg 2]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Sethost <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'host de $user en $host"
+						}
+					}
+					"SETIDENT" {
+						set user		[string trim [lindex $arg 0] :]
+						set ident		[lindex $arg 2]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setident <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'ident de $user en $ident"
+						}
+					}
+					"SETNAME" {
+						set user		[string trim [lindex $arg 0] :]
+						set real		[join [string trim [lrange $arg 2 end] :]]
+						if { [eva:console 3]=="ok" && $eva(init)==0 } {
+							eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setname <c>$eva(console_deco):<c>$eva(console_txt) Changement du realname de $user en $real"
+						}
+					}
+					"JOIN" {
+						set user		[string trim [lindex $arg 0] :]
+						set vuser		[string tolower $user]
+						set chan		[string trim [lindex $arg 2] :]
+						set vchan		[string tolower $chan]
+						if {
+							[eva:console 3]=="ok" && \
+								$vchan!=[string tolower $eva(salon)] && \
+								$eva(init)==0 } {
+									eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Join <c>$eva(console_deco):<c>$eva(console_txt) $user entre sur $chan"
+							}
+							catch { open "[eva:scriptdir]db/salon.db" r } liste
+							while { ![eof $liste] } {
+								gets $liste verif
+								if {
+									$verif!="" && \
+										[string match *[string trimleft $verif #]* [string trimleft $vchan #]] && \
+										$vuser!=[string tolower $eva(pseudo)] && \
+										![info exists ueva($vuser)] && \
+										![info exists admins($vuser)] && \
+										[eva:protection $vuser $eva(protection)]!="ok"
+								} {
+									set eva(cmd)		"badchan";
+									eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan";
+									eva:FCT:SENT:MODE $vchan "+ntsio" $eva(pseudo)
+									eva:FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [eva:duree [unixtime]]";
+									eva:sent2socket $eva(idx) ":$eva(link) NAMES $vchan"
+									if { [eva:console 3]=="ok" && $eva(init)==0 } {
+										eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan : Salon Interdit"
+										};
+										break
+									}
+								}
+								catch { close $liste }
+							}
+							"PART" {
+								set user		[string trim [lindex $arg 0] :]
+								set chan		[string trim [lindex $arg 2] :]
+								set vchan		[string tolower $chan]
+								if {
+									[eva:console 3]=="ok" && \
+										$vchan!=[string tolower $eva(salon)] && \
+										$eva(init)==0
+								} {
+									eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan"
+								}
+							}
+							"QUIT" {
+								set user		[string trim [lindex $arg 0] :]
+								set vuser		[string tolower [string trim [lindex $arg 0] :]]
+								set text		[join [string trim [lrange $arg 2 end] :]]
+								eva:refresh $vuser
+								if { [eva:console 2]=="ok" && $eva(init)==0 } {
+									if { $text!="" } {
+										eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC : $text"
+									} else {
+										eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC"
+									}
+								}
+							}
+						}
+					}
