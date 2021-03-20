@@ -55,8 +55,6 @@ proc eva:sent2socket { idx arg } {
 	global eva
 	if { $eva(DEBUG) } {
 		putlog "Sent: $arg"
-		putlog "putdcc $idx $arg"
-
 	}
 	putdcc $idx $arg
 }
@@ -272,6 +270,14 @@ proc eva:FCT:SENT:MODE { DEST MODE CIBLE } {
 proc eva:FCT:SET:TOPIC { DEST TOPIC } {
 	global eva
 	eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $DEST :[eva:FCT:apply_visuals $TOPIC]"
+}
+proc eva:FCT:DATA:TO:NICK { DATA } {
+	if { [string range $DATA 0 0] == 0 } {
+		set user		[eva:UID:CONVERT $DATA]
+	} else {
+		set user		$DATA
+	}
+	return $user;
 }
 
 ###############################################################################
@@ -4246,6 +4252,8 @@ proc eva:link { idx arg } {
 	if { $eva(debug)==1 } {
 		eva:putdebug "[join [lrange $arg 0 end]]"
 	}
+	set user		[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
+	set vuser		[string tolower $user]
 	switch -exact [lindex $arg 0] {
 		"PING" {
 			set eva(counter)		0
@@ -4264,7 +4272,7 @@ proc eva:link { idx arg } {
 		}
 		"SERVER" {
 			# Received: SERVER irc.xxx.net 1 :U5002-Fhn6OoEmM-001 Serveur QNET
-			set serv		[lindex $arg 1]
+			set eva(ircdservname)	[lindex $arg 1]
 			set desc		[join [string trim [lrange $arg 3 end] :]]
 			# set serv		[lindex $arg 2]
 			# set desc		[join [string trim [lrange $arg 4 end] :]]
@@ -4293,7 +4301,7 @@ proc eva:link { idx arg } {
 
 			set UID_DB([string		toupper $nickname])	$uid
 			set UID_DB([string		toupper $uid])		$nickname
-			set servs		[lindex $arg 6]
+			# set servs		[lindex $arg 6]
 			if { ![info exists vhost($nickname2)] } {
 				set vhost($nickname2)		$hostname
 			}
@@ -4306,7 +4314,7 @@ proc eva:link { idx arg } {
 				set stype		"Connexion"
 			}
 			if { [eva:console 2]=="ok" && $eva(init)==0 } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)$stype <c>$eva(console_deco):<c>$eva(console_txt) $nickname2 ($username@$hostname) - (Serveur : $servs)"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)$stype <c>$eva(console_deco):<c>$eva(console_txt) $nickname2 ($username@$hostname) - (Serveur : $eva(ircdservname))"
 			}
 			foreach { mask num } [array get trust] {
 				if { [string match *$mask* $hostname] } { return 0 }
@@ -4700,8 +4708,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"NOTICE" {
-		set user		[string trim [lindex $arg 0] :]
-		set vuser		[string tolower [string trim [lindex $arg 0] :]]
 		set version		[string trim [lindex $arg 3] :]
 		set vdata		[string tolower [join [lrange $arg 3 end]]]
 		if { [eva:flood $vuser]!="ok" } { return 0 }
@@ -4722,19 +4728,7 @@ proc eva:link { idx arg } {
 		}
 	}
 	"PRIVMSG" {
-		set USER_TMP	[string trim [lindex $arg 0] :]
-		# si user est en format : 001119S0G alors c un UID
-		if { [string range $USER_TMP 0 0] == 0 } {
-			set userUID		$USER_TMP
-			set user		[eva:UID:CONVERT $USER_TMP]
-
-		} else {
-			set userUID		[eva:UID:CONVERT $USER_TMP]
-			set user		$USER_TMP
-		}
-		set user		[eva:UID:CONVERT $userUID]
-		set vuserUID	[string tolower $user]
-		set vuser		[eva:UID:CONVERT $vuserUID]
+		set vuser		[string tolower $user]
 		set robotUID	[string tolower [lindex $arg 2]]
 		set cmds		[string tolower [string trim [lindex $arg 3] :]]
 		set hcmds		[string tolower [lindex $arg 4]]
@@ -4783,7 +4777,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"MODE" {
-		set user		[string trim [lindex $arg 0] :]
 		set chan		[lindex $arg 2]
 		set vchan		[string tolower [lindex $arg 2]]
 		set umode		[lindex $arg 3]
@@ -4804,52 +4797,48 @@ proc eva:link { idx arg } {
 		}
 	}
 	"UMODE2" {
-		set user		[string tolower [string trim [lindex $arg 0] :]]
-		set user2		[string trim [lindex $arg 0] :]
 		set umode		[lindex $arg 2]
 		if { ![info exists ueva($user)] && [string match *+*S* $umode] } { set ueva($user)		on }
 		if { ![info exists netadmin($user)] && [string match *+*N* $umode] } { set netadmin($user)		on }
 		if { [info exists netadmin($user)] && [string match *-*N* $umode] } { unset netadmin($user)		}
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
 			if { [string match *+*S* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Service Réseau"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Service Réseau"
 			} elseif { [string match *-*S* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Service Réseau"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Service Réseau"
 			} elseif { [string match *+*N* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Administrateur Réseau"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Administrateur Réseau"
 			} elseif { [string match *-*N* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Administrateur Réseau"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Administrateur Réseau"
 			} elseif { [string match *+*A* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Administrateur Serveur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Administrateur Serveur"
 			} elseif { [string match *-*A* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Administrateur Serveur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Administrateur Serveur"
 			} elseif { [string match *+*a* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Administrateur Services"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Administrateur Services"
 			} elseif { [string match *-*a* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Administrateur Services"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Administrateur Services"
 			} elseif { [string match *+*C* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Co-Administrateur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Co-Administrateur"
 			} elseif { [string match *-*C* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Co-Administrateur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Co-Administrateur"
 			} elseif { [string match *+*o* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un IRC Opérateur Global"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un IRC Opérateur Global"
 			} elseif { [string match *-*o* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un IRC Opérateur Global"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un IRC Opérateur Global"
 			} elseif { [string match *+*O* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un IRC Opérateur Local"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un IRC Opérateur Local"
 			} elseif { [string match *-*O* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un IRC Opérateur Local"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un IRC Opérateur Local"
 			} elseif { [string match *+*h* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 est un Helpeur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user est un Helpeur"
 			} elseif { [string match *-*h* $umode] } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user2 n'est plus un Helpeur"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Usermode <c>$eva(console_deco):<c>$eva(console_txt) $user n'est plus un Helpeur"
 			}
 		}
 	}
 	"NICK" {
-		set user		[string trim [lindex $arg 0] :]
-		set new		[lindex $arg 2]
-		set vuser		[string tolower [string trim [lindex $arg 0] :]]
+		set new			[lindex $arg 2]
 		set vnew		[string tolower [lindex $arg 2]]
 		if { [info exists ueva($vuser)] && $vuser!=$vnew } {
 			set ueva($vnew)		on;
@@ -4891,7 +4880,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"TOPIC" {
-		set user		[string trim [lindex $arg 0] :]
 		set chan		[lindex $arg 2]
 		set vchan		[string tolower $chan]
 		set topic		[join [string trim [lrange $arg 5 end] :]]
@@ -4904,7 +4892,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"KICK" {
-		set user		[string trim [lindex $arg 0] :]
 		set pseudo		[lindex $arg 3]
 		set chan		[lindex $arg 2]
 		set vchan		[string tolower [lindex $arg 2]]
@@ -4939,8 +4926,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"GLOBOPS" {
-		set user		[string trim [lindex $arg 0] :]
-		set vuser		[string tolower [string trim [lindex $arg 0] :]]
 		set text		[join [string trim [lrange $arg 2 end] :]]
 		if {
 			[eva:console 3]=="ok" && \
@@ -4951,7 +4936,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"CHGIDENT" {
-		set user		[string trim [lindex $arg 0] :]
 		set pseudo		[lindex $arg 2]
 		set ident		[lindex $arg 3]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
@@ -4959,7 +4943,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"CHGHOST" {
-		set user		[string trim [lindex $arg 0] :]
 		set pseudo		[lindex $arg 2]
 		set host		[lindex $arg 3]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
@@ -4967,7 +4950,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"CHGNAME" {
-		set user		[string trim [lindex $arg 0] :]
 		set pseudo		[lindex $arg 2]
 		set real		[join [string trim [lrange $arg 3 end] :]]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
@@ -4975,30 +4957,24 @@ proc eva:link { idx arg } {
 		}
 	}
 	"SETHOST" {
-		set user		[string trim [lindex $arg 0] :]
 		set host		[lindex $arg 2]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Sethost <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'host de $user en $host"
 		}
 	}
 	"SETIDENT" {
-		set user		[string trim [lindex $arg 0] :]
 		set ident		[lindex $arg 2]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setident <c>$eva(console_deco):<c>$eva(console_txt) Changement de l'ident de $user en $ident"
 		}
 	}
 	"SETNAME" {
-		set user		[string trim [lindex $arg 0] :]
 		set real		[join [string trim [lrange $arg 2 end] :]]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setname <c>$eva(console_deco):<c>$eva(console_txt) Changement du realname de $user en $real"
 		}
 	}
 	"JOIN" {
-		set userUID		[string trim [lindex $arg 0] :]
-		set user		[eva:UID:CONVERT $userUID]
-
 		set vuser		[string tolower $user]
 		set chan		[string trim [lindex $arg 2] :]
 		set vchan		[string tolower $chan]
@@ -5034,8 +5010,6 @@ proc eva:link { idx arg } {
 		catch { close $liste }
 	}
 	"PART" {
-		set userUID		[string trim [lindex $arg 0] :]
-		set user		[eva:UID:CONVERT $userUID]
 		set chan		[string trim [lindex $arg 2] :]
 		set vchan		[string tolower $chan]
 		if {
@@ -5047,8 +5021,6 @@ proc eva:link { idx arg } {
 		}
 	}
 	"QUIT" {
-		set user		[string trim [lindex $arg 0] :]
-		set vuser		[string tolower [string trim [lindex $arg 0] :]]
 		set text		[join [string trim [lrange $arg 2 end] :]]
 		eva:refresh $vuser
 		if { [eva:console 2]=="ok" && $eva(init)==0 } {
