@@ -232,6 +232,10 @@ proc eva:FCT:SENT:PRIVMSG { DEST MSG } {
 	global eva
 	eva:sent2socket $eva(idx) ":$eva(server_id) PRIVMSG $DEST :[eva:FCT:apply_visuals $MSG]"
 }
+proc eva:FCT:SENT:MODE { DEST MODE CIBLE } {
+	global eva
+	eva:sent2socket $eva(idx) ":$eva(server_id) MODE $DEST $MODE $CIBLE"
+}
 
 
 ###############################################################################
@@ -947,7 +951,7 @@ proc eva:cmds { arg } {
 			eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $eva(salon)"
 			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $eva(salon) +$eva(smode)"
 			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $eva(salon) +$eva(cmode) $eva(SID)"
+				eva:FCT:SENT:MODE $eva(salon) "+$eva(cmode)" $eva(SID)
 			}
 			eva:FCT:SENT:NOTICE "$vuser" "Changement du salon de log reussi ($value1)"
 			if { [eva:console 1]=="ok" } {
@@ -998,7 +1002,7 @@ proc eva:cmds { arg } {
 			if { $stop==1 } { return 0 }
 			set join		[open "[eva:scriptdir]db/chan.db" a]; puts $join $value2; close $join; eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1"
 			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +$eva(cmode) $eva(SID)"
+				eva:FCT:SENT:MODE $value1 "+$eva(cmode)" $eva(SID)
 			}
 			eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) entre sur <b>$value1</b>"
 
@@ -1573,12 +1577,12 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE "$vuser" "Pseudo introuvable.";
 				return 0
 			}
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +q $value3"
+			eva:FCT:SENT:MODE $value1 "+q" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Owner <c>$eva(console_deco):<c>$eva(console_txt) $value3 sur $value1 par $user"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +q $user"
+			eva:FCT:SENT:MODE $value1 "+q" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Owner <c>$eva(console_deco):<c>$eva(console_txt) $user sur $value1"
 			}
@@ -1601,12 +1605,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -q $value3"
+			eva:FCT:SENT:MODE $value1 "-q" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deowner <c>$eva(console_deco):<c>$eva(console_txt) $value3 sur $value1 par $user"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -q $user"
+			eva:FCT:SENT:MODE $value1 "-q" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deowner <c>$eva(console_deco):<c>$eva(console_txt) $user sur $value1"
 			}
@@ -1629,12 +1633,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +a $value3"
+			eva:FCT:SENT:MODE $value1 "+a" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Protect <c>$eva(console_deco):<c>$eva(console_txt) $value3 sur $value1 par $user"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +a $user"
+			eva:FCT:SENT:MODE $value1 "+a" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Protect <c>$eva(console_deco):<c>$eva(console_txt) $user sur $value1"
 			}
@@ -1657,12 +1661,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -a $value3"
+			eva:FCT:SENT:MODE $value1 "-a" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deprotect <c>$eva(console_deco):<c>$eva(console_txt) $value3 sur $value1 par $user"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -a $user"
+			eva:FCT:SENT:MODE $value1 "-a" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deprotect <c>$eva(console_deco):<c>$eva(console_txt) $user sur $value1"
 			}
@@ -1731,12 +1735,12 @@ proc eva:cmds { arg } {
 				return 0;
 
 			}
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +o $value3"
+			eva:FCT:SENT:MODE $value1 "+o" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Op <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été opé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +o $user"
+			eva:FCT:SENT:MODE $value1 "+o" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Op <c>$eva(console_deco):<c>$eva(console_txt) $user a été opé sur $value1"
 			}
@@ -1759,12 +1763,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -o $value3"
+			eva:FCT:SENT:MODE $value1 "-o" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deop <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été déopé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -o $user"
+			eva:FCT:SENT:MODE $value1 "-o" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Deop <c>$eva(console_deco):<c>$eva(console_txt) $user a été déopé sur $value1"
 			}
@@ -1787,12 +1791,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +h $value3"
+			eva:FCT:SENT:MODE $value1 "+h" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Halfop <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été halfopé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +h $user"
+			eva:FCT:SENT:MODE $value1 "+h" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Halfop <c>$eva(console_deco):<c>$eva(console_txt) $user a été halfopé sur $value1"
 			}
@@ -1815,12 +1819,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -h $value3"
+			eva:FCT:SENT:MODE $value1 "-h" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Dehalfop <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été déhalfopé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -h $user"
+			eva:FCT:SENT:MODE $value1 "-h" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Dehalfop <c>$eva(console_deco):<c>$eva(console_txt) $user a été déhalfopé sur $value1"
 			}
@@ -1843,12 +1847,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +v $value3"
+			eva:FCT:SENT:MODE $value1 "+v" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Voice <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été voicé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +v $user"
+			eva:FCT:SENT:MODE $value1 "+v" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Voice <c>$eva(console_deco):<c>$eva(console_txt) $user a été voicé sur $value1"
 			}
@@ -1871,12 +1875,12 @@ proc eva:cmds { arg } {
 				return 0;
 			}
 
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -v $value3"
+			eva:FCT:SENT:MODE $value1 "-v" $value3
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Devoice <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été dévoicé par $user sur $value1"
 			}
 		} else {
-			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -v $user"
+			eva:FCT:SENT:MODE $value1 "-v" $user
 			if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Devoice <c>$eva(console_deco):<c>$eva(console_txt) $user a été dévoicé sur $value1"
 			}
@@ -1993,7 +1997,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +b $value3"
+		eva:FCT:SENT:MODE $value1 "+b" $value3
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Ban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été banni par $user sur $value1"
 		}
@@ -2015,7 +2019,7 @@ proc eva:cmds { arg } {
 		}
 
 		if { $value5=="" } { set value5		"Nick Banned" }
-		eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +b $value4*!*@*"
+		eva:FCT:SENT:MODE $value1 "+b" $value4*!*@*
 		eva:sent2socket $eva(idx) ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Nickban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été banni par $user sur $value1 - Raison : $value5"
@@ -2038,7 +2042,7 @@ proc eva:cmds { arg } {
 		}
 
 		if { $value5=="" } { set value5		"Kick Banned" }
-		eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +b *!*@$vhost($value4)"
+		eva:FCT:SENT:MODE $value1 "+b" *!*@$vhost($value4)
 		eva:sent2socket $eva(idx) ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kickban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été banni par $user sur $value1 - Raison : $value5"
@@ -2050,7 +2054,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 -b $value3"
+		eva:FCT:SENT:MODE $value1 "-b" $value3
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été débanni par $user sur $value1"
 		}
@@ -2818,7 +2822,7 @@ proc eva:cmds { arg } {
 		if { $stop==1 } { return 0 }
 		set bclose		[open "[eva:scriptdir]db/close.db" a]; puts $bclose $value2; close $bclose
 		eva:FCT:SENT:NOTICE "$vuser" "<b>$value1</b> vient d'être ajouté dans la liste des salons fermés."
-		eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1"; eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1 +sntio $eva(SID)"; eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $value1 :<c1>Salon Fermé le [eva:duree [unixtime]]"
+		eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1"; eva:FCT:SENT:MODE $value1 +sntio $eva(SID)"; eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $value1 :<c1>Salon Fermé le "[eva:duree" [unixtime]]
 		eva:sent2socket $eva(idx) ":$eva(link) NAMES $value1"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Close <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
@@ -4044,7 +4048,7 @@ proc eva:connexion { } {
 		for { set i		0 } { $i < [string length $eva(cmode)] } { incr i } {
 			set tmode		[string index $eva(cmode) $i]
 			if { $tmode=="q" || $tmode=="a" || $tmode=="o" || $tmode=="h" || $tmode=="v" } {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $eva(salon) +$tmode $eva(server_id)"
+				eva:FCT:SENT:MODE $eva(salon) "+$tmode" $eva(server_id)
 			}
 		}
 		catch { open "[eva:scriptdir]db/chan.db" r } autojoin
@@ -4053,7 +4057,7 @@ proc eva:connexion { } {
 			if { $salon!="" } {
 				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salon";
 				if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-					eva:sent2socket $eva(idx) ":$eva(server_id) MODE $salon +$eva(cmode) $eva(server_id)"
+					eva:FCT:SENT:MODE $salon "+$eva(cmode)" $eva(server_id)
 				}
 			}
 		}
@@ -4063,7 +4067,7 @@ proc eva:connexion { } {
 			gets $ferme salle;
 			if { $salle!="" } {
 				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salle";
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $salle +sntio $eva(SID)";
+				eva:FCT:SENT:MODE $salle "+sntio" $eva(SID);
 				eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $salle :<c1>Salon Fermé le [eva:duree [unixtime]]";
 				eva:sent2socket $eva(idx) ":$eva(link) NAMES $salle"
 			}
@@ -4417,7 +4421,7 @@ proc eva:link { idx arg } {
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan +q $n"
+				eva:FCT:SENT:MODE $chan "+q" $n
 			} elseif {
 				$eva(cmd)=="deownerall" && \
 					![info exists ueva($n)] && \
@@ -4425,7 +4429,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan -q $n"
+				eva:FCT:SENT:MODE $chan "-q" $n
 			} elseif {
 				$eva(cmd)=="protectall" && \
 					![info exists ueva($n)] && \
@@ -4433,7 +4437,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan +a $n"
+				eva:FCT:SENT:MODE $chan "+a" $n
 			} elseif {
 				$eva(cmd)=="deprotectall" && \
 					![info exists ueva($n)] && \
@@ -4441,7 +4445,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan -a $n"
+				eva:FCT:SENT:MODE $chan "-a" $n
 			} elseif {
 				$eva(cmd)=="opall" && \
 					![info exists ueva($n)] && \
@@ -4449,7 +4453,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan +o $n"
+				eva:FCT:SENT:MODE $chan "+o" $n
 			} elseif {
 				$eva(cmd)=="deopall" && \
 					![info exists ueva($n)] && \
@@ -4457,7 +4461,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan -o $n"
+				eva:FCT:SENT:MODE $chan "-o" $n
 			} elseif {
 				$eva(cmd)=="halfopall" && \
 					![info exists ueva($n)] && \
@@ -4465,7 +4469,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan +h $n"
+				eva:FCT:SENT:MODE $chan "+h" $n
 			} elseif {
 				$eva(cmd)=="dehalfopall" && \
 					![info exists ueva($n)] && \
@@ -4473,7 +4477,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan -h $n"
+				eva:FCT:SENT:MODE $chan "-h" $n
 			} elseif {
 				$eva(cmd)=="voiceall" && \
 					![info exists ueva($n)] && \
@@ -4481,7 +4485,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan +v $n"
+				eva:FCT:SENT:MODE $chan "+v" $n
 			} elseif {
 				$eva(cmd)=="devoiceall" && \
 					![info exists ueva($n)] && \
@@ -4489,7 +4493,7 @@ proc eva:link { idx arg } {
 					![info exists admins($n)] && \
 					[eva:protection $n $eva(protection)]!="ok"
 			} {
-				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $chan -v $n"
+				eva:FCT:SENT:MODE $chan "-v" $n
 			} elseif {
 				$eva(cmd)=="kickall" && \
 					![info exists ueva($n)] && \
@@ -4877,7 +4881,7 @@ proc eva:link { idx arg } {
 					![info exists admins($vuser)] && \
 					[eva:protection $vuser $eva(protection)]!="ok"
 			} {
-				set eva(cmd)		"badchan"; eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan"; eva:sent2socket $eva(idx) ":$eva(server_id) MODE $vchan +ntsio $eva(SID)"
+				set eva(cmd)		"badchan"; eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan"; eva:FCT:SENT:MODE $vchan "+ntsio" $eva(SID)
 				eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $vchan :<c1>Salon Interdit le [eva:duree [unixtime]]"; eva:sent2socket $eva(idx) ":$eva(link) NAMES $vchan"
 				if { [eva:console 3]=="ok" && $eva(init)==0 } {
 					eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan : Salon Interdit"
