@@ -4033,6 +4033,7 @@ proc eva:connexion { } {
 		eva:sent2socket $eva(idx) ":$eva(SID) UID $eva(pseudo) 1 [unixtime] $eva(ident) $eva(host) $eva(server_id) * +ioS * * * :$eva(real)"
 		eva:sent2socket $eva(idx) ":$eva(SID) SJOIN [unixtime] $eva(salon) + :$eva(server_id)"
 		eva:sent2socket $eva(idx) ":$eva(SID) MODE $eva(salon) +$eva(smode)"
+		eva:sent2socket $eva(idx) "EOS"
 
 		set UID_DB([string		toupper $eva(pseudo)])	$eva(server_id)
 		set UID_DB($eva(server_id))					$eva(pseudo)
