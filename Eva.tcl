@@ -4283,6 +4283,14 @@ proc eva:link { idx arg } {
 
 	}
 	switch -exact [lindex $arg 1] {
+		"REPUTATION"	{
+			#:001 REPUTATION 144.76.236.138 373
+			if { [eva:console 2]=="ok" && $eva(init)==0 } {
+				set host	[lindex $arg 2]
+				set score	[lindex $arg 3]
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Réputation <c>$eva(console_deco):<c>$eva(console_txt) score $score ($host)"
+			}
+		}
 		"UID"		{
 			set SID				[string range [lindex $arg 0] 1 end]
 			set nickname		[lindex $arg 2]
