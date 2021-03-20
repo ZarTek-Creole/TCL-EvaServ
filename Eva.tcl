@@ -969,7 +969,7 @@ proc eva:cmds { arg } {
 			eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $eva(salon)"
 			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $eva(salon) +$eva(smode)"
 			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-				eva:FCT:SENT:MODE $eva(salon) "+$eva(cmode)" $eva(SID)
+				eva:FCT:SENT:MODE $eva(salon) "+$eva(cmode)" $eva(pseudo)
 			}
 			eva:FCT:SENT:NOTICE "$vuser" "Changement du salon de log reussi ($value1)"
 			if { [eva:console 1]=="ok" } {
@@ -1023,7 +1023,7 @@ proc eva:cmds { arg } {
 			close $join;
 			eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1"
 			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-				eva:FCT:SENT:MODE $value1 "+$eva(cmode)" $eva(SID)
+				eva:FCT:SENT:MODE $value1 "+$eva(cmode)" $eva(pseudo)
 			}
 			eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) entre sur <b>$value1</b>"
 
@@ -1595,7 +1595,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1621,7 +1621,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1649,7 +1649,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1677,7 +1677,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1752,7 +1752,7 @@ proc eva:cmds { arg } {
 			eva:FCT:SENT:NOTICE "$vuser" "<b>Commande Op :</b> /msg $eva(pseudo) op #salon pseudo";
 			return 0
 		}
-		if { $value4 == [string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0
 		}
@@ -1778,7 +1778,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1806,7 +1806,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1834,7 +1834,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1862,7 +1862,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1890,7 +1890,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -1991,7 +1991,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2032,7 +2032,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2055,7 +2055,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2171,7 +2171,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value2==[string tolower $eva(SID)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
+		if { $value2==[string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2217,7 +2217,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2238,7 +2238,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value4==[string tolower $eva(SID)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value4==[string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2259,7 +2259,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value2==[string tolower $eva(SID)] || $value4==[string tolower $eva(SID)] || [info exists ueva($value2)] || [info exists ueva($value4)] || [eva:protection $value2 $eva(protection)]=="ok" || [eva:protection $value4 $eva(protection)]=="ok" } {
+		if { $value2==[string tolower $eva(pseudo)] || $value4==[string tolower $eva(pseudo)] || [info exists ueva($value2)] || [info exists ueva($value4)] || [eva:protection $value2 $eva(protection)]=="ok" || [eva:protection $value4 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -2274,7 +2274,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(SID) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
+		eva:sent2socket $eva(idx) ":$eva(pseudo) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Svsnick <c>$eva(console_deco):<c>$eva(console_txt) $user change le pseudo de $value1 en $value3"
 		}
@@ -2386,16 +2386,16 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value2==[string tolower $eva(SID)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
+		if { $value2==[string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
 
 		if { $value6=="" } { set value6		"Glined" }
 		if { [info exists vhost($value2)] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $vhost($value2) $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} elseif { [string match *.* $value1] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $value1 $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} else {
 			eva:FCT:SENT:NOTICE "$vuser" "Pseudo introuvable.";
 			return 0;
@@ -2410,7 +2410,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(link) TKL - G [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(SID)"
+		eva:sent2socket $eva(idx) ":$eva(link) TKL - G [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Ungline <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
 		}
@@ -2421,16 +2421,16 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value2==[string tolower $eva(SID)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
+		if { $value2==[string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
 
 		if { $value6=="" } { set value6		"Shun" }
 		if { [info exists vhost($value2)] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + s * $vhost($value2) $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + s * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} elseif { [string match *.* $value1] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + s * $value1 $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + s * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} else {
 			eva:FCT:SENT:NOTICE "$vuser" "Pseudo introuvable.";
 			return 0;
@@ -2445,7 +2445,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(link) TKL - s [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(SID)"
+		eva:sent2socket $eva(idx) ":$eva(link) TKL - s [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unshun <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
 		}
@@ -2456,16 +2456,16 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { $value2==[string tolower $eva(SID)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
+		if { $value2==[string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)]=="ok" } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
 
 		if { $value6=="" } { set value6		"Klined" }
 		if { [info exists vhost($value2)] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + k * $vhost($value2) $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + k * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} elseif { [string match *.* $value1] } {
-			eva:sent2socket $eva(idx) ":$eva(link) TKL + k * $value1 $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+			eva:sent2socket $eva(idx) ":$eva(link) TKL + k * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 		} else {
 			eva:FCT:SENT:NOTICE "$vuser" "Pseudo introuvable.";
 			return 0;
@@ -2480,7 +2480,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(link) TKL - k [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(SID)"
+		eva:sent2socket $eva(idx) ":$eva(link) TKL - k [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unkline <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
 		}
@@ -2937,7 +2937,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		if { [string match *$value2* [string tolower $eva(SID)]] } {
+		if { [string match *$value2* [string tolower $eva(pseudo)]] } {
 			eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
 			return 0;
 		}
@@ -4107,7 +4107,7 @@ proc eva:cmds { arg } {
 			gets $ferme salle;
 			if { $salle!="" } {
 				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salle";
-				eva:FCT:SENT:MODE $salle "+sntio" $eva(SID);
+				eva:FCT:SENT:MODE $salle "+sntio" $eva(pseudo);
 				eva:FCT:SET:TOPIC $salle "<c1>Salon Fermé le [eva:duree [unixtime]]";
 				eva:sent2socket $eva(idx) ":$eva(link) NAMES $salle"
 			}
@@ -4290,7 +4290,7 @@ proc eva:cmds { arg } {
 						utimer $eva(secutime) eva:secu
 					}
 					if { [info exists eva(maxthrottle)] } {
-						eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $hostname $eva(SID) [expr [unixtime] + $eva(secutime)] [unixtime] :$eva(secustop)";
+						eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $hostname $eva(pseudo) [expr [unixtime] + $eva(secutime)] [unixtime] :$eva(secustop)";
 						return 0;
 					}
 
@@ -4374,7 +4374,7 @@ proc eva:cmds { arg } {
 						eva:FCT:SENT:NOTICE "$nickname" "$eva(ravert)"
 					}
 					if { $clone==$eva(numclone) } {
-						eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $hostname $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] :$eva(rclone) (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])";
+						eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $hostname $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] :$eva(rclone) (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])";
 						return 0;
 					}
 
@@ -4420,9 +4420,9 @@ proc eva:cmds { arg } {
 					}
 					eva:FCT:SENT:NOTICE "$eva(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
 				} elseif { $eva(cmd)=="cleargline" } {
-					eva:sent2socket $eva(idx) ":$eva(link) TKL - G [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(SID)"
+					eva:sent2socket $eva(idx) ":$eva(link) TKL - G [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(pseudo)"
 				} elseif { $eva(cmd)=="clearkline" } {
-					eva:sent2socket $eva(idx) ":$eva(link) TKL - k [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(SID)"
+					eva:sent2socket $eva(idx) ":$eva(link) TKL - k [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(pseudo)"
 				}
 			}
 			"307" {
@@ -4492,7 +4492,7 @@ proc eva:cmds { arg } {
 				foreach n [split $user] {
 					if { $eva(cmd)=="ownerall" && \
 						![info exists ueva($n)] && \
-							$n!=[string tolower $eva(SID)] && \
+							$n!=[string tolower $eva(pseudo)] && \
 							![info exists admins($n)] && \
 							[eva:protection $n $eva(protection)]!="ok"
 					} {
@@ -4500,7 +4500,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="deownerall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4508,7 +4508,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="protectall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4516,7 +4516,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="deprotectall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4524,7 +4524,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="opall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4532,7 +4532,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="deopall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4540,7 +4540,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="halfopall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4548,7 +4548,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="dehalfopall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4556,7 +4556,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="voiceall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4564,7 +4564,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="devoiceall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4572,7 +4572,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="kickall" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4581,7 +4581,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="chankill" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok" && [eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4590,15 +4590,15 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="changline" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok" && [eva:protection $n $eva(protection)]!="ok"
 				} {
-					eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $vhost($n) $eva(SID) [expr [unixtime] + $eva(duree)] [unixtime] :Chan Glined [eva:rnick $eva(rep)] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+					eva:sent2socket $eva(idx) ":$eva(link) TKL + G * $vhost($n) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] :Chan Glined [eva:rnick $eva(rep)] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
 				} elseif {
 					$eva(cmd)=="badchan" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4606,7 +4606,7 @@ proc eva:cmds { arg } {
 				} elseif {
 					$eva(cmd)=="close" && \
 						![info exists ueva($n)] && \
-						$n!=[string tolower $eva(SID)] && \
+						$n!=[string tolower $eva(pseudo)] && \
 						![info exists admins($n)] && \
 						[eva:protection $n $eva(protection)]!="ok"
 				} {
@@ -4745,7 +4745,7 @@ proc eva:cmds { arg } {
 				[eva:console 3]=="ok" && \
 					$vchan!=[string tolower $eva(salon)] && \
 					$eva(init)==0 && \
-					[string tolower $user]!=[string tolower $eva(SID)]
+					[string tolower $user]!=[string tolower $eva(pseudo)]
 			} {
 				if {[regexp "^\[0-9\]\{10\}" $unix]} {
 					set smode		[string trim $pmode $unix]
@@ -4869,7 +4869,7 @@ proc eva:cmds { arg } {
 			if { [eva:console 1]=="ok" && $eva(init)==0 } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kill <c>$eva(console_deco):<c>$eva(console_txt) $pseudo : $text<c>"
 			}
-			if { $vpseudo==[string tolower $eva(SID)] } {
+			if { $vpseudo==[string tolower $eva(pseudo)] } {
 				eva:gestion;
 				eva:sent2socket $eva(idx) ":$eva(link) SQUIT $eva(link) :$eva(raison)"
 				foreach kill [utimers] {
@@ -4955,14 +4955,14 @@ proc eva:cmds { arg } {
 				if {
 					$verif!="" && \
 						[string match *[string trimleft $verif #]* [string trimleft $vchan #]] && \
-						$vuser!=[string tolower $eva(SID)] && \
+						$vuser!=[string tolower $eva(pseudo)] && \
 						![info exists ueva($vuser)] && \
 						![info exists admins($vuser)] && \
 						[eva:protection $vuser $eva(protection)]!="ok"
 				} {
 					set eva(cmd)		"badchan";
 					eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan";
-					eva:FCT:SENT:MODE $vchan "+ntsio" $eva(SID)
+					eva:FCT:SENT:MODE $vchan "+ntsio" $eva(pseudo)
 					eva:FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [eva:duree [unixtime]]";
 					eva:sent2socket $eva(idx) ":$eva(link) NAMES $vchan"
 					if { [eva:console 3]=="ok" && $eva(init)==0 } {
