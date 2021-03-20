@@ -247,6 +247,11 @@ proc eva:FCT:SENT:MODE { DEST MODE CIBLE } {
 	global eva
 	eva:sent2socket $eva(idx) ":$eva(server_id) MODE $DEST $MODE $CIBLE"
 }
+proc eva:FCT:SET:TOPIC { DEST TOPIC } {
+	global eva
+	eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $DEST :$TOPIC"
+}
+
 ###############################################################################
 ### Substitution des symboles couleur/gras/soulignement/...
 ###############################################################################
@@ -2095,7 +2100,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $value1 :$value6"
+		eva:FCT:SET:TOPIC $value1 $value6
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Topic <c>$eva(console_deco):<c>$eva(console_txt) $user change le topic sur $value1 : $value6"
 		}
@@ -2850,8 +2855,8 @@ proc eva:cmds { arg } {
 		close $bclose
 		eva:FCT:SENT:NOTICE "$vuser" "<b>$value1</b> vient d'être ajouté dans la liste des salons fermés."
 		eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1";
-		eva:FCT:SENT:MODE $value1 +sntio $eva(SID)";
-		eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $value1 :<c1>Salon Fermé le "[eva:duree" [unixtime]]
+		eva:FCT:SENT:MODE $value1 +sntio "$eva(SID)";
+		eva:FCT:SET:TOPIC $value1 "<c1>Salon Fermé le [eva:duree [unixtime]]"
 		eva:sent2socket $eva(idx) ":$eva(link) NAMES $value1"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Close <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
@@ -2884,7 +2889,7 @@ proc eva:cmds { arg } {
 			}
 			eva:FCT:SENT:NOTICE "$user" "<b>$value1</b> a bien été supprimé de la liste des salons fermés."
 			eva:sent2socket $eva(idx) ":$eva(server_id) MODE $value1"
-			eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $value1 :Bienvenue sur $value1"
+			eva:FCT:SET:TOPIC $value1 "Bienvenue sur $value1"
 			eva:sent2socket $eva(idx) ":$eva(server_id) PART $value1"
 			if { [eva:console 1]=="ok" } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unclose <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
@@ -2914,7 +2919,7 @@ proc eva:cmds { arg } {
 			gets $liste salon
 			if { $salon!="" } {
 				eva:sent2socket $eva(idx) ":$eva(server_id) MODE $salon"
-				eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $salon :Bienvenue sur $salon"
+				eva:FCT:SET:TOPIC $salon "Bienvenue sur $salon"
 				eva:sent2socket $eva(idx) ":$eva(server_id) PART $salon"
 			}
 		}
@@ -4103,7 +4108,7 @@ proc eva:cmds { arg } {
 			if { $salle!="" } {
 				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salle";
 				eva:FCT:SENT:MODE $salle "+sntio" $eva(SID);
-				eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $salle :<c1>Salon Fermé le [eva:duree [unixtime]]";
+				eva:FCT:SET:TOPIC $salle "<c1>Salon Fermé le [eva:duree [unixtime]]";
 				eva:sent2socket $eva(idx) ":$eva(link) NAMES $salle"
 			}
 		}
@@ -4958,7 +4963,7 @@ proc eva:cmds { arg } {
 					set eva(cmd)		"badchan";
 					eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $vchan";
 					eva:FCT:SENT:MODE $vchan "+ntsio" $eva(SID)
-					eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $vchan :<c1>Salon Interdit le [eva:duree [unixtime]]";
+					eva:FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [eva:duree [unixtime]]";
 					eva:sent2socket $eva(idx) ":$eva(link) NAMES $vchan"
 					if { [eva:console 3]=="ok" && $eva(init)==0 } {
 						eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $user part de $chan : Salon Interdit"
