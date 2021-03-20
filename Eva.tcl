@@ -249,7 +249,7 @@ proc eva:FCT:SENT:MODE { DEST MODE CIBLE } {
 }
 proc eva:FCT:SET:TOPIC { DEST TOPIC } {
 	global eva
-	eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $DEST :$TOPIC"
+	eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $DEST :[eva:FCT:apply_visuals $TOPIC]"
 }
 
 ###############################################################################
@@ -2043,7 +2043,7 @@ proc eva:cmds { arg } {
 		}
 
 		if { $value5=="" } { set value5		"Nick Banned" }
-		eva:FCT:SENT:MODE $value1 "+b" $value4*!*@*
+		eva:FCT:SENT:MODE $value1 "+b" "$value4*!*@*"
 		eva:sent2socket $eva(idx) ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Nickban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été banni par $user sur $value1 - Raison : $value5"
@@ -2066,7 +2066,7 @@ proc eva:cmds { arg } {
 		}
 
 		if { $value5=="" } { set value5		"Kick Banned" }
-		eva:FCT:SENT:MODE $value1 "+b" *!*@$vhost($value4)
+		eva:FCT:SENT:MODE $value1 "+b" "*!*@$vhost($value4)"
 		eva:sent2socket $eva(idx) ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
 		if { [eva:console 1]=="ok" && $value2!=[string tolower $eva(salon)] } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Kickban <c>$eva(console_deco):<c>$eva(console_txt) $value3 a été banni par $user sur $value1 - Raison : $value5"
@@ -2274,7 +2274,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(link) SVSNICK $value1 $value3 [unixtime]"
+		eva:sent2socket $eva(idx) ":$eva(SID) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
 		if { [eva:console 1]=="ok" } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Svsnick <c>$eva(console_deco):<c>$eva(console_txt) $user change le pseudo de $value1 en $value3"
 		}
@@ -2855,7 +2855,7 @@ proc eva:cmds { arg } {
 		close $bclose
 		eva:FCT:SENT:NOTICE "$vuser" "<b>$value1</b> vient d'être ajouté dans la liste des salons fermés."
 		eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $value1";
-		eva:FCT:SENT:MODE $value1 +sntio "$eva(SID)";
+		eva:FCT:SENT:MODE $value1 +sntio "$eva(pseudo)";
 		eva:FCT:SET:TOPIC $value1 "<c1>Salon Fermé le [eva:duree [unixtime]]"
 		eva:sent2socket $eva(idx) ":$eva(link) NAMES $value1"
 		if { [eva:console 1]=="ok" } {
