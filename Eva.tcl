@@ -4016,28 +4016,30 @@ proc eva:connexion { } {
 	if { $eva(DEBUG) } { putlog "connect $eva(ip) $eva(port)" }
 	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
 		control $eva(idx) eva:link
-		if { [info exists vhost] } { unset vhost	}
-		if { [info exists ueva] } { unset ueva		}
-		if { [info exists netadmin] } { unset netadmin		}
-		set eva(init)		1;
-		set eva(cmd)		"close"; utimer $eva(timerinit) [list set eva(init)		0]
-		utimer $eva(timerinit) [list unset eva(cmd)];		eva:chargement;
-		set eva(uptime)		[clock seconds]
-		set eva(server_id)			[string toupper	"${eva(SID)}AAAAAB"]
-		eva:sent2socket $eva(idx) ":$eva(SID) PASS :$eva(pass)"
-		eva:sent2socket $eva(idx) ":$eva(SID) PROTOCTL NICKv2 VHP UMODE2 NICKIP SJOIN SJOIN2 SJ3 NOQUIT TKLEXT MLOCK SID"
-		eva:sent2socket $eva(idx) ":$eva(SID) PROTOCTL EAUTH=$eva(link),,,Eva-$eva(version)"
-		eva:sent2socket $eva(idx) ":$eva(SID) PROTOCTL SID=$eva(SID)"
+		if { [info exists vhost] }		{ unset vhost		}
+		if { [info exists ueva] }		{ unset ueva		}
+		if { [info exists netadmin] }	{ unset netadmin	}
+		set eva(init)			1;
+		set eva(cmd)			"close"; utimer $eva(timerinit) [list set eva(init)		0]
+		utimer $eva(timerinit) [list unset eva(cmd)];
+		eva:chargement;
+		set eva(uptime)			[clock seconds]
+		set eva(server_id)		[string toupper	"${eva(SID)}AAAAAB"]
+		eva:sent2socket $eva(idx) "PASS :$eva(pass)"
+		eva:sent2socket $eva(idx) "PROTOCTL NICKv2 VHP UMODE2 NICKIP SJOIN SJOIN2 SJ3 NOQUIT TKLEXT MLOCK SID"
+		eva:sent2socket $eva(idx) "PROTOCTL EAUTH=$eva(link),,,Eva-$eva(version)"
+		eva:sent2socket $eva(idx) "PROTOCTL SID=$eva(SID)"
 		eva:sent2socket $eva(idx) ":$eva(SID) SERVER $eva(link) 1 :Services for IRC Networks"
+		eva:sent2socket $eva(idx) "EOS"
 		eva:sent2socket $eva(idx) ":$eva(SID) $eva(pseudo) :Reserved for services"
 		eva:sent2socket $eva(idx) ":$eva(SID) UID $eva(pseudo) 1 [unixtime] $eva(ident) $eva(host) $eva(server_id) * +ioS * * * :$eva(real)"
 		eva:sent2socket $eva(idx) ":$eva(SID) SJOIN [unixtime] $eva(salon) + :$eva(server_id)"
 		eva:sent2socket $eva(idx) ":$eva(SID) MODE $eva(salon) +$eva(smode)"
-		eva:sent2socket $eva(idx) "EOS"
+		
 
-		set UID_DB([string		toupper $eva(pseudo)])	$eva(server_id)
+		set UID_DB([string toupper $eva(pseudo)])	$eva(server_id)
 		set UID_DB($eva(server_id))					$eva(pseudo)
-		set vhost([string		tolower $eva(pseudo)])	$eva(host)
+		set vhost([string tolower $eva(pseudo)])	$eva(host)
 
 		for { set i		0 } { $i < [string length $eva(cmode)] } { incr i } {
 			set tmode		[string index $eva(cmode) $i]
