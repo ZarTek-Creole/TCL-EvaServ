@@ -4015,9 +4015,47 @@ proc eva:hcmds { arg } {
 # Eva Connexion #
 #################
 
+proc eva:connexion:server { } {
+	global eva
+	eva:sent2socket $eva(idx) "EOS"
+	eva:sent2socket $eva(idx) ":$eva(SID) SQLINE $eva(pseudo) :Reserved for services"
+	eva:sent2socket $eva(idx) ":$eva(SID) UID $eva(pseudo) 1 [unixtime] $eva(ident) $eva(host) $eva(server_id) * +ioS * * * :$eva(real)"
+	eva:sent2socket $eva(idx) ":$eva(SID) SJOIN [unixtime] $eva(salon) + :$eva(server_id)"
+	eva:sent2socket $eva(idx) ":$eva(SID) MODE $eva(salon) +$eva(smode)"
+	for { set i		0 } { $i < [string length $eva(cmode)] } { incr i } {
+		set tmode		[string index $eva(cmode) $i]
+		if { $tmode=="q" || $tmode=="a" || $tmode=="o" || $tmode=="h" || $tmode=="v" } {
+			eva:FCT:SENT:MODE $eva(salon) "+$tmode" $eva(server_id)
+		}
+	}
+	catch { open "[eva:scriptdir]db/chan.db" r } autojoin
+	while { ![eof $autojoin] } {
+		gets $autojoin salon;
+		if { $salon!="" } {
+			eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salon";
+			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
+				eva:FCT:SENT:MODE $salon "+$eva(cmode)" $eva(server_id)
+			}
+		}
+	}
+	catch { close $autojoin }
+	catch { open "[eva:scriptdir]db/close.db" r } ferme
+	while { ![eof $ferme] } {
+		gets $ferme salle;
+		if { $salle!="" } {
+			eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salle";
+			eva:FCT:SENT:MODE $salle "+sntio" $eva(SID);
+			eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $salle :<c1>Salon Fermé le [eva:duree [unixtime]]";
+			eva:sent2socket $eva(idx) ":$eva(link) NAMES $salle"
+		}
+	}
+	catch { close $ferme }
+	incr eva(counter) 1
+	utimer $eva(timerco) eva:verif
+}
 proc eva:connexion { } {
 	global eva vhost protect ueva netadmin UID_DB
-	if { $eva(DEBUG) } { putlog "connect $eva(ip) $eva(port)" }
+	if { $eva(DEBUG) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
 	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
 		control $eva(idx) eva:link
 		if { [info exists vhost] }		{ unset vhost		}
@@ -4034,48 +4072,12 @@ proc eva:connexion { } {
 		eva:sent2socket $eva(idx) "PROTOCTL EAUTH=$eva(link),,,Eva-$eva(version)"
 		eva:sent2socket $eva(idx) "PROTOCTL SID=$eva(SID)"
 		eva:sent2socket $eva(idx) ":$eva(SID) SERVER $eva(link) 1 :Services for IRC Networks"
-		eva:sent2socket $eva(idx) "EOS"
-		eva:sent2socket $eva(idx) ":$eva(SID) $eva(pseudo) :Reserved for services"
-		eva:sent2socket $eva(idx) ":$eva(SID) UID $eva(pseudo) 1 [unixtime] $eva(ident) $eva(host) $eva(server_id) * +ioS * * * :$eva(real)"
-		eva:sent2socket $eva(idx) ":$eva(SID) SJOIN [unixtime] $eva(salon) + :$eva(server_id)"
-		eva:sent2socket $eva(idx) ":$eva(SID) MODE $eva(salon) +$eva(smode)"
-		
 
 		set UID_DB([string toupper $eva(pseudo)])	$eva(server_id)
 		set UID_DB($eva(server_id))					$eva(pseudo)
 		set vhost([string tolower $eva(pseudo)])	$eva(host)
 
-		for { set i		0 } { $i < [string length $eva(cmode)] } { incr i } {
-			set tmode		[string index $eva(cmode) $i]
-			if { $tmode=="q" || $tmode=="a" || $tmode=="o" || $tmode=="h" || $tmode=="v" } {
-				eva:FCT:SENT:MODE $eva(salon) "+$tmode" $eva(server_id)
-			}
-		}
-		catch { open "[eva:scriptdir]db/chan.db" r } autojoin
-		while { ![eof $autojoin] } {
-			gets $autojoin salon;
-			if { $salon!="" } {
-				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salon";
-				if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
-					eva:FCT:SENT:MODE $salon "+$eva(cmode)" $eva(server_id)
-				}
-			}
-		}
-		catch { close $autojoin }
-		catch { open "[eva:scriptdir]db/close.db" r } ferme
-		while { ![eof $ferme] } {
-			gets $ferme salle;
-			if { $salle!="" } {
-				eva:sent2socket $eva(idx) ":$eva(server_id) JOIN $salle";
-				eva:FCT:SENT:MODE $salle "+sntio" $eva(SID);
-				eva:sent2socket $eva(idx) ":$eva(server_id) TOPIC $salle :<c1>Salon Fermé le [eva:duree [unixtime]]";
-				eva:sent2socket $eva(idx) ":$eva(link) NAMES $salle"
-			}
-		}
-		catch { close $ferme }
-		incr eva(counter) 1
-
-		utimer $eva(timerco) eva:verif
+	
 
 	} else {
 
@@ -4127,10 +4129,38 @@ proc remove_modenicklist { data } {
 
 proc eva:link { idx arg } {
 	global eva ceva admins netadmin vhost protect ueva trust UID_DB
-	if { $eva(DEBUG) } { putlog "Received:([lindex $arg 1]) $arg" }
+	if { $eva(DEBUG) } { putlog "Received: $arg" }
 	set arg	[split $arg]
 	if { $eva(debug)==1 } {
 		eva:putdebug "[join [lrange $arg 0 end]]"
+	}
+	switch -exact [lindex $arg 0] {
+		"PING" {
+			set eva(counter)		0
+			eva:sent2socket $eva(idx) "PONG [lindex $arg 1]"
+		}
+		"NETINFO" {
+			set eva(netinfo)		[lindex $arg 4]
+			set eva(network)		[lindex $arg 8]
+			eva:sent2socket $eva(idx) "NETINFO 0 [unixtime] 0 $eva(netinfo) 0 0 0 $eva(network)"
+		}
+		"SQUIT" {
+			set serv		[lindex $arg 1]
+			if { [eva:console 2]=="ok" && $eva(init)==0 } {
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unlink <c>$eva(console_deco):<c>$eva(console_txt) $serv"
+			}
+		}
+		"SERVER" {
+			# Received: SERVER irc.xxx.net 1 :U5002-Fhn6OoEmM-001 Serveur QNET
+			set serv		[lindex $arg 1]
+			set desc		[join [string trim [lrange $arg 3 end] :]]
+			# set serv		[lindex $arg 2]
+			# set desc		[join [string trim [lrange $arg 4 end] :]]
+			if { $eva(init)==1 } {
+				eva:connexion:server
+			}
+		}
+
 	}
 	switch -exact [lindex $arg 1] {
 		"UID"		{
@@ -4288,26 +4318,6 @@ proc eva:link { idx arg } {
 
 			}
 		}
-	}
-	switch -exact [lindex $arg 0] {
-		"PING" {
-			set eva(counter)		0
-			eva:sent2socket $eva(idx) "PONG [lindex $arg 1]"
-		}
-		"NETINFO" {
-			set eva(netinfo)		[lindex $arg 4]
-			set eva(network)		[lindex $arg 8]
-			eva:sent2socket $eva(idx) "NETINFO 0 [unixtime] 0 $eva(netinfo) 0 0 0 $eva(network)"
-		}
-		"SQUIT" {
-			set serv		[lindex $arg 1]
-			if { [eva:console 2]=="ok" && $eva(init)==0 } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Unlink <c>$eva(console_deco):<c>$eva(console_txt) $serv"
-			}
-		}
-
-	}
-	switch -exact [lindex $arg 1] {
 		"219" {
 			if { ![info exists eva(aff)] && $eva(cmd)=="gline" } {
 				eva:FCT:SENT:NOTICE "$eva(rep)" "Aucun Gline"
