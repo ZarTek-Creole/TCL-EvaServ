@@ -1033,7 +1033,7 @@ proc eva:cmds { arg } {
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) est déjà sur <b>$value1</b>.";
+					eva:FCT:SENT:NOTICE "$vuser" "$eva(pseudo) est déjà sur <b>$value1</b>.";
 					set stop		1;
 					break
 				}
@@ -1047,7 +1047,7 @@ proc eva:cmds { arg } {
 			if { $eva(cmode)=="q" || $eva(cmode)=="a" || $eva(cmode)=="o" || $eva(cmode)=="h" || $eva(cmode)=="v" } {
 				eva:FCT:SENT:MODE $value1 "+$eva(cmode)" $eva(pseudo)
 			}
-			eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) entre sur <b>$value1</b>"
+			eva:FCT:SENT:NOTICE "$vuser" "$eva(pseudo) entre sur <b>$value1</b>"
 
 			if { [eva:console 1]=="ok" } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Join <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
@@ -1072,7 +1072,7 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop==0 } {
-				eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) n'est pas sur <b>$value1</b>.";
+				eva:FCT:SENT:NOTICE "$vuser" "$eva(pseudo) n'est pas sur <b>$value1</b>.";
 				return 0;
 			} else {
 				if { [info exists salle] } {
@@ -1084,7 +1084,7 @@ proc eva:cmds { arg } {
 					close $del
 				}
 				eva:sent2socket $eva(idx) ":$eva(server_id) PART $value1"
-				eva:FCT:SENT:NOTICE "$vuser" "$eva(server_id) part de <b>$value1</b>"
+				eva:FCT:SENT:NOTICE "$vuser" "$eva(pseudo) part de <b>$value1</b>"
 				if { [eva:console 1]=="ok" } {
 					eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Part <c>$eva(console_deco):<c>$eva(console_txt) $value1 par $user"
 				}
@@ -4996,7 +4996,9 @@ proc eva:link { idx arg } {
 		}
 	}
 	"JOIN" {
-		set user		[string trim [lindex $arg 0] :]
+		set userUID		[string trim [lindex $arg 0] :]
+		set user		[eva:UID:CONVERT $userUID]
+
 		set vuser		[string tolower $user]
 		set chan		[string trim [lindex $arg 2] :]
 		set vchan		[string tolower $chan]
@@ -5032,7 +5034,8 @@ proc eva:link { idx arg } {
 		catch { close $liste }
 	}
 	"PART" {
-		set user		[string trim [lindex $arg 0] :]
+		set userUID		[string trim [lindex $arg 0] :]
+		set user		[eva:UID:CONVERT $userUID]
 		set chan		[string trim [lindex $arg 2] :]
 		set vchan		[string tolower $chan]
 		if {
