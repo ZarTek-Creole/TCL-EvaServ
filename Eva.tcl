@@ -2298,7 +2298,7 @@ proc eva:cmds { arg } {
 			return 0;
 		}
 
-		eva:sent2socket $eva(idx) ":$eva(pseudo) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
+		eva:sent2socket $eva(idx) ":$eva(SID) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
 		if { [info exists vhost($value1)] && $value1!=$value3 } {
 			set vhost($value3)		$vhost($value1);
 			unset vhost($value1)
