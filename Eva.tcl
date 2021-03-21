@@ -4308,6 +4308,13 @@ proc eva:link { idx arg } {
 
 	}
 	switch -exact [lindex $arg 1] {
+		"MD"	{
+			#:001 MD client 001E6A4GK certfp :023f2eae234f23fed481be360d744e99df957f.....
+			set user	[eva:FCT:DATA:TO:NICK [lindex $arg 3]]
+			set certfp	[string trim [string tolower [join [lrange $arg 5 end]]] :]
+			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Client CertFP <c>$eva(console_deco):<c>$eva(console_txt) $certfp ($user)"
+
+		}
 		"REPUTATION"	{
 			#:001 REPUTATION xxx.xxx.xxx.xxx 373
 			if { [eva:console 2]=="ok" && $eva(init)==0 } {
@@ -5081,9 +5088,9 @@ proc eva:link { idx arg } {
 
 		if { [eva:console 2]=="ok" && $eva(init)==0 } {
 			if { $text!="" } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST]) a quitté l'IRC : $text"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC : $text - ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST])"
 			} else {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST]) a quitté l'IRC"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC - ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST])"
 			}
 		}
 	}
