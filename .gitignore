@@ -35,3 +35,4 @@
 
 Eva.conf
 db/*.db
+db/*.bak

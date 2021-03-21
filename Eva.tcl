@@ -242,16 +242,33 @@ set eva(aclone)			0
 set eva(aclient)		0
 set eva(secu)			0
 
+####################
+# Eva DB Variables #
+####################
+array set DBU_INFO		""
+array set UID_DB		""
+set scoredb(last)		""
+
 #################
 # Eva fonctions #
 #################
-array set UID_DB		""
+
 proc eva:UID:CONVERT { ID } {
 	global UID_DB
 	if { [info exists UID_DB([string toupper $ID])] } {
 		return "$UID_DB([string toupper $ID])"
 	} else {
 		return $ID
+	}
+}
+
+proc eva:DBU:GET { UID WHAT } {
+	global DBU_INFO
+	set UID	[eva:FCT:DATA:TO:UID [string toupper $UID]]
+	if { [info exists DBU_INFO($UID,$WHAT)] } {
+		return "$DBU_INFO($UID,$WHAT)";
+	} else {
+		return -1;
 	}
 }
 proc eva:FCT:SENT:NOTICE { WHO MSG } {
@@ -278,6 +295,14 @@ proc eva:FCT:DATA:TO:NICK { DATA } {
 		set user		$DATA
 	}
 	return $user;
+}
+proc eva:FCT:DATA:TO:UID { DATA } {
+	if { [string range $DATA 0 0] == 0 } {
+		set UID		$DATA
+	} else {
+		set UID		[eva:UID:CONVERT $DATA]
+	}
+	return $UID;
 }
 
 ###############################################################################
@@ -4246,7 +4271,7 @@ proc remove_modenicklist { data } {
 }
 
 proc eva:link { idx arg } {
-	global eva ceva admins netadmin vhost protect ueva trust UID_DB
+	global eva ceva admins netadmin vhost protect ueva trust UID_DB scoredb DBU_INFO
 	if { $eva(DEBUG) } { putlog "Received: $arg" }
 	set arg	[split $arg]
 	if { $eva(debug)==1 } {
@@ -4284,11 +4309,13 @@ proc eva:link { idx arg } {
 	}
 	switch -exact [lindex $arg 1] {
 		"REPUTATION"	{
-			#:001 REPUTATION 144.76.236.138 373
+			#:001 REPUTATION xxx.xxx.xxx.xxx 373
 			if { [eva:console 2]=="ok" && $eva(init)==0 } {
 				set host	[lindex $arg 2]
 				set score	[lindex $arg 3]
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Réputation <c>$eva(console_deco):<c>$eva(console_txt) score $score ($host)"
+				set scoredb($host) $score
+				set scoredb(last) "$host|$score"
+				#eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Réputation <c>$eva(console_deco):<c>$eva(console_txt) score $score ($host)"
 			}
 		}
 		"UID"		{
@@ -4299,7 +4326,7 @@ proc eva:link { idx arg } {
 			set timestamp		[lindex $arg 4]
 			set username		[lindex $arg 5]
 			set hostname		[lindex $arg 6]
-			set uid				[lindex $arg 7]
+			set uid				[string toupper [lindex $arg 7]]
 			set servicestamp	[lindex $arg 8]
 			set umodes			[lindex $arg 9]
 			set virthost		[lindex $arg 10]
@@ -4309,10 +4336,16 @@ proc eva:link { idx arg } {
 
 			set UID_DB([string		toupper $nickname])	$uid
 			set UID_DB([string		toupper $uid])		$nickname
-			# set servs		[lindex $arg 6]
-			if { ![info exists vhost($nickname2)] } {
-				set vhost($nickname2)		$hostname
-			}
+
+			if { ![info exists vhost($nickname2)] } { set vhost($nickname2)		$hostname }
+
+			# Genere une base USER infos:
+			if { ![info exists DBU_INFO($uid,VHOST)] }		{ set DBU_INFO($uid,VHOST)		$hostname }
+			if { ![info exists DBU_INFO($uid,IDENT)] }		{ set DBU_INFO($uid,IDENT)		$username }
+			if { ![info exists DBU_INFO($uid,NICK)] }		{ set DBU_INFO($uid,NICK)		$nickname }
+			if { ![info exists DBU_INFO($uid,REALNAME)] }	{ set DBU_INFO($uid,REALNAME)	$gecos }
+
+
 			if { ![info exists ueva($nickname)] && [string match *+*S* $umodes] } {
 				set ueva($nickname)		on
 			}
@@ -4322,7 +4355,21 @@ proc eva:link { idx arg } {
 				set stype		"Connexion"
 			}
 			if { [eva:console 2]=="ok" && $eva(init)==0 } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)$stype <c>$eva(console_deco):<c>$eva(console_txt) $nickname2 ($username@$hostname) - (Serveur : $eva(ircdservname))"
+
+				set MSG_CONNECT		"<c>$eva(console_com)$stype <c>$eva(console_deco):<c>$eva(console_txt)"
+				append MSG_CONNECT	" [eva:DBU:GET $uid NICK]"
+				append MSG_CONNECT	" ([eva:DBU:GET $uid IDENT]@[eva:DBU:GET $uid VHOST]) "
+				append MSG_CONNECT	"- (Serveur : $eva(ircdservname)) "
+				if { $scoredb(last) != "" } {
+					if { ![info exists DBU_INFO($uid,REPUTATION)] } {
+						set TMP	[split $scoredb(last) "|"]
+						set DBU_INFO($uid,IP)			[lindex $TMP 0]
+						set DBU_INFO($uid,REPUTATION)	[lindex $TMP 1]
+					}
+					append MSG_CONNECT	" - (Score: [eva:DBU:GET $uid REPUTATION]) "
+				}
+				append MSG_CONNECT	"- (realname: [eva:DBU:GET $uid REALNAME]) "
+				eva:FCT:SENT:PRIVMSG $eva(salon) $MSG_CONNECT
 			}
 			foreach { mask num } [array get trust] {
 				if { [string match *$mask* $hostname] } { return 0 }
@@ -4900,7 +4947,7 @@ proc eva:link { idx arg } {
 		}
 	}
 	"KICK" {
-		set pseudo		[lindex $arg 3]
+		set pseudo		[eva:UID:CONVERT [lindex $arg 3]]
 		set chan		[lindex $arg 2]
 		set vchan		[string tolower [lindex $arg 2]]
 		set raison		[join [string trim [lrange $arg 4 end] :]]
@@ -4951,7 +4998,7 @@ proc eva:link { idx arg } {
 		}
 	}
 	"CHGHOST" {
-		set pseudo		[lindex $arg 2]
+		set pseudo		[eva:FCT:DATA:TO:NICK [lindex $arg 2]]
 		set host		[lindex $arg 3]
 		if { [eva:console 3]=="ok" && $eva(init)==0 } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Chghost <c>$eva(console_deco):<c>$eva(console_txt) $user change l'host de $pseudo en $host"
@@ -5031,13 +5078,15 @@ proc eva:link { idx arg } {
 	"QUIT" {
 		set text		[join [string trim [lrange $arg 2 end] :]]
 		eva:refresh $vuser
+
 		if { [eva:console 2]=="ok" && $eva(init)==0 } {
 			if { $text!="" } {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC : $text"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST]) a quitté l'IRC : $text"
 			} else {
-				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user a quitté l'IRC"
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Déconnexion <c>$eva(console_deco):<c>$eva(console_txt) $user ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST]) a quitté l'IRC"
 			}
 		}
 	}
 }
 }
+
