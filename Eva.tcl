@@ -5036,9 +5036,11 @@ proc eva:link { idx arg } {
 			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Setname <c>$eva(console_deco):<c>$eva(console_txt) Changement du realname de $user en $real"
 		}
 	}
-	"JOIN" {
+	"SJOIN" {
+		#	[20:40:16] Received: :001 SJOIN 1616246465 #Amandine :001119S0G
+		set user		[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 4] :]]
 		set vuser		[string tolower $user]
-		set chan		[string trim [lindex $arg 2] :]
+		set chan		[lindex $arg 3]
 		set vchan		[string tolower $chan]
 		if {
 			[eva:console 3]=="ok" && \
