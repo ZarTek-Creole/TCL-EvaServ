@@ -305,7 +305,24 @@ proc eva:FCT:DATA:TO:UID { DATA } {
 	}
 	return $UID;
 }
-
+proc eva:FCT:TXT:ESPACE:DISPLAY { text length } {
+	set text			[string trim $text]
+	set text_length		[string length $text];
+	set espace_length	[expr ($length - $text_length)/2.0]
+	set ESPACE_TMP		[split $espace_length .]
+	set ESPACE_ENTIER	[lindex $ESPACE_TMP 0]
+	set ESPACE_DECIMAL	[lindex $ESPACE_TMP 1]
+	if { $ESPACE_DECIMAL == 0 } {
+	    set espace_one			[string repeat " " $ESPACE_ENTIER]; 
+		set espace_two			[string repeat " " $ESPACE_ENTIER]; 
+		return "$espace_one$text$espace_two"
+	} else {
+		set espace_one			[string repeat " " $ESPACE_ENTIER]; 
+		set espace_two			[string repeat " " [expr ($ESPACE_ENTIER+1)]]; 
+		return "$espace_one$text$espace_two"
+	}
+	
+}
 ###############################################################################
 ### Substitution des symboles couleur/gras/soulignement/...
 ###############################################################################
@@ -1147,130 +1164,130 @@ proc eva:cmds { arg } {
 			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Utilisateur \]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>HELP<c01> \[<c04> [eva:help:description:help] <c01>\]";
-			eva:FCT:SENT:NOTICE $vuser "<c02>AUTH<c01> \[<c04> [eva:help:description:auth] <c01>\]";
-			eva:FCT:SENT:NOTICE $vuser "<c02>COPYRIGHT<c01> \[<c04> [eva:help:description:copyright] <c01>\]";
-			eva:FCT:SENT:NOTICE $vuser "<c02>DEAUTH<c01> \[<c04> [eva:help:description:deauth] <c01>\]";
-			eva:FCT:SENT:NOTICE $vuser "<c02>SEEN<c01> \[<c04> [eva:help:description:seen] <c01>\]";
-			eva:FCT:SENT:NOTICE $vuser "<c02>SHOWCOMMANDS<c01> \[<c04> [eva:help:description:showcommands] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "HELP" 15 ]<c01> \[<c04> [eva:help:description:help] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "AUTH" 15 ]<c01> \[<c04> [eva:help:description:auth] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "COPYRIGHT" 15 ]<c01> \[<c04> [eva:help:description:copyright] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEAUTH" 15 ]<c01> \[<c04> [eva:help:description:deauth] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SEEN" 15 ]<c01> \[<c04> [eva:help:description:seen] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SHOWCOMMANDS" 15 ]<c01> \[<c04> [eva:help:description:showcommands] <c01>\]";
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Helpeur \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MAP<c01> \[<c04> [eva:help:description:map] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>WHOIS<c01> \[<c04> [eva:help:description:whois] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MAP" 15 ]<c01> \[<c04> [eva:help:description:map] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "WHOIS" 15 ]<c01> \[<c04> [eva:help:description:whois] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Géofront \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>SHUN<c01> \[<c04> [eva:help:description:shun] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ACCESS<c01> \[<c04> [eva:help:description:access] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>BAN<c01> \[<c04> [eva:help:description:ban] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARALLMODES<c01> \[<c04> [eva:help:description:clearallmodes] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARBANS<c01> \[<c04> [eva:help:description:clearbans] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARMODES<c01> \[<c04> [eva:help:description:clearmodes] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOP<c01> \[<c04> [eva:help:description:dehalfop] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOPALL<c01> \[<c04> [eva:help:description:dehalfopall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEOP<c01> \[<c04> [eva:help:description:deop] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEOPALL<c01> \[<c04> [eva:help:description:deopall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEOWNER<c01> \[<c04> [eva:help:description:deowner] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEOWNERALL<c01> \[<c04> [eva:help:description:deownerall] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECT<c01> \[<c04> [eva:help:description:deprotect] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECTALL<c01> \[<c04> [eva:help:description:deprotectall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEVOICE<c01> \[<c04> [eva:help:description:devoice] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEVOICEALL<c01> \[<c04> [eva:help:description:devoiceall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>GLINE<c01> \[<c04> [eva:help:description:gline] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>GLINELIST<c01> \[<c04> [eva:help:description:glinelist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SHUNLIST<c01> \[<c04> [eva:help:description:shunlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>GLOBOPS<c01> \[<c04> [eva:help:description:globops] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>HALFOP<c01> \[<c04> [eva:help:description:halfop] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>HALFOPALL<c01> \[<c04> [eva:help:description:halfopall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>INVITE<c01> \[<c04> [eva:help:description:invite] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>INVITEME<c01> \[<c04> [eva:help:description:inviteme] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>KICK<c01> \[<c04> [eva:help:description:kick] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>KICKALL<c01> \[<c04> [eva:help:description:kickall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>KICKBAN<c01> \[<c04> [eva:help:description:kickban] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>KILL<c01> \[<c04> [eva:help:description:kill] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>KLINE<c01> \[<c04> [eva:help:description:kline] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>KLINELIST<c01> \[<c04> [eva:help:description:klinelist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>MODE<c01> \[<c04> [eva:help:description:mode] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>NEWPASS<c01> \[<c04> [eva:help:description:newpass] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>NICKBAN<c01> \[<c04> [eva:help:description:nickban] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>OP<c01> \[<c04> [eva:help:description:op] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>OPALL<c01> \[<c04> [eva:help:description:opall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>OWNER<c01> \[<c04> [eva:help:description:owner] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>OWNERALL<c01> \[<c04> [eva:help:description:ownerall] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECT<c01> \[<c04> [eva:help:description:protect] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECTALL<c01> \[<c04> [eva:help:description:protectall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>TOPIC<c01> \[<c04> [eva:help:description:topic] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNBAN<c01> \[<c04> [eva:help:description:unban] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNGLINE<c01> \[<c04> [eva:help:description:ungline] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNSHUN<c01> \[<c04> [eva:help:description:unshun] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNKLINE<c01> \[<c04> [eva:help:description:unkline] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>VOICE<c01> \[<c04> [eva:help:description:voice] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>VOICEALL<c01> \[<c04> [eva:help:description:voiceall] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>WALLOPS<c01> \[<c04> [eva:help:description:wallops] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SHUN" 15 ]<c01> \[<c04> [eva:help:description:shun] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ACCESS" 15 ]<c01> \[<c04> [eva:help:description:access] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "BAN" 15 ]<c01> \[<c04> [eva:help:description:ban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARALLMODES" 15 ]<c01> \[<c04> [eva:help:description:clearallmodes] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARBANS" 15 ]<c01> \[<c04> [eva:help:description:clearbans] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARMODES" 15 ]<c01> \[<c04> [eva:help:description:clearmodes] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEHALFOP" 15 ]<c01> \[<c04> [eva:help:description:dehalfop] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEHALFOPALL" 15 ]<c01> \[<c04> [eva:help:description:dehalfopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEOP" 15 ]<c01> \[<c04> [eva:help:description:deop] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEOPALL" 15 ]<c01> \[<c04> [eva:help:description:deopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEOWNER" 15 ]<c01> \[<c04> [eva:help:description:deowner] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEOWNERALL" 15 ]<c01> \[<c04> [eva:help:description:deownerall] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEPROTECT" 15 ]<c01> \[<c04> [eva:help:description:deprotect] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEPROTECTALL" 15 ]<c01> \[<c04> [eva:help:description:deprotectall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEVOICE" 15 ]<c01> \[<c04> [eva:help:description:devoice] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEVOICEALL" 15 ]<c01> \[<c04> [eva:help:description:devoiceall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "GLINE" 15 ]<c01> \[<c04> [eva:help:description:gline] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "GLINELIST" 15 ]<c01> \[<c04> [eva:help:description:glinelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SHUNLIST" 15 ]<c01> \[<c04> [eva:help:description:shunlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "GLOBOPS" 15 ]<c01> \[<c04> [eva:help:description:globops] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "HALFOP" 15 ]<c01> \[<c04> [eva:help:description:halfop] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "HALFOPALL" 15 ]<c01> \[<c04> [eva:help:description:halfopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "INVITE" 15 ]<c01> \[<c04> [eva:help:description:invite] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "INVITEME" 15 ]<c01> \[<c04> [eva:help:description:inviteme] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KICK" 15 ]<c01> \[<c04> [eva:help:description:kick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KICKALL" 15 ]<c01> \[<c04> [eva:help:description:kickall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KICKBAN" 15 ]<c01> \[<c04> [eva:help:description:kickban] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KILL" 15 ]<c01> \[<c04> [eva:help:description:kill] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KLINE" 15 ]<c01> \[<c04> [eva:help:description:kline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KLINELIST" 15 ]<c01> \[<c04> [eva:help:description:klinelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MODE" 15 ]<c01> \[<c04> [eva:help:description:mode] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NEWPASS" 15 ]<c01> \[<c04> [eva:help:description:newpass] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NICKBAN" 15 ]<c01> \[<c04> [eva:help:description:nickban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "OP" 15 ]<c01> \[<c04> [eva:help:description:op] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "OPALL" 15 ]<c01> \[<c04> [eva:help:description:opall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "OWNER" 15 ]<c01> \[<c04> [eva:help:description:owner] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "OWNERALL" 15 ]<c01> \[<c04> [eva:help:description:ownerall] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECT" 15 ]<c01> \[<c04> [eva:help:description:protect] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECTALL" 15 ]<c01> \[<c04> [eva:help:description:protectall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "TOPIC" 15 ]<c01> \[<c04> [eva:help:description:topic] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNBAN" 15 ]<c01> \[<c04> [eva:help:description:unban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNGLINE" 15 ]<c01> \[<c04> [eva:help:description:ungline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNSHUN" 15 ]<c01> \[<c04> [eva:help:description:unshun] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNKLINE" 15 ]<c01> \[<c04> [eva:help:description:unkline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "VOICE" 15 ]<c01> \[<c04> [eva:help:description:voice] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "VOICEALL" 15 ]<c01> \[<c04> [eva:help:description:voiceall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "WALLOPS" 15 ]<c01> \[<c04> [eva:help:description:wallops] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Ircop \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANGLINE<c01> \[<c04> [eva:help:description:changline] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANKILL<c01> \[<c04> [eva:help:description:chankill] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLIST<c01> \[<c04> [eva:help:description:chanlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARCLOSE<c01> \[<c04> [eva:help:description:clearclose] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARGLINE<c01> \[<c04> [eva:help:description:cleargline] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARKLINE<c01> \[<c04> [eva:help:description:clearkline] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLIENTLIST<c01> \[<c04> [eva:help:description:clientlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLOSE<c01> \[<c04> [eva:help:description:close] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLOSELIST<c01> \[<c04> [eva:help:description:closelist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>HOSTLIST<c01> \[<c04> [eva:help:description:hostlist] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>IDENTLIST<c01> \[<c04> [eva:help:description:identlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>JOIN<c01> \[<c04> [eva:help:description:join] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>LIST<c01> \[<c04> [eva:help:description:list] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>NICKLIST<c01> \[<c04> [eva:help:description:nicklist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>NOTICE<c01> \[<c04> [eva:help:description:notice] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PART<c01> \[<c04> [eva:help:description:part] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>REALLIST<c01> \[<c04> [eva:help:description:reallist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SAY<c01> \[<c04> [eva:help:description:say] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SECULIST<c01> \[<c04> [eva:help:description:seculist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>STATUS<c01> \[<c04> [eva:help:description:status] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>SVSJOIN<c01> \[<c04> [eva:help:description:svsjoin] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SVSNICK<c01> \[<c04> [eva:help:description:svsnick] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SVSPART<c01> \[<c04> [eva:help:description:svspart] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>TRUSTLIST<c01> \[<c04> [eva:help:description:trustlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNCLOSE<c01> \[<c04> [eva:help:description:unclose] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANGLINE" 15 ]<c01> \[<c04> [eva:help:description:changline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANKILL" 15 ]<c01> \[<c04> [eva:help:description:chankill] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANLIST" 15 ]<c01> \[<c04> [eva:help:description:chanlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARCLOSE" 15 ]<c01> \[<c04> [eva:help:description:clearclose] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARGLINE" 15 ]<c01> \[<c04> [eva:help:description:cleargline] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARKLINE" 15 ]<c01> \[<c04> [eva:help:description:clearkline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLIENTLIST" 15 ]<c01> \[<c04> [eva:help:description:clientlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLOSE" 15 ]<c01> \[<c04> [eva:help:description:close] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLOSELIST" 15 ]<c01> \[<c04> [eva:help:description:closelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "HOSTLIST" 15 ]<c01> \[<c04> [eva:help:description:hostlist] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "IDENTLIST" 15 ]<c01> \[<c04> [eva:help:description:identlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "JOIN" 15 ]<c01> \[<c04> [eva:help:description:join] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "LIST" 15 ]<c01> \[<c04> [eva:help:description:list] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NICKLIST" 15 ]<c01> \[<c04> [eva:help:description:nicklist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NOTICE" 15 ]<c01> \[<c04> [eva:help:description:notice] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PART" 15 ]<c01> \[<c04> [eva:help:description:part] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "REALLIST" 15 ]<c01> \[<c04> [eva:help:description:reallist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SAY" 15 ]<c01> \[<c04> [eva:help:description:say] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SECULIST" 15 ]<c01> \[<c04> [eva:help:description:seculist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "STATUS" 15 ]<c01> \[<c04> [eva:help:description:status] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSJOIN" 15 ]<c01> \[<c04> [eva:help:description:svsjoin] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSNICK" 15 ]<c01> \[<c04> [eva:help:description:svsnick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSPART" 15 ]<c01> \[<c04> [eva:help:description:svspart] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "TRUSTLIST" 15 ]<c01> \[<c04> [eva:help:description:trustlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNCLOSE" 15 ]<c01> \[<c04> [eva:help:description:unclose] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Admin \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDACCESS<c01> \[<c04> [eva:help:description:addaccess] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDCHAN<c01> \[<c04> [eva:help:description:addchan] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDCLIENT<c01> \[<c04> [eva:help:description:addclient] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDHOST<c01> \[<c04> [eva:help:description:addhost] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDIDENT<c01> \[<c04> [eva:help:description:addident] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDNICK<c01> \[<c04> [eva:help:description:addnick] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDREAL<c01> \[<c04> [eva:help:description:addreal] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDSECU<c01> \[<c04> [eva:help:description:addsecu] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDTRUST<c01> \[<c04> [eva:help:description:addtrust] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>BACKUP<c01> \[<c04> [eva:help:description:backup] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLOG<c01> \[<c04> [eva:help:description:chanlog] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLIENT<c01> \[<c04> [eva:help:description:client] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLONE<c01> \[<c04> [eva:help:description:clone] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>CONSOLE<c01> \[<c04> [eva:help:description:console] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELACCESS<c01> \[<c04> [eva:help:description:delaccess] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELCHAN<c01> \[<c04> [eva:help:description:delchan] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELCLIENT<c01> \[<c04> [eva:help:description:delclient] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELHOST<c01> \[<c04> [eva:help:description:delhost] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELIDENT<c01> \[<c04> [eva:help:description:delident] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELNICK<c01> \[<c04> [eva:help:description:delnick] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELREAL<c01> \[<c04> [eva:help:description:delreal] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELSECU<c01> \[<c04> [eva:help:description:delsecu] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELTRUST<c01> \[<c04> [eva:help:description:deltrust] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>DIE<c01> \[<c04> [eva:help:description:die] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>MAXLOGIN<c01> \[<c04> [eva:help:description:maxlogin] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MODACCESS<c01> \[<c04> [eva:help:description:modaccess] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECTION<c01> \[<c04> [eva:help:description:protection] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>RESTART<c01> \[<c04> [eva:help:description:restart] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>SECU<c01> \[<c04> [eva:help:description:secu] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDACCESS" 15 ]<c01> \[<c04> [eva:help:description:addaccess] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDCHAN" 15 ]<c01> \[<c04> [eva:help:description:addchan] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDCLIENT" 15 ]<c01> \[<c04> [eva:help:description:addclient] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDHOST" 15 ]<c01> \[<c04> [eva:help:description:addhost] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDIDENT" 15 ]<c01> \[<c04> [eva:help:description:addident] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDNICK" 15 ]<c01> \[<c04> [eva:help:description:addnick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDREAL" 15 ]<c01> \[<c04> [eva:help:description:addreal] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDSECU" 15 ]<c01> \[<c04> [eva:help:description:addsecu] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDTRUST" 15 ]<c01> \[<c04> [eva:help:description:addtrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "BACKUP" 15 ]<c01> \[<c04> [eva:help:description:backup] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANLOG" 15 ]<c01> \[<c04> [eva:help:description:chanlog] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLIENT" 15 ]<c01> \[<c04> [eva:help:description:client] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLONE" 15 ]<c01> \[<c04> [eva:help:description:clone] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CONSOLE" 15 ]<c01> \[<c04> [eva:help:description:console] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELACCESS" 15 ]<c01> \[<c04> [eva:help:description:delaccess] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCHAN" 15 ]<c01> \[<c04> [eva:help:description:delchan] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCLIENT" 15 ]<c01> \[<c04> [eva:help:description:delclient] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELHOST" 15 ]<c01> \[<c04> [eva:help:description:delhost] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELIDENT" 15 ]<c01> \[<c04> [eva:help:description:delident] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELNICK" 15 ]<c01> \[<c04> [eva:help:description:delnick] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELREAL" 15 ]<c01> \[<c04> [eva:help:description:delreal] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELSECU" 15 ]<c01> \[<c04> [eva:help:description:delsecu] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELTRUST" 15 ]<c01> \[<c04> [eva:help:description:deltrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DIE" 15 ]<c01> \[<c04> [eva:help:description:die] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MAXLOGIN" 15 ]<c01> \[<c04> [eva:help:description:maxlogin] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MODACCESS" 15 ]<c01> \[<c04> [eva:help:description:modaccess] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECTION" 15 ]<c01> \[<c04> [eva:help:description:protection] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "RESTART" 15 ]<c01> \[<c04> [eva:help:description:restart] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SECU" 15 ]<c01> \[<c04> [eva:help:description:secu] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [eva:console 1] == "ok" } {
@@ -1281,44 +1298,44 @@ proc eva:cmds { arg } {
 			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Utilisateur \]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>AUTH<c01> \[<c04> 0 <c01>\] | <c02>COPYRIGHT<c01> \[<c04> 0 <c01>\] | <c02>DEAUTH<c01> \[<c04> 0 <c01>\] | <c02>HELP<c01> \[<c04> 0 <c01>\]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>SEEN<c01> \[<c04> 0 <c01>\] | <c02>SHOWCOMMANDS<c01> \[<c04> 0 <c01>\]"
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "AUTH" 15 ]<c01> \[<c04> 0 <c01>\] | <c02>COPYRIGHT<c01> \[<c04> 0 <c01>\] | <c02>DEAUTH<c01> \[<c04> 0 <c01>\] | <c02>HELP<c01> \[<c04> 0 <c01>\]"
+			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SEEN" 15 ]<c01> \[<c04> 0 <c01>\] | <c02>SHOWCOMMANDS<c01> \[<c04> 0 <c01>\]"
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Helpeur \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MAP<c01> \[<c04> 1 <c01>\] | <c02>WHOIS<c01> \[<c04> 1 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MAP" 15 ]<c01> \[<c04> 1 <c01>\] | <c02>WHOIS<c01> \[<c04> 1 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Géofront \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ACCESS<c01> \[<c04> 2 <c01>\] | <c02>BAN<c01> \[<c04> 2 <c01>\] | <c02>CLEARALLMODES<c01> \[<c04> 2 <c01>\] | <c02>CLEARBANS<c01> \[<c04> 2 <c01>\] | <c02>CLEARMODES<c01> \[<c04> 2 <c01>\] | <c02>DEHALFOP<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOP<c01> \[<c04> 2 <c01>\] | <c02>DEOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOWNER<c01> \[<c04> 2 <c01>\] | <c02>DEOWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECT<c01> \[<c04> 2 <c01>\] | <c02>DEPROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>DEVOICE<c01> \[<c04> 2 <c01>\] | <c02>DEVOICEALL<c01> \[<c04> 2 <c01>\] | <c02>GLINE<c01> \[<c04> 2 <c01>\] | <c02>SHUN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>GLINELIST<c01> \[<c04> 2 <c01>\] | <c02>GLOBOPS<c01> \[<c04> 2 <c01>\] | <c02>HALFOP<c01> \[<c04> 2 <c01>\] | <c02>HALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>INVITE<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>INVITEME<c01> \[<c04> 2 <c01>\] | <c02>KICK<c01> \[<c04> 2 <c01>\] | <c02>KICKALL<c01> \[<c04> 2 <c01>\] | <c02>KICKBAN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>KILL<c01> \[<c04> 2 <c01>\] | <c02>KLINE<c01> \[<c04> 2 <c01>\] | <c02>KLINELIST<c01> \[<c04> 2 <c01>\] | <c02>MODE<c01> \[<c04> 2 <c01>\] | <c02>NEWPASS<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>NICKBAN<c01> \[<c04> 2 <c01>\] | <c02>OP<c01> \[<c04> 2 <c01>\] | <c02>OPALL<c01> \[<c04> 2 <c01>\] | <c02>OWNER<c01> \[<c04> 2 <c01>\] | <c02>OWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECT<c01> \[<c04> 2 <c01>\] | <c02>PROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>TOPIC<c01> \[<c04> 2 <c01>\] | <c02>UNBAN<c01> \[<c04> 2 <c01>\] | <c02>UNGLINE<c01> \[<c04> 2 <c01>\] | <c02>UNSHUN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNKLINE<c01> \[<c04> 2 <c01>\] | <c02>VOICE<c01> \[<c04> 2 <c01>\] | <c02>VOICEALL<c01> \[<c04> 2 <c01>\] | <c02>WALLOPS<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ACCESS" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>BAN<c01> \[<c04> 2 <c01>\] | <c02>CLEARALLMODES<c01> \[<c04> 2 <c01>\] | <c02>CLEARBANS<c01> \[<c04> 2 <c01>\] | <c02>CLEARMODES<c01> \[<c04> 2 <c01>\] | <c02>DEHALFOP<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEHALFOPALL" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>DEOP<c01> \[<c04> 2 <c01>\] | <c02>DEOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOWNER<c01> \[<c04> 2 <c01>\] | <c02>DEOWNERALL<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEPROTECT" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>DEPROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>DEVOICE<c01> \[<c04> 2 <c01>\] | <c02>DEVOICEALL<c01> \[<c04> 2 <c01>\] | <c02>GLINE<c01> \[<c04> 2 <c01>\] | <c02>SHUN<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "GLINELIST" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>GLOBOPS<c01> \[<c04> 2 <c01>\] | <c02>HALFOP<c01> \[<c04> 2 <c01>\] | <c02>HALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>INVITE<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "INVITEME" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>KICK<c01> \[<c04> 2 <c01>\] | <c02>KICKALL<c01> \[<c04> 2 <c01>\] | <c02>KICKBAN<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KILL" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>KLINE<c01> \[<c04> 2 <c01>\] | <c02>KLINELIST<c01> \[<c04> 2 <c01>\] | <c02>MODE<c01> \[<c04> 2 <c01>\] | <c02>NEWPASS<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NICKBAN" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>OP<c01> \[<c04> 2 <c01>\] | <c02>OPALL<c01> \[<c04> 2 <c01>\] | <c02>OWNER<c01> \[<c04> 2 <c01>\] | <c02>OWNERALL<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECT" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>PROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>TOPIC<c01> \[<c04> 2 <c01>\] | <c02>UNBAN<c01> \[<c04> 2 <c01>\] | <c02>UNGLINE<c01> \[<c04> 2 <c01>\] | <c02>UNSHUN<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNKLINE" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>VOICE<c01> \[<c04> 2 <c01>\] | <c02>VOICEALL<c01> \[<c04> 2 <c01>\] | <c02>WALLOPS<c01> \[<c04> 2 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Ircop \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANGLINE<c01> \[<c04> 3 <c01>\] | <c02>CHANKILL<c01> \[<c04> 3 <c01>\] | <c02>CHANLIST<c01> \[<c04> 3 <c01>\] | <c02>CLEARCLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLEARGLINE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARKLINE<c01> \[<c04> 3 <c01>\] | <c02>CLIENTLIST<c01> \[<c04> 3 <c01>\] | <c02>CLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLOSELIST<c01> \[<c04> 3 <c01>\] | <c02>HOSTLIST<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>IDENTLIST<c01> \[<c04> 3 <c01>\] | <c02>JOIN<c01> \[<c04> 3 <c01>\] | <c02>LIST<c01> \[<c04> 3 <c01>\] | <c02>NICKLIST<c01> \[<c04> 3 <c01>\] | <c02>NOTICE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PART<c01> \[<c04> 3 <c01>\] | <c02>REALLIST<c01> \[<c04> 3 <c01>\] | <c02>SAY<c01> \[<c04> 3 <c01>\] | <c02>SECULIST<c01> \[<c04> 3 <c01>\] | <c02>STATUS<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>SVSJOIN<c01> \[<c04> 3 <c01>\] | <c02>SVSNICK<c01> \[<c04> 3 <c01>\] | <c02>SVSPART<c01> \[<c04> 3 <c01>\] | <c02>TRUSTLIST<c01> \[<c04> 3 <c01>\] | <c02>UNCLOSE<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANGLINE" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>CHANKILL<c01> \[<c04> 3 <c01>\] | <c02>CHANLIST<c01> \[<c04> 3 <c01>\] | <c02>CLEARCLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLEARGLINE<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARKLINE" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>CLIENTLIST<c01> \[<c04> 3 <c01>\] | <c02>CLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLOSELIST<c01> \[<c04> 3 <c01>\] | <c02>HOSTLIST<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "IDENTLIST" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>JOIN<c01> \[<c04> 3 <c01>\] | <c02>LIST<c01> \[<c04> 3 <c01>\] | <c02>NICKLIST<c01> \[<c04> 3 <c01>\] | <c02>NOTICE<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PART" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>REALLIST<c01> \[<c04> 3 <c01>\] | <c02>SAY<c01> \[<c04> 3 <c01>\] | <c02>SECULIST<c01> \[<c04> 3 <c01>\] | <c02>STATUS<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSJOIN" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>SVSNICK<c01> \[<c04> 3 <c01>\] | <c02>SVSPART<c01> \[<c04> 3 <c01>\] | <c02>TRUSTLIST<c01> \[<c04> 3 <c01>\] | <c02>UNCLOSE<c01> \[<c04> 3 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Admin \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDACCESS<c01> \[<c04> 4 <c01>\] | <c02>ADDCHAN<c01> \[<c04> 4 <c01>\] | <c02>ADDCLIENT<c01> \[<c04> 4 <c01>\] | <c02>ADDHOST<c01> \[<c04> 4 <c01>\] | <c02>ADDIDENT<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDNICK<c01> \[<c04> 4 <c01>\] | <c02>ADDREAL<c01> \[<c04> 4 <c01>\] | <c02>ADDSECU<c01> \[<c04> 4 <c01>\] | <c02>ADDTRUST<c01> \[<c04> 4 <c01>\] | <c02>BACKUP<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLOG<c01> \[<c04> 4 <c01>\] | <c02>CLIENT<c01> \[<c04> 4 <c01>\] | <c02>CLONE<c01> \[<c04> 4 <c01>\] | <c02>CONSOLE<c01> \[<c04> 4 <c01>\] | <c02>DELACCESS<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELCHAN<c01> \[<c04> 4 <c01>\] | <c02>DELCLIENT<c01> \[<c04> 4 <c01>\] | <c02>DELHOST<c01> \[<c04> 4 <c01>\] | <c02>DELIDENT<c01> \[<c04> 4 <c01>\] | <c02>DELNICK<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELREAL<c01> \[<c04> 4 <c01>\] | <c02>DELSECU<c01> \[<c04> 4 <c01>\] | <c02>DELTRUST<c01> \[<c04> 4 <c01>\] | <c02>DIE<c01> \[<c04> 4 <c01>\] | <c02>MAXLOGIN<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MODACCESS<c01> \[<c04> 4 <c01>\] | <c02>PROTECTION<c01> \[<c04> 4 <c01>\] | <c02>RESTART<c01> \[<c04> 4 <c01>\] | <c02>SECU<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDACCESS" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>ADDCHAN<c01> \[<c04> 4 <c01>\] | <c02>ADDCLIENT<c01> \[<c04> 4 <c01>\] | <c02>ADDHOST<c01> \[<c04> 4 <c01>\] | <c02>ADDIDENT<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDNICK" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>ADDREAL<c01> \[<c04> 4 <c01>\] | <c02>ADDSECU<c01> \[<c04> 4 <c01>\] | <c02>ADDTRUST<c01> \[<c04> 4 <c01>\] | <c02>BACKUP<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANLOG" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>CLIENT<c01> \[<c04> 4 <c01>\] | <c02>CLONE<c01> \[<c04> 4 <c01>\] | <c02>CONSOLE<c01> \[<c04> 4 <c01>\] | <c02>DELACCESS<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCHAN" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>DELCLIENT<c01> \[<c04> 4 <c01>\] | <c02>DELHOST<c01> \[<c04> 4 <c01>\] | <c02>DELIDENT<c01> \[<c04> 4 <c01>\] | <c02>DELNICK<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELREAL" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>DELSECU<c01> \[<c04> 4 <c01>\] | <c02>DELTRUST<c01> \[<c04> 4 <c01>\] | <c02>DIE<c01> \[<c04> 4 <c01>\] | <c02>MAXLOGIN<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MODACCESS" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>PROTECTION<c01> \[<c04> 4 <c01>\] | <c02>RESTART<c01> \[<c04> 4 <c01>\] | <c02>SECU<c01> \[<c04> 4 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 				eva:FCT:SENT:NOTICE $vuser "Liste des commandes: /msg $eva(pseudo) showcommands"
 			}
