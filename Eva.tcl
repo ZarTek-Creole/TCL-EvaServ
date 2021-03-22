@@ -4197,8 +4197,8 @@ proc eva:connexion:server { } {
 }
 proc eva:connexion { } {
 	global eva vhost protect ueva netadmin UID_DB
-	if { $eva(DEBUG) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
 	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
+		if { $eva(DEBUG) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
 		control $eva(idx) eva:link
 		if { [info exists vhost] }		{ unset vhost		}
 		if { [info exists ueva] }		{ unset ueva		}
@@ -4219,11 +4219,7 @@ proc eva:connexion { } {
 		set UID_DB([string toupper $eva(pseudo)])	$eva(server_id)
 		set UID_DB($eva(server_id))					$eva(pseudo)
 		set vhost([string tolower $eva(pseudo)])	$eva(host)
-
-
-
 	} else {
-
 		if { [info exists eva(idx)] } { unset eva(idx)		}
 	}
 }
@@ -4296,7 +4292,7 @@ proc eva:link { idx arg } {
 			}
 		}
 		"SERVER" {
-			# Received: SERVER irc.xxx.net 1 :U5002-Fhn6OoEmM-001 Serveur QNET
+			# Received: SERVER irc.xxx.net 1 :U5002-Fhn6OoEmM-001 Serveur networkname
 			set eva(ircdservname)	[lindex $arg 1]
 			set desc		[join [string trim [lrange $arg 3 end] :]]
 			# set serv		[lindex $arg 2]
@@ -4310,9 +4306,11 @@ proc eva:link { idx arg } {
 	switch -exact [lindex $arg 1] {
 		"MD"	{
 			#:001 MD client 001E6A4GK certfp :023f2eae234f23fed481be360d744e99df957f.....
-			set user	[eva:FCT:DATA:TO:NICK [lindex $arg 3]]
-			set certfp	[string trim [string tolower [join [lrange $arg 5 end]]] :]
-			eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Client CertFP <c>$eva(console_deco):<c>$eva(console_txt) $certfp ($user)"
+			if { [eva:console 2]=="ok" && $eva(init)==0 } {
+				set user	[eva:FCT:DATA:TO:NICK [lindex $arg 3]]
+				set certfp	[string trim [string tolower [join [lrange $arg 5 end]]] :]
+				eva:FCT:SENT:PRIVMSG $eva(salon) "<c>$eva(console_com)Client CertFP <c>$eva(console_deco):<c>$eva(console_txt) $user ($certfp)"
+			}
 
 		}
 		"REPUTATION"	{
