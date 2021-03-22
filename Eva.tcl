@@ -4,18 +4,19 @@
 ##			|  __| | | .'|			##
 ##			|____|\_/|__,|			##
 ##									##
-##		Auteur : TiSmA				##
-##		Email : TiSmA@eXolia.fr		##
+##		Auteur	: TiSmA/MalaGaM		##
+##		Email	: TiSmA@eXolia.fr	##
 ##		Licence : GNU / GPL			##
 ##									##
 ######################################
 # Version 1.4 et +	:
-#	auteur	:
+#
+#	Auteur	:
 #		https://github.com/MalaGaM/tcl-eva
-#	support	:
+#	Support	:
 #		https://github.com/MalaGaM/tcl-eva/issues
 #
-#	change:
+#	Change:
 #		+ Prise en charge des nouveau protocol IRC
 #		-> https://github.com/MalaGaM/tcl-eva/commits/main
 #
@@ -562,7 +563,7 @@ proc eva:secu { } {
 			gets $liste salon;
 			if { $salon != "" } {
 				eva:FCT:SENT:MODE $salon "-msi"
-				
+
 			}
 		}
 		catch { close $liste }
@@ -707,7 +708,7 @@ proc eva:uptime { nick idx arg } {
 
 proc eva:version { nick idx arg } {
 	global eva
-	eva:sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> Eva Service $eva(version) by TiSmA"
+	eva:sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> Eva Service $eva(version) by TiSmA/MalaGaM"
 }
 
 #############
@@ -938,7 +939,7 @@ proc eva:cmds { arg } {
 			}
 		}
 		"copyright" {
-			eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA"
+			eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA/MalaGaM"
 			if { [eva:console 1] == "ok" } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c$eva(console_com)>Copyright <c$eva(console_deco)>:<c$eva(console_txt)> $user"
 			}
@@ -1146,44 +1147,130 @@ proc eva:cmds { arg } {
 			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Utilisateur \]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>AUTH<c01> \[<c04> 0 <c01>\] | <c02>COPYRIGHT<c01> \[<c04> 0 <c01>\] | <c02>DEAUTH<c01> \[<c04> 0 <c01>\] | <c02>HELP<c01> \[<c04> 0 <c01>\]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>SEEN<c01> \[<c04> 0 <c01>\] | <c02>SHOWCOMMANDS<c01> \[<c04> 0 <c01>\]"
+			eva:FCT:SENT:NOTICE $vuser "<c02>HELP<c01> \[<c04> [eva:help:description:help] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>AUTH<c01> \[<c04> [eva:help:description:auth] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>COPYRIGHT<c01> \[<c04> [eva:help:description:copyright] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>DEAUTH<c01> \[<c04> [eva:help:description:deauth] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>SEEN<c01> \[<c04> [eva:help:description:seen] <c01>\]";
+			eva:FCT:SENT:NOTICE $vuser "<c02>SHOWCOMMANDS<c01> \[<c04> [eva:help:description:showcommands] <c01>\]";
 			eva:FCT:SENT:NOTICE $vuser "<c>"
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Helpeur \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MAP<c01> \[<c04> 1 <c01>\] | <c02>WHOIS<c01> \[<c04> 1 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>MAP<c01> \[<c04> [eva:help:description:map] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>WHOIS<c01> \[<c04> [eva:help:description:whois] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Géofront \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ACCESS<c01> \[<c04> 2 <c01>\] | <c02>BAN<c01> \[<c04> 2 <c01>\] | <c02>CLEARALLMODES<c01> \[<c04> 2 <c01>\] | <c02>CLEARBANS<c01> \[<c04> 2 <c01>\] | <c02>CLEARMODES<c01> \[<c04> 2 <c01>\] | <c02>DEHALFOP<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOP<c01> \[<c04> 2 <c01>\] | <c02>DEOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOWNER<c01> \[<c04> 2 <c01>\] | <c02>DEOWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECT<c01> \[<c04> 2 <c01>\] | <c02>DEPROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>DEVOICE<c01> \[<c04> 2 <c01>\] | <c02>DEVOICEALL<c01> \[<c04> 2 <c01>\] | <c02>GLINE<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>GLINELIST<c01> \[<c04> 2 <c01>\] | <c02>SHUNLIST<c01> | \[<c04> 2 <c01>\] |<c02>GLOBOPS<c01> \[<c04> 2 <c01>\] | <c02>HALFOP<c01> \[<c04> 2 <c01>\] | <c02>HALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>INVITE<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>INVITEME<c01> \[<c04> 2 <c01>\] | <c02>KICK<c01> \[<c04> 2 <c01>\] | <c02>KICKALL<c01> \[<c04> 2 <c01>\] | <c02>KICKBAN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>KILL<c01> \[<c04> 2 <c01>\] | <c02>KLINE<c01> \[<c04> 2 <c01>\] | <c02>KLINELIST<c01> \[<c04> 2 <c01>\] | <c02>MODE<c01> \[<c04> 2 <c01>\] | <c02>NEWPASS<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>NICKBAN<c01> \[<c04> 2 <c01>\] | <c02>OP<c01> \[<c04> 2 <c01>\] | <c02>OPALL<c01> \[<c04> 2 <c01>\] | <c02>OWNER<c01> \[<c04> 2 <c01>\] | <c02>OWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECT<c01> \[<c04> 2 <c01>\] | <c02>PROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>TOPIC<c01> \[<c04> 2 <c01>\] | <c02>UNBAN<c01> \[<c04> 2 <c01>\] | <c02>UNGLINE<c01> \[<c04> 2 <c01>\] | <c02>UNSHUN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>UNKLINE<c01> \[<c04> 2 <c01>\] | <c02>VOICE<c01> \[<c04> 2 <c01>\] | <c02>VOICEALL<c01> \[<c04> 2 <c01>\] | <c02>WALLOPS<c01> \[<c04> 2 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>SHUN<c01> \[<c04> [eva:help:description:shun] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ACCESS<c01> \[<c04> [eva:help:description:access] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>BAN<c01> \[<c04> [eva:help:description:ban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARALLMODES<c01> \[<c04> [eva:help:description:clearallmodes] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARBANS<c01> \[<c04> [eva:help:description:clearbans] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARMODES<c01> \[<c04> [eva:help:description:clearmodes] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOP<c01> \[<c04> [eva:help:description:dehalfop] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEHALFOPALL<c01> \[<c04> [eva:help:description:dehalfopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEOP<c01> \[<c04> [eva:help:description:deop] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEOPALL<c01> \[<c04> [eva:help:description:deopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEOWNER<c01> \[<c04> [eva:help:description:deowner] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEOWNERALL<c01> \[<c04> [eva:help:description:deownerall] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECT<c01> \[<c04> [eva:help:description:deprotect] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEPROTECTALL<c01> \[<c04> [eva:help:description:deprotectall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEVOICE<c01> \[<c04> [eva:help:description:devoice] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DEVOICEALL<c01> \[<c04> [eva:help:description:devoiceall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>GLINE<c01> \[<c04> [eva:help:description:gline] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>GLINELIST<c01> \[<c04> [eva:help:description:glinelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SHUNLIST<c01> \[<c04> [eva:help:description:shunlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>GLOBOPS<c01> \[<c04> [eva:help:description:globops] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>HALFOP<c01> \[<c04> [eva:help:description:halfop] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>HALFOPALL<c01> \[<c04> [eva:help:description:halfopall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>INVITE<c01> \[<c04> [eva:help:description:invite] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>INVITEME<c01> \[<c04> [eva:help:description:inviteme] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>KICK<c01> \[<c04> [eva:help:description:kick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>KICKALL<c01> \[<c04> [eva:help:description:kickall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>KICKBAN<c01> \[<c04> [eva:help:description:kickban] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>KILL<c01> \[<c04> [eva:help:description:kill] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>KLINE<c01> \[<c04> [eva:help:description:kline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>KLINELIST<c01> \[<c04> [eva:help:description:klinelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>MODE<c01> \[<c04> [eva:help:description:mode] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>NEWPASS<c01> \[<c04> [eva:help:description:newpass] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>NICKBAN<c01> \[<c04> [eva:help:description:nickban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>OP<c01> \[<c04> [eva:help:description:op] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>OPALL<c01> \[<c04> [eva:help:description:opall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>OWNER<c01> \[<c04> [eva:help:description:owner] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>OWNERALL<c01> \[<c04> [eva:help:description:ownerall] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECT<c01> \[<c04> [eva:help:description:protect] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECTALL<c01> \[<c04> [eva:help:description:protectall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>TOPIC<c01> \[<c04> [eva:help:description:topic] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>UNBAN<c01> \[<c04> [eva:help:description:unban] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>UNGLINE<c01> \[<c04> [eva:help:description:ungline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>UNSHUN<c01> \[<c04> [eva:help:description:unshun] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>UNKLINE<c01> \[<c04> [eva:help:description:unkline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>VOICE<c01> \[<c04> [eva:help:description:voice] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>VOICEALL<c01> \[<c04> [eva:help:description:voiceall] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>WALLOPS<c01> \[<c04> [eva:help:description:wallops] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Ircop \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANGLINE<c01> \[<c04> 3 <c01>\] | <c02>SHUNLIST<c01> | <c02>CHANKILL<c01> \[<c04> 3 <c01>\] | <c02>CHANLIST<c01> \[<c04> 3 <c01>\] | <c02>CLEARCLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLEARGLINE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARKLINE<c01> \[<c04> 3 <c01>\] | <c02>CLIENTLIST<c01> \[<c04> 3 <c01>\] | <c02>CLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLOSELIST<c01> \[<c04> 3 <c01>\] | <c02>HOSTLIST<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>IDENTLIST<c01> \[<c04> 3 <c01>\] | <c02>JOIN<c01> \[<c04> 3 <c01>\] | <c02>LIST<c01> \[<c04> 3 <c01>\] | <c02>NICKLIST<c01> \[<c04> 3 <c01>\] | <c02>NOTICE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>PART<c01> \[<c04> 3 <c01>\] | <c02>REALLIST<c01> \[<c04> 3 <c01>\] | <c02>SAY<c01> \[<c04> 3 <c01>\] | <c02>SECULIST<c01> \[<c04> 3 <c01>\] | <c02>STATUS<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>SVSJOIN<c01> \[<c04> 3 <c01>\] | <c02>SVSNICK<c01> \[<c04> 3 <c01>\] | <c02>SVSPART<c01> \[<c04> 3 <c01>\] | <c02>TRUSTLIST<c01> \[<c04> 3 <c01>\] | <c02>UNCLOSE<c01> \[<c04> 3 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>CHANGLINE<c01> \[<c04> [eva:help:description:changline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CHANKILL<c01> \[<c04> [eva:help:description:chankill] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLIST<c01> \[<c04> [eva:help:description:chanlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARCLOSE<c01> \[<c04> [eva:help:description:clearclose] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARGLINE<c01> \[<c04> [eva:help:description:cleargline] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLEARKLINE<c01> \[<c04> [eva:help:description:clearkline] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLIENTLIST<c01> \[<c04> [eva:help:description:clientlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLOSE<c01> \[<c04> [eva:help:description:close] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLOSELIST<c01> \[<c04> [eva:help:description:closelist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>HOSTLIST<c01> \[<c04> [eva:help:description:hostlist] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>IDENTLIST<c01> \[<c04> [eva:help:description:identlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>JOIN<c01> \[<c04> [eva:help:description:join] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>LIST<c01> \[<c04> [eva:help:description:list] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>NICKLIST<c01> \[<c04> [eva:help:description:nicklist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>NOTICE<c01> \[<c04> [eva:help:description:notice] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>PART<c01> \[<c04> [eva:help:description:part] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>REALLIST<c01> \[<c04> [eva:help:description:reallist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SAY<c01> \[<c04> [eva:help:description:say] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SECULIST<c01> \[<c04> [eva:help:description:seculist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>STATUS<c01> \[<c04> [eva:help:description:status] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>SVSJOIN<c01> \[<c04> [eva:help:description:svsjoin] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SVSNICK<c01> \[<c04> [eva:help:description:svsnick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SVSPART<c01> \[<c04> [eva:help:description:svspart] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>TRUSTLIST<c01> \[<c04> [eva:help:description:trustlist] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>UNCLOSE<c01> \[<c04> [eva:help:description:unclose] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Admin \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDACCESS<c01> \[<c04> 4 <c01>\] | <c02>ADDCHAN<c01> \[<c04> 4 <c01>\] | <c02>ADDCLIENT<c01> \[<c04> 4 <c01>\] | <c02>ADDHOST<c01> \[<c04> 4 <c01>\] | <c02>ADDIDENT<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>ADDNICK<c01> \[<c04> 4 <c01>\] | <c02>ADDREAL<c01> \[<c04> 4 <c01>\] | <c02>ADDSECU<c01> \[<c04> 4 <c01>\] | <c02>ADDTRUST<c01> \[<c04> 4 <c01>\] | <c02>BACKUP<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLOG<c01> \[<c04> 4 <c01>\] | <c02>CLIENT<c01> \[<c04> 4 <c01>\] | <c02>CLONE<c01> \[<c04> 4 <c01>\] | <c02>CONSOLE<c01> \[<c04> 4 <c01>\] | <c02>DELACCESS<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELCHAN<c01> \[<c04> 4 <c01>\] | <c02>DELCLIENT<c01> \[<c04> 4 <c01>\] | <c02>DELHOST<c01> \[<c04> 4 <c01>\] | <c02>DELIDENT<c01> \[<c04> 4 <c01>\] | <c02>DELNICK<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>DELREAL<c01> \[<c04> 4 <c01>\] | <c02>DELSECU<c01> \[<c04> 4 <c01>\] | <c02>DELTRUST<c01> \[<c04> 4 <c01>\] | <c02>DIE<c01> \[<c04> 4 <c01>\] | <c02>MAXLOGIN<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>MODACCESS<c01> \[<c04> 4 <c01>\] | <c02>PROTECTION<c01> \[<c04> 4 <c01>\] | <c02>RESTART<c01> \[<c04> 4 <c01>\] | <c02>SECU<c01> \[<c04> 4 <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDACCESS<c01> \[<c04> [eva:help:description:addaccess] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDCHAN<c01> \[<c04> [eva:help:description:addchan] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDCLIENT<c01> \[<c04> [eva:help:description:addclient] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDHOST<c01> \[<c04> [eva:help:description:addhost] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDIDENT<c01> \[<c04> [eva:help:description:addident] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDNICK<c01> \[<c04> [eva:help:description:addnick] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDREAL<c01> \[<c04> [eva:help:description:addreal] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDSECU<c01> \[<c04> [eva:help:description:addsecu] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>ADDTRUST<c01> \[<c04> [eva:help:description:addtrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>BACKUP<c01> \[<c04> [eva:help:description:backup] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>CHANLOG<c01> \[<c04> [eva:help:description:chanlog] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLIENT<c01> \[<c04> [eva:help:description:client] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CLONE<c01> \[<c04> [eva:help:description:clone] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>CONSOLE<c01> \[<c04> [eva:help:description:console] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELACCESS<c01> \[<c04> [eva:help:description:delaccess] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELCHAN<c01> \[<c04> [eva:help:description:delchan] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELCLIENT<c01> \[<c04> [eva:help:description:delclient] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELHOST<c01> \[<c04> [eva:help:description:delhost] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELIDENT<c01> \[<c04> [eva:help:description:delident] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELNICK<c01> \[<c04> [eva:help:description:delnick] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELREAL<c01> \[<c04> [eva:help:description:delreal] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELSECU<c01> \[<c04> [eva:help:description:delsecu] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DELTRUST<c01> \[<c04> [eva:help:description:deltrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>DIE<c01> \[<c04> [eva:help:description:die] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>MAXLOGIN<c01> \[<c04> [eva:help:description:maxlogin] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>MODACCESS<c01> \[<c04> [eva:help:description:modaccess] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>PROTECTION<c01> \[<c04> [eva:help:description:protection] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>RESTART<c01> \[<c04> [eva:help:description:restart] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>SECU<c01> \[<c04> [eva:help:description:secu] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [eva:console 1] == "ok" } {
@@ -1233,6 +1320,7 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE $vuser "<c02>DELREAL<c01> \[<c04> 4 <c01>\] | <c02>DELSECU<c01> \[<c04> 4 <c01>\] | <c02>DELTRUST<c01> \[<c04> 4 <c01>\] | <c02>DIE<c01> \[<c04> 4 <c01>\] | <c02>MAXLOGIN<c01> \[<c04> 4 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c02>MODACCESS<c01> \[<c04> 4 <c01>\] | <c02>PROTECTION<c01> \[<c04> 4 <c01>\] | <c02>RESTART<c01> \[<c04> 4 <c01>\] | <c02>SECU<c01> \[<c04> 4 <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
+				eva:FCT:SENT:NOTICE $vuser "Liste des commandes: /msg $eva(pseudo) showcommands"
 			}
 			if { [eva:console 1] == "ok" } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c$eva(console_com)>Help <c$eva(console_deco)>:<c$eva(console_txt)> $user"
@@ -3716,11 +3804,141 @@ proc eva:cmds { arg } {
 		}
 	}
 }
+proc eva:help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
+proc eva:help:description:auth {}			{
+	global eva
+	return "Permet de vous authentifier sur $eva(pseudo)."
+}
+proc eva:help:description:copyright {}		{
+	global eva
+	return "Permet de voir l'auteur de $eva(pseudo)."
+}
+proc eva:help:description:deauth {}			{
+	global eva
+	return "Permet de vous déauthentifier sur $eva(pseudo)."
+}
+proc eva:help:description:seen {}			{ return "Permet de voir la dernière authentification du pseudo." }
+proc eva:help:description:showcommands {}	{ return "Permet de voir la liste des commandes de Eva Service." }
+proc eva:help:description:map {}			{ return "Permet de voir la liste des serveurs." }
+proc eva:help:description:whois {}			{ return "Permet de voir le whois d'un utilisateur." }
+proc eva:help:description:access {}			{ return "Permet de voir l'accès du pseudo." }
+proc eva:help:description:ban {}			{ return "Permet de bannir un mask d'un salon." }
+proc eva:help:description:clearallmodes {}	{ return "Permet de retirer tous les modes, tous les accès et tous les bans d'un salon." }
+proc eva:help:description:clearbans {}		{ return "Permet de débannir tous les masks d'un salon." }
+proc eva:help:description:clearmodes {}		{ return "Permet de retirer tous les modes d'un salon." }
+proc eva:help:description:dehalfop {}		{ return "Permet de déhalfoper un utilisateur d'un salon." }
+proc eva:help:description:dehalfopall {}	{ return "Permet de déhalfoper tous les utilisateurs d'un salon." }
+proc eva:help:description:deop {}			{ return "Permet de déoper un utilisateur d'un salon." }
+proc eva:help:description:deopall {}		{ return "Permet de déoper tous les utilisateurs d'un salon." }
+proc eva:help:description:deowner {}		{ return "Permet de retirer un utilisateur owner d'un salon." }
+proc eva:help:description:deownerall {}		{ return "Permet de retirer tous les utilisateurs owner d'un salon." }
+proc eva:help:description:deprotect {}		{ return "Permet de retirer un utilisateur protect d'un salon." }
+proc eva:help:description:deprotectall {}	{ return "Permet de retirer tous les utilisateurs protect d'un salon." }
+proc eva:help:description:devoice {}		{ return "Permet de dévoicer un utilisateur d'un salon." }
+proc eva:help:description:devoiceall {}		{ return "Permet de dévoicer tous les utilisateurs d'un salon." }
+proc eva:help:description:gline {}			{ return "Permet de gline un utilisateur du serveur." }
+proc eva:help:description:glinelist {}		{ return "Permet de voir la liste des glines." }
+proc eva:help:description:shunlist {}		{ return "Permet de voir la liste des shuns." }
+proc eva:help:description:globops {}		{ return "Permet d'envoyer un message en globops à tous les ircops et admins." }
+proc eva:help:description:halfop {}			{ return "Permet d'halfoper un utilisateur d'un salon." }
+proc eva:help:description:halfopall {}		{ return "Permet d'halfoper tous les utilisateurs d'un salon." }
+proc eva:help:description:invite {}			{ return "Permet d'inviter un utilisateur sur un salon." }
+proc eva:help:description:inviteme {}		{
+	global eva
+	return "Permet de s'inviter sur $eva(salon)."
+}
+proc eva:help:description:kick {}			{ return "Permet de kicker un utilisateur d'un salon." }
+proc eva:help:description:kickall {}		{ return "Permet de kicker tous les utilisateurs d'un salon." }
+proc eva:help:description:kickban {}		{ return "Permet de bannir et kicker un utilisateur d'un salon." }
+proc eva:help:description:kill {}			{ return "Permet de killer un utilisateur du serveur." }
+proc eva:help:description:kline {}			{ return "Permet de kline un utilisateur du serveur." }
+proc eva:help:description:klinelist {}		{ return "Permet de voir la liste des klines."}
+proc eva:help:description:mode {}			{ return "Permet de changer les modes d'un salon." }
+proc eva:help:description:newpass {}		{ return "Permet de changer le mot de passe de votre accès." }
+proc eva:help:description:nickban {}		{ return "Permet de bannir et kicker un utilisateur d'un salon en fonction de son pseudo." }
+proc eva:help:description:op {}				{ return "Permet d'oper un utilisateur d'un salon." }
+proc eva:help:description:opall {}			{ return "Permet d'oper tous les utilisateurs d'un salon." }
+proc eva:help:description:owner {}			{ return "Permet de mêttre un utilisateur owner d'un salon." }
+proc eva:help:description:ownerall {}		{ return "Permet de mêttre tous les utilisateurs owner d'un salon." }
+proc eva:help:description:protect {}		{ return "Permet de mêttre un utilisateur protect d'un salon." }
+proc eva:help:description:protectall {}		{ return "Permet de mêttre tous les utilisateurs protect d'un salon." }
+proc eva:help:description:topic {}			{ return "Permet de changer le topic d'un salon." }
+proc eva:help:description:unban {}			{ return "Permet de débannir un mask d'un salon."}
+proc eva:help:description:ungline {}		{ return "Permet de supprimer un mask de la liste des glines." }
+proc eva:help:description:unshun {}			{ return "Permet de unshun un utilisateur du serveur." }
+proc eva:help:description:unkline {}		{ return "Permet de supprimer un mask de la liste des klines." }
+proc eva:help:description:voice {}			{ return "Permet de voicer un utilisateur d'un salon." }
+proc eva:help:description:voiceall {}		{ return "Permet de voicer tous les utilisateurs d'un salon." }
+proc eva:help:description:wallops {}		{ return "Permet d'envoyer un message en wallops à tous les utilisateurs." }
+proc eva:help:description:changline {}		{ return "Permet de gline tous les utilisateurs d'un salon." }
+proc eva:help:description:chankill {}		{ return "Permet de killer tous les utilisateurs d'un salon." }
+proc eva:help:description:chanlist {}		{ return "Permet de voir la liste des salons interdits." }
+proc eva:help:description:clearclose {}		{ return "Permet de vider la liste des salons fermés." }
+proc eva:help:description:cleargline {}		{ return "Permet de retirer tous les glines du serveur." }
+proc eva:help:description:clearkline {}		{ return "Permet de retirer tous les klines du serveur." }
+proc eva:help:description:clientlist {}		{ return "Permet de voir la liste des clients IRC interdits."}
+proc eva:help:description:close {}			{ return "Permet de fermer un salon." }
+proc eva:help:description:closelist {}		{ return "Permet de voir la liste des salons fermés." }
+proc eva:help:description:hostlist {}		{ return "Permet de voir la liste des hostnames interdites." }
+proc eva:help:description:identlist {}		{ return "Permet de voir la liste des idents interdits." }
+proc eva:help:description:join {}			{
+	global eva
+	return "Permet de faire joindre $eva(pseudo) sur un salon."
+}
+proc eva:help:description:list {}			{ return "Permet de voir les autojoin salons."}
+proc eva:help:description:nicklist {}		{ return "Permet de voir la liste des pseudos interdits." }
+proc eva:help:description:notice {}			{ return "Permet d'envoyer une notice à tous les utilisateurs."}
+proc eva:help:description:part {}			{
+	global eva
+	return "Permet de faire partir $eva(pseudo) d'un salon."
+}
+proc eva:help:description:reallist {}		{ return "Permet de voir la liste des realnames interdits." }
+proc eva:help:description:say {}			{ return "Permet d'envoyer un message sur un salon." }
+proc eva:help:description:seculist {}		{ return "Permet de voir la liste des salons sécurisés." }
+proc eva:help:description:status {}			{ return "Permet de voir les informations de Eva Service." }
+proc eva:help:description:svsjoin {}		{ return "Permet de forcer un utilisateur à joindre un salon." }
+proc eva:help:description:svsnick {}		{ return "Permet de changer le pseudo d'un utilisateur."}
+proc eva:help:description:svspart {}		{ return "Permet de forcer un utilisateur à partir d'un salon." }
+proc eva:help:description:trustlist {}		{ return "Permet de voir la liste des trusts." }
+proc eva:help:description:unclose {}		{ return "Permet d'ouvrir un salon fermé." }
+proc eva:help:description:addaccess {}		{ return "Permet d'ajouter un accès sur Eva Service." }
+proc eva:help:description:addchan {}		{ return "Permet d'ajouter un salon interdit." }
+proc eva:help:description:addclient {}		{ return "Permet d'ajouter un client IRC interdit." }
+proc eva:help:description:addhost {}		{ return "Permet d'ajouter une hostname interdite." }
+proc eva:help:description:addident {}		{ return "Permet d'ajouter un ident interdit." }
+proc eva:help:description:addnick {}		{ return "Permet d'ajouter un pseudo interdit." }
+proc eva:help:description:addreal {}		{ return "Permet d'ajouter un realname interdit." }
+proc eva:help:description:addsecu {}		{ return "Permet d'ajouter un salon sécurisé." }
+proc eva:help:description:addtrust {}		{ return "Permet d'ajouter un trust sur un mask." }
+proc eva:help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
+proc eva:help:description:chanlog {}		{
+	global eva
+	return "Permet de changer le salon de log de $eva(pseudo)."
+}
+proc eva:help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
+proc eva:help:description:clone {}			{ return "Permet d'activer ou désactiver la protection clone." }
+proc eva:help:description:console {}		{ return "Permet d'activer la console des logs en fonction du level." }
+proc eva:help:description:delaccess {}		{ return "Permet de supprimer un accès de Eva Service." }
+proc eva:help:description:delchan {}		{ return "Permet de supprimer un salon interdit." }
+proc eva:help:description:delclient {}		{ return "Permet de supprimer un client IRC interdit." }
+proc eva:help:description:delhost {}		{ return "Permet de supprimer une hostname interdite." }
+proc eva:help:description:delident {}		{ return "Permet de supprimer un ident interdit." }
+proc eva:help:description:delnick {}		{ return "Permet de supprimer un pseudo interdit." }
+proc eva:help:description:delreal {}		{ return "Permet de supprimer un realname interdit." }
+proc eva:help:description:delsecu {}		{ return "Permet de supprimer un salon sécurisé." }
+proc eva:help:description:deltrust {}		{ return "Permet de supprimer le trust d'un mask." }
+proc eva:help:description:die {}			{ return "Permet d'arrêter Eva Service." }
+proc eva:help:description:maxlogin {}		{ return "Permet d'activer où désactiver la protection max login." }
+proc eva:help:description:modaccess {}		{ return "Permet de modifier un accès de Eva Service." }
+proc eva:help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
+proc eva:help:description:restart {}		{ return "Permet de redémarrer Eva Service." }
+proc eva:help:description:secu {}			{ return "Permet d'activer ou désactiver le système de sécurité des salons." }
+proc eva:help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
+
 
 #############
 # Eva Hcmds #
 #############
-
 proc eva:hcmds { arg } {
 	global eva ceva
 	set arg			[split $arg]
@@ -3730,450 +3948,451 @@ proc eva:hcmds { arg } {
 	if { [eva:authed $vuser $ceva($hcmd)] != "ok" } { return 0 }
 	switch -exact $hcmd {
 		"help" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) help nom-de-la-commande"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir l'aide détaillée de la commande."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) help nom-de-la-commande"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:help]
 		}
 		"auth" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) auth pseudo mot-de-passe"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de vous authentifier sur $eva(pseudo)."
-		}
-		"deauth" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deauth"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de vous déauthentifier sur $eva(pseudo)."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) auth pseudo mot-de-passe"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:auth]
 		}
 		"copyright" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) copyright"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir l'auteur de $eva(pseudo)."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) copyright"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:copyright]
 		}
-		"showcommands" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) showcommands"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des commandes de Eva Service."
-		}
-		"join" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) join #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de faire joindre $eva(pseudo) sur un salon."
-		}
-		"part" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) part #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de faire partir $eva(pseudo) d'un salon."
-		}
-		"list" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) list"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir les autojoin salons."
-		}
-		"chanlog" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) chanlog #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de changer le salon de log de $eva(pseudo)."
-		}
-		"console" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) console 0/1/2/3"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 0 <c04>:<c01> Aucune console"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 1 <c04>:<c01> Console commande"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 3 <c04>:<c01> Toutes les consoles"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer la console des logs en fonction du level."
-		}
-		"maxlogin" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) maxlogin on/off"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer où désactiver la protection max login."
-		}
-		"backup" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) backup"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de créer une sauvegarde des databases."
-		}
-		"restart" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) restart"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de redémarrer Eva Service."
-		}
-		"die" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) die"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'arrêter Eva Service."
-		}
-		"status" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) status"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir les informations de Eva Service."
-		}
-		"protection" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) protection 0/1/2/3/4"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 0 <c04>:<c01> Aucune Protection"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 1 <c04>:<c01> Protection Admins"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer la protection en fonction du level."
-		}
-		"newpass" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) newpass mot-de-passe"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de changer le mot de passe de votre accès."
-		}
-		"map" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) map"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des serveurs."
+		"deauth" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deauth"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deauth]
 		}
 		"seen" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) seen pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la dernière authentification du pseudo."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) seen pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:seen]
 		}
-		"access" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) access pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir l'accès du pseudo."
+		"showcommands" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) showcommands"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:showcommands]
 		}
-		"owner" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) owner #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de mêttre un utilisateur owner d'un salon."
-		}
-		"deowner" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deowner #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer un utilisateur owner d'un salon."
-		}
-		"protect" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) protect #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de mêttre un utilisateur protect d'un salon."
-		}
-		"deprotect" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deprotect #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer un utilisateur protect d'un salon."
-		}
-		"ownerall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) ownerall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de mêttre tous les utilisateurs owner d'un salon."
-		}
-		"deownerall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deownerall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les utilisateurs owner d'un salon."
-		}
-		"protectall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) protectall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de mêttre tous les utilisateurs protect d'un salon."
-		}
-		"deprotectall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deprotectall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les utilisateurs protect d'un salon."
-		}
-		"op" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) op #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'oper un utilisateur d'un salon."
-		}
-		"deop" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deop #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de déoper un utilisateur d'un salon."
-		}
-		"halfop" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) halfop #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'halfoper un utilisateur d'un salon."
-		}
-		"dehalfop" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) dehalfop #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de déhalfoper un utilisateur d'un salon."
-		}
-		"voice" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) voice #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voicer un utilisateur d'un salon."
-		}
-		"devoice" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) devoice #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de dévoicer un utilisateur d'un salon."
-		}
-		"opall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) opall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'oper tous les utilisateurs d'un salon."
-		}
-		"deopall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deopall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de déoper tous les utilisateurs d'un salon."
-		}
-		"halfopall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) halfopall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'halfoper tous les utilisateurs d'un salon."
-		}
-		"dehalfopall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) dehalfopall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de déhalfoper tous les utilisateurs d'un salon."
-		}
-		"voiceall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) voiceall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voicer tous les utilisateurs d'un salon."
-		}
-		"devoiceall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) devoiceall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de dévoicer tous les utilisateurs d'un salon."
-		}
-		"kick" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) kick #salon pseudo raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de kicker un utilisateur d'un salon."
-		}
-		"kickall" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) kickall #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de kicker tous les utilisateurs d'un salon."
-		}
-		"ban" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) ban #salon mask"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de bannir un mask d'un salon."
-		}
-		"nickban" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) nickban #salon pseudo raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de bannir et kicker un utilisateur d'un salon en fonction de son pseudo."
-		}
-		"kickban" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) kickban #salon pseudo raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de bannir et kicker un utilisateur d'un salon."
-		}
-		"unban" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) unban #salon mask"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de débannir un mask d'un salon."
-		}
-		"clearbans" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clearbans #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de débannir tous les masks d'un salon."
-		}
-		"topic" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) topic #salon topic"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de changer le topic d'un salon."
-		}
-		"mode" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) mode #salon +/-mode"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de changer les modes d'un salon."
-		}
-		"clearmodes" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clearmodes #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les modes d'un salon."
-		}
-		"clearallmodes" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clearallmodes #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les modes, tous les accès et tous les bans d'un salon."
-		}
-		"kill" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) kill pseudo raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de killer un utilisateur du serveur."
-		}
-		"chankill" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) chankill #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de killer tous les utilisateurs d'un salon."
-		}
-		"svsjoin" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) svsjoin #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de forcer un utilisateur à joindre un salon."
-		}
-		"svspart" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) svspart #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de forcer un utilisateur à partir d'un salon."
-		}
-		"svsnick" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) svsnick ancien-pseudo nouveau-pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de changer le pseudo d'un utilisateur."
-		}
-		"say" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) say #salon message"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'envoyer un message sur un salon."
-		}
-		"invite" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) invite #salon pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'inviter un utilisateur sur un salon."
-		}
-		"inviteme" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) inviteme"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de s'inviter sur $eva(salon)."
-		}
-		"wallops" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) wallops message"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'envoyer un message en wallops à tous les utilisateurs."
-		}
-		"globops" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) globops message"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'envoyer un message en globops à tous les ircops et admins."
-		}
-		"notice" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) notice message"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'envoyer une notice à tous les utilisateurs."
+		"map" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) map"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:map]
 		}
 		"whois" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) whois pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir le whois d'un utilisateur."
-		}
-		"changline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) changline #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de gline tous les utilisateurs d'un salon."
-		}
-		"gline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) gline <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de gline un utilisateur du serveur."
-		}
-		"ungline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) ungline ident@host"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un mask de la liste des glines."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) whois pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:whois]
 		}
 		"shun" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) shun <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de shun un utilisateur du serveur."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) shun <pseudo ou ip> raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:shun]
 		}
-		"unshun" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) unshun pseudo raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de unshun un utilisateur du serveur."
+		"access" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) access pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:access]
 		}
-		"kline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) kline <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de kline un utilisateur du serveur."
+		"ban" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ban #salon mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ban]
 		}
-		"unkline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) unkline ident@host"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un mask de la liste des klines."
+		"clearallmodes" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearallmodes #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearallmodes]
+		}
+		"clearbans" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearbans #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearbans]
+		}
+		"clearmodes" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearmodes #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearmodes]
+		}
+		"dehalfop" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) dehalfop #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:dehalfop]
+		}
+		"dehalfopall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) dehalfopall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:dehalfopall]
+		}
+		"deop" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deop #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deop]
+		}
+		"deopall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deopall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deopall]
+		}
+		"deowner" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deowner #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deowner]
+		}
+		"deownerall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deownerall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deownerall]
+		}
+		"deprotect" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deprotect #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deprotect]
+		}
+		"deprotectall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deprotectall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deprotectall]
+		}
+		"devoice" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) devoice #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:devoice]
+		}
+		"devoiceall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) devoiceall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:devoiceall]
+		}
+		"gline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) gline <pseudo ou ip> raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:gline]
 		}
 		"glinelist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) glinelist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des glines."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) glinelist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:glinelist]
 		}
 		"shunlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) shunlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des shuns."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) shunlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:shunlist]
+		}
+		"globops" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) globops message"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:globops]
+		}
+		"halfop" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) halfop #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:halfop]
+		}
+		"halfopall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) halfopall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:halfopall]
+		}
+		"invite" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) invite #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:invite]
+		}
+		"inviteme" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) inviteme"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:inviteme]
+		}
+		"kick" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kick #salon pseudo raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kick]
+		}
+		"kickall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kickall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kickall]
+		}
+		"kickban" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kickban #salon pseudo raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kickban]
+		}
+		"kill" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kill pseudo raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kill]
+		}
+		"kline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kline <pseudo ou ip> raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kline]
 		}
 		"klinelist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) klinelist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des klines."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) klinelist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:klinelist]
 		}
-		"cleargline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) cleargline"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les glines du serveur."
+		"mode" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) mode #salon +/-mode"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:mode]
 		}
-		"clearkline" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clearkline"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de retirer tous les klines du serveur."
+		"newpass" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) newpass mot-de-passe"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:newpass]
 		}
-		"clientlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clientlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des clients IRC interdits."
+		"nickban" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickban #salon pseudo raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickban]
 		}
-		"addclient" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addclient version"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un client IRC interdit."
+		"op" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) op #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:op]
 		}
-		"delclient" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delclient version"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un client IRC interdit."
+		"opall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) opall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:opall]
 		}
-		"addsecu" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addsecu #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un salon sécurisé."
+		"owner" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) owner #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:owner]
 		}
-		"delsecu" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delsecu #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un salon sécurisé."
+		"ownerall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ownerall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ownerall]
 		}
-		"seculist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) seculist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des salons sécurisés."
+		"protect" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protect #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protect]
 		}
-		"secu" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) secu on/off"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer ou désactiver le système de sécurité des salons."
+		"protectall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protectall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protectall]
 		}
-		"client" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) client on/off"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer ou désactiver les clients IRC interdits."
+		"topic" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) topic #salon topic"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:topic]
 		}
-		"clone" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clone on/off"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'activer ou désactiver la protection clone."
+		"unban" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unban #salon mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unban]
 		}
-		"close" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) close #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de fermer un salon."
+		"ungline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ungline ident@host"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ungline]
 		}
-		"unclose" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) unclose #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ouvrir un salon fermé."
+		"unshun" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unshun pseudo raison"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unshun]
 		}
-		"closelist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) closelist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des salons fermés."
+		"unkline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unkline ident@host"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unkline]
 		}
-		"clearclose" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) clearclose"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de vider la liste des salons fermés."
+
+		"voice" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) voice #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:voice]
 		}
-		"addnick" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addnick pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un pseudo interdit."
+		"voiceall" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) voiceall #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:voiceall]
 		}
-		"delnick" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delnick pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un pseudo interdit."
+		"wallops" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) wallops message"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:wallops]
 		}
-		"nicklist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) nicklist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des pseudos interdits."
+		"changline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) changline #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:changline]
 		}
-		"addident" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addident ident"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un ident interdit."
-		}
-		"delident" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delident ident"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un ident interdit."
-		}
-		"identlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) identlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des idents interdits."
-		}
-		"addreal" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addreal realname"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un realname interdit."
-		}
-		"delreal" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delreal realname"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un realname interdit."
-		}
-		"reallist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) reallist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des realnames interdits."
-		}
-		"addhost" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addhost hostname"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter une hostname interdite."
-		}
-		"delhost" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delhost hostname"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer une hostname interdite."
-		}
-		"hostlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) hostlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des hostnames interdites."
-		}
-		"addchan" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addchan #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un salon interdit."
-		}
-		"delchan" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delchan #salon"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un salon interdit."
+		"chankill" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chankill #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chankill]
 		}
 		"chanlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) chanlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des salons interdits."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanlist]
 		}
-		"addtrust" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addtrust mask"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un trust sur un mask."
+		"clearclose" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearclose"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearclose]
 		}
-		"deltrust" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) deltrust mask"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer le trust d'un mask."
+		"cleargline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) cleargline"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:cleargline]
+		}
+		"clearkline" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearkline"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearkline]
+		}
+		"clientlist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientlist]
+		}
+		"close" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) close #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:close]
+		}
+		"closelist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closelist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closelist]
+		}
+		"hostlist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostlist]
+		}
+		"identlist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identlist]
+		}
+		"join" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) join #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:join]
+		}
+		"list" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) list"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:list]
+		}
+		"nicklist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nicklist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nicklist]
+		}
+		"notice" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) notice message"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:notice]
+		}
+		"part" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) part #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:part]
+		}
+		"reallist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) reallist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:reallist]
+		}
+		"say" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) say #salon message"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:say]
+		}
+		"seculist" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) seculist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:seculist]
+		}
+		"status" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) status"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:status]
+		}
+		"svsjoin" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svsjoin #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svsjoin]
+		}
+		"svsnick" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svsnick ancien-pseudo nouveau-pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svsnick]
+		}
+		"svspart" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svspart #salon pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svspart]
 		}
 		"trustlist" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) trustlist"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de voir la liste des trusts."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustlist"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustlist]
+		}
+		"unclose" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unclose #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unclose]
 		}
 		"addaccess" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) addaccess pseudo password level"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet d'ajouter un accès sur Eva Service."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addaccess pseudo password level"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addaccess]
 		}
-		"modaccess" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) modaccess pass pseudo mot-de-passe"
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) modaccess level pseudo level"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de modifier un accès de Eva Service."
+		"addchan" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addchan #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addchan]
+		}
+		"addclient" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addclient version"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addclient]
+		}
+		"addhost" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addhost hostname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addhost]
+		}
+		"addident" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addident ident"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addident]
+		}
+		"addnick" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addnick pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addnick]
+		}
+		"addreal" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addreal realname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addreal]
+		}
+		"addsecu" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addsecu #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addsecu]
+		}
+		"addtrust" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addtrust mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addtrust]
+		}
+		"backup" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) backup"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:backup]
+		}
+		"chanlog" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanlog #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanlog]
+		}
+		"client" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) client on/off"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:client]
+		}
+		"clone" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clone on/off"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clone]
+		}
+		"console" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) console 0/1/2/3"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 0 <c04>:<c01> Aucune console"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 1 <c04>:<c01> Console commande"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 3 <c04>:<c01> Toutes les consoles"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:console]
 		}
 		"delaccess" {
-			eva:FCT:SENT:NOTICE "$vuserUID" "<b>Commande Help :</b> /msg $eva(pseudo) delaccess pseudo"
-			eva:FCT:SENT:NOTICE "$vuserUID" "Permet de supprimer un accès de Eva Service."
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delaccess pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delaccess]
+		}
+		"delchan" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delchan #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delchan]
+		}
+		"delclient" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delclient version"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delclient]
+		}
+		"delhost" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delhost hostname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delhost]
+		}
+		"delident" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delident ident"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delident]
+		}
+		"delnick" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delnick pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delnick]
+		}
+		"delreal" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delreal realname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delreal]
+		}
+		"delsecu" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delsecu #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delsecu]
+		}
+		"deltrust" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deltrust mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deltrust]
+		}
+		"die" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) die"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:die]
+		}
+		"maxlogin" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) maxlogin on/off"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:maxlogin]
+		}
+		"modaccess" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) modaccess pass pseudo mot-de-passe"
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) modaccess level pseudo level"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:modaccess]
+		}
+		"protection" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protection 0/1/2/3/4"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 0 <c04>:<c01> Aucune Protection"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 1 <c04>:<c01> Protection Admins"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
+			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protection]
+		}
+		"restart" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) restart"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:restart]
+		}
+		"secu" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secu on/off"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secu]
 		}
 	}
 }
@@ -4826,7 +5045,7 @@ proc eva:link { idx arg } {
 				eva:FCT:SENT:NOTICE "$user" "\001PING [clock seconds]\001";
 				return 0;
 			} elseif { $cmds == "version" } {
-				eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA<c03>©";
+				eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA/MalaGaM<c03>©";
 				return 0;
 				# verifie si c une command eva :
 
