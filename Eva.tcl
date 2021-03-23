@@ -188,8 +188,8 @@ proc eva:CMD:LIST { } {
 proc eva:CMD:TO:LEVEL { CMD } {
 	global ceva
 	foreach level [dict keys $::ceva] {
-		if { [lsearch -nocase [dict get $::ceva $level cmd] $CMD] != "-1" } { 
-			return $level 
+		if { [lsearch -nocase [dict get $::ceva $level cmd] $CMD] != "-1" } {
+			return $level
 		}
 	}
 	return -1
@@ -257,15 +257,15 @@ proc eva:FCT:TXT:ESPACE:DISPLAY { text length } {
 	set ESPACE_ENTIER	[lindex $ESPACE_TMP 0]
 	set ESPACE_DECIMAL	[lindex $ESPACE_TMP 1]
 	if { $ESPACE_DECIMAL == 0 } {
-	    set espace_one			[string repeat " " $ESPACE_ENTIER]; 
-		set espace_two			[string repeat " " $ESPACE_ENTIER]; 
+		set espace_one			[string repeat " " $ESPACE_ENTIER];
+		set espace_two			[string repeat " " $ESPACE_ENTIER];
 		return "$espace_one$text$espace_two"
 	} else {
-		set espace_one			[string repeat " " $ESPACE_ENTIER]; 
-		set espace_two			[string repeat " " [expr ($ESPACE_ENTIER+1)]]; 
+		set espace_one			[string repeat " " $ESPACE_ENTIER];
+		set espace_two			[string repeat " " [expr ($ESPACE_ENTIER+1)]];
 		return "$espace_one$text$espace_two"
 	}
-	
+
 }
 ###############################################################################
 ### Substitution des symboles couleur/gras/soulignement/...
@@ -325,7 +325,7 @@ proc eva:refresh { pseudo } {
 	if { [info exists vhost($vuser)] } {
 		if { [info exists protect($vhost($vuser))] && [info exists admins($vuser)] } {
 			eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
-			unset protect($vhost($vuser))	
+			unset protect($vhost($vuser))
 		}
 		unset vhost($vuser)
 	}
@@ -451,9 +451,175 @@ proc eva:console { level } {
 	}
 }
 
-##################
-# Eva Protection #
-##################
+###########################################################
+# Eva Verification de securité utilisateur a la connexion #
+###########################################################
+proc eva:connexion:user:security:check { nickname hostname username gecos } {
+	global eva ueva
+	# default
+	set eva(ahost)			1
+	set eva(aident)			1
+	set eva(areal)			1
+	set eva(anick)			1
+	set MSG_security_check	""
+	# Lors de l'init (connexion au irc du service) on verifie rien
+	if { $eva(init) == 1 } { return 0 }
+
+	# Si l'utilisateur est proteger, on skip les verification
+	if { [info exists protect($hostname)] } {
+		eva:SHOW:INFO:TO:CHANLOG "Security Check" "Aucune verification de sécurité sur $hostname, le hostname protegé"
+		return 0
+	}
+	# ueva ??
+	if { [info exists ueva($nickname)] } { return 0 }
+	# Version client ?
+	if { $eva(aclient) == 1 } {
+		lappend MSG_security_check "Client version: On";
+	} else {
+		lappend MSG_security_check "Client version: Off";
+	}
+	# verif clone? (session)
+	if { $eva(aclone) == 1 } {
+		lappend MSG_security_check "Clone: On";
+	} else {
+		lappend MSG_security_check "Clone: Off";
+	}
+	# verif host?
+	if { $eva(ahost) == 1 } {
+		lappend MSG_security_check "Host: On";
+	} else {
+		lappend MSG_security_check "Host: Off";
+	}
+	# verif ident?
+	if { $eva(aident) == 1 } {
+		lappend MSG_security_check "Ident: On";
+	} else {
+		lappend MSG_security_check "Ident: Off";
+	}
+	# verif areal?
+	if { $eva(areal) == 1 } {
+		lappend MSG_security_check "Realname: On";
+	} else {
+		lappend MSG_security_check "Realname: Off";
+	}
+	# verif nick?
+	if { $eva(anick) == 1 } {
+		lappend MSG_security_check "Nick: On";
+	} else {
+		lappend MSG_security_check "Nick: Off";
+	}
+
+	eva:SHOW:INFO:TO:CHANLOG "Security Check" [join $MSG_security_check " | "]
+
+	# Version client
+	if { $eva(aclient) == 1	} {
+		eva:FCT:SENT:PRIVMSG $nickname "\001VERSION\001"
+	}
+
+	# verif clone? (session)
+	if { $eva(aclone) == 1 	} {
+		set clone		0
+		foreach { u h } [array get vhost] {
+			if { $h==$hostname } { incr clone 1 }
+		}
+		if { $clone==$eva(numavert) } {
+			eva:FCT:SENT:NOTICE "$nickname" "$eva(ravert)"
+		}
+		if { $clone==$eva(numclone) } {
+			eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [exp[unixtime] + $eva(duree)] [unixtime] :$eva(rclone) (Expire l[eva:duree [expr [unixtime] + $eva(duree)]])";
+			return 0;
+
+		}
+	}
+	if { $eva(ahost) == 1 	} {
+		catch { open [eva:scriptdir]db/host.db r } liste2
+		while { ![eof $liste2] } {
+			gets $liste2 verif2
+			if { [string match *$verif2* $hostname] && $verif2 != "" } {
+				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
+					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(rhost)"
+				}
+				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rhost)";
+				break;
+				eva:refresh $nickname;
+				return 0
+			}
+		}
+		catch { close $liste2 }
+	}
+	if { $eva(aident) == 1 	} {
+		catch { open [eva:scriptdir]db/ident.db r } liste3
+		while { ![eof $liste3] } {
+			gets $liste3 verif3
+			if { [string match *$verif3* $username] && $verif3 != "" } {
+				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
+					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname ($verif3) a été killé : $eva(rident)"
+				}
+				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rident)";
+				break ;
+				eva:refresh $nickname;
+				return 0;
+			}
+		}
+		catch { close $liste3 }
+	}
+	if { $eva(areal) == 1 	} {
+		catch { open [eva:scriptdir]db/real.db r } liste4
+		while { ![eof $liste4] } {
+			gets $liste4 verif4
+			if { [string match *$verif4* $gecos] && $verif4 != "" } {
+				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
+					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname (Realname: $verif4) a été killé : $eva(rreal)"
+				}
+				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rreal)";
+				break;
+				eva:refresh $nickname;
+				return 0;
+			}
+		}
+		catch { close $liste4 }
+	}
+	if { $eva(anick) == 1 	} {
+		catch { open [eva:scriptdir]db/nick.db r } liste5
+		while { ![eof $liste5] } {
+			gets $liste5 verif5
+			if { [string match $verif5 $nickname] && $verif5 != "" } {
+				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
+					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(ruser)"
+				}
+				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(ruser)";
+				break;
+				eva:refresh $nickname;
+				return 0;
+			}
+		}
+		catch { close $liste5 }
+	}
+	if { ![info exists eva(throttle)] } {
+		set eva(throttle)		1;
+		utimer 2 [list unset eva(throttle)]
+	} elseif { $eva(throttle)<$eva(secuco) } {
+		incr eva(throttle) 1
+	} else {
+		if { ![info exists eva(maxthrottle)] } {
+			eva:FCT:SENT:NOTICE "$*.*" " $eva(secuon)"
+			catch { open "[eva:scriptdir]db/secu.db" r } liste
+			while { ![eof $liste] } {
+				gets $liste salon;
+				if { $salon != "" } {
+					eva:FCT:SENT:MODE $salon "+msi"
+				}
+			}
+			catch { close $liste }
+		}
+		set eva(maxthrottle)		1
+		utimer $eva(secutime) eva:secu
+	}
+	if { [info exists eva(maxthrottle)] } {
+		eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [ex[unixtime] + $eva(secutime)] [unixtime] :$eva(secustop)";
+		return 0;
+	}
+}
 
 proc eva:protection { user level } {
 	global eva netadmin admins vhost
@@ -527,7 +693,6 @@ proc eva:secu { } {
 			gets $liste salon;
 			if { $salon != "" } {
 				eva:FCT:SENT:MODE $salon "-msi"
-
 			}
 		}
 		catch { close $liste }
@@ -869,9 +1034,9 @@ proc eva:cmds { arg } {
 					}
 					if { ![info exists admins($vuser)] } {
 						set admins($vuser)		[string tolower [lindex $arg 2]]
-						if { [info exists vhost($vuser)] && ![info exists protect($vhost($vuser))] } { 
+						if { [info exists vhost($vuser)] && ![info exists protect($vhost($vuser))] } {
 							eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Activé)"
-							set protect($vhost($vuser))		1 
+							set protect($vhost($vuser))		1
 						}
 						setuser [string tolower [lindex $arg 2]] LASTON [unixtime]
 						eva:FCT:SENT:NOTICE $vuser "Authentification Réussie."
@@ -897,9 +1062,9 @@ proc eva:cmds { arg } {
 		"deauth" {
 			if { [info exists admins($vuser)] } {
 				if { [matchattr $admins($vuser) o] || [matchattr $admins($vuser) m] || [matchattr $admins($vuser) n] } {
-					if { [info exists vhost($vuser)] && [info exists protect($vhost($vuser))] } { 
+					if { [info exists vhost($vuser)] && [info exists protect($vhost($vuser))] } {
 						eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
-						unset protect($vhost($vuser))	
+						unset protect($vhost($vuser))
 					}
 					unset admins($vuser);
 					eva:FCT:SENT:NOTICE $vuser "Déauthentification Réussie."
@@ -1120,7 +1285,7 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "List" "$user"
 			}
 		}
-	"showcommands" {
+		"showcommands" {
 			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
 			eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 0
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
@@ -4429,11 +4594,13 @@ proc eva:link { idx arg } {
 			if { ![info exists DBU_INFO($uid,IDENT)] }		{ set DBU_INFO($uid,IDENT)		$username }
 			if { ![info exists DBU_INFO($uid,NICK)] }		{ set DBU_INFO($uid,NICK)		$nickname }
 			if { ![info exists DBU_INFO($uid,REALNAME)] }	{ set DBU_INFO($uid,REALNAME)	$gecos }
-
+			
 
 			if { ![info exists ueva($nickname)] && [string match *+*S* $umodes] } {
 				set ueva($nickname)		on
 			}
+			eva:connexion:user:security:check $nickname $hostname $username $gecos
+
 			if { [string match *+*z* $umodes] } {
 				set stype		"Connexion SSL"
 			} else {
@@ -4456,125 +4623,9 @@ proc eva:link { idx arg } {
 			}
 			foreach { mask num } [array get trust] {
 				if { [string match *$mask* $hostname] } {
-						eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
-					 return 0
+					eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
+					return 0
 				}
-			}
-			if {
-				$eva(secu) == 1 && \
-					$eva(init) == 0 && \
-					![info exists ueva($nickname)] && \
-					![info exists protect($hostname)]
-			} {
-				if { ![info exists eva(throttle)] } {
-					set eva(throttle)		1;
-					utimer 2 [list unset eva(throttle)]
-				} elseif { $eva(throttle)<$eva(secuco) } {
-					incr eva(throttle) 1
-				} else {
-					if { ![info exists eva(maxthrottle)] } {
-						eva:FCT:SENT:NOTICE "$*.*" " $eva(secuon)"
-						catch { open "[eva:scriptdir]db/secu.db" r } liste
-						while { ![eof $liste] } {
-							gets $liste salon;
-							if { $salon != "" } {
-								eva:FCT:SENT:MODE $salon "+msi"
-							}
-						}
-						catch { close $liste }
-					}
-					set eva(maxthrottle)		1
-					utimer $eva(secutime) eva:secu
-				}
-				if { [info exists eva(maxthrottle)] } {
-					eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [expr [unixtime] + $eva(secutime)] [unixtime] :$eva(secustop)";
-					return 0;
-				}
-
-			}
-			if { ![info exists ueva($nickname)] && ![info exists protect($hostname)] } {
-				catch { open [eva:scriptdir]db/host.db r } liste2
-				while { ![eof $liste2] } {
-					gets $liste2 verif2
-					if { [string match *$verif2* $hostname] && $verif2 != "" } {
-						if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-							eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname2 a été killé : $eva(rhost)"
-						}
-						eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rhost)";
-						break;
-						eva:refresh $nickname;
-						return 0
-					}
-				}
-				catch { close $liste2 }
-				catch { open [eva:scriptdir]db/ident.db r } liste3
-				while { ![eof $liste3] } {
-					gets $liste3 verif3
-					if { [string match *$verif3* $username] && $verif3 != "" } {
-						if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-							eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname2 ($verif3) a été killé : $eva(rident)"
-						}
-						eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rident)";
-						break ;
-						eva:refresh $nickname;
-						return 0;
-					}
-				}
-				catch { close $liste3 }
-				catch { open [eva:scriptdir]db/real.db r } liste4
-				while { ![eof $liste4] } {
-					gets $liste4 verif4
-					if { [string match *$verif4* $gecos] && $verif4 != "" } {
-						if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-							eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname2 (Realname: $verif4) a été killé : $eva(rreal)"
-						}
-						eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rreal)";
-						break;
-						eva:refresh $nickname;
-						return 0;
-					}
-				}
-				catch { close $liste4 }
-				catch { open [eva:scriptdir]db/nick.db r } liste5
-				while { ![eof $liste5] } {
-					gets $liste5 verif5
-					if { [string match $verif5 $nickname] && $verif5 != "" } {
-						if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-							eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname2 a été killé : $eva(ruser)"
-						}
-						eva:sent2socket ":$eva(server_id) KILL $nickname $eva(ruser)";
-						break;
-						eva:refresh $nickname;
-						return 0;
-					}
-				}
-				catch { close $liste5 }
-			}
-			if {
-				$eva(aclient) == 1 && \
-					$eva(init) == 0 && \
-					![info exists ueva($nickname)] && \
-					![info exists protect($hostname)]
-			} {
-				eva:FCT:SENT:PRIVMSG $nickname "\001VERSION\001"
-			}
-			if {
-				$eva(aclone) == 1 && \
-					![info exists ueva($nickname)] && \
-					![info exists protect($hostname)]
-			} {
-				set clone		0
-				foreach { u h } [array get vhost] {
-					if { $h==$hostname } { incr clone 1 }
-				}
-				if { $clone==$eva(numavert) } {
-					eva:FCT:SENT:NOTICE "$nickname" "$eva(ravert)"
-				}
-				if { $clone==$eva(numclone) } {
-					eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] :$eva(rclone) (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])";
-					return 0;
-				}
-
 			}
 		}
 		"219" {
