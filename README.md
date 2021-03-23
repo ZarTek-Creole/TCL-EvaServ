@@ -1,18 +1,16 @@
- tcl-eva
-Services IRC "Eva" en TCL/Eggdrop
-- [1. Installation / Configuration](#1-installation--configuration)
-			- [1.1 Récuperer le code Eva](#11-récuperer-le-code-eva)
-			- [1.2 Configuration de l'eggdrop](#12-configuration-de-leggdrop)
-			- [1.3 Configuration de Eva Service](#13-configuration-de-eva-service)
-			- [1.4 Configuration de votre IRCD (UnrealIRCd 5 et +)](#14-configuration-de-votre-ircd-unrealircd-5-et-)
-			- [1.5 Rehashez votre eggdrop](#15-rehashez-votre-eggdrop)
-- [2. Un peu plus loin](#2-un-peu-plus-loin)
-			- [2.1 Debug general](#21-debug-general)
-			- [2.2 Debug Socket/Link](#22-debug-socketlink)
-- [3. Support](#3-support)
-			- [3.1 Tickets](#31-tickets)
-			- [3.2 IRC](#32-irc)
-- [4. Greets](#4-greets)
+-  [1. Installation / Configuration](#1-installation--configuration)
+	- [1.1 Récuperer le code Eva](#11-récuperer-le-code-eva)
+	- [1.2 Configuration de l'eggdrop](#12-configuration-de-leggdrop)
+	- [1.3 Configuration de Eva Service](#13-configuration-de-eva-service)
+	- [1.4 Configuration de votre IRCD (UnrealIRCd 5 et +)](#14-configuration-de-votre-ircd-unrealircd-5-et-)
+	- [1.5 Rehashez votre eggdrop](#15-rehashez-votre-eggdrop)
+-  [2. Un peu plus loin](#2-un-peu-plus-loin)
+	- [2.1 Debug general](#21-debug-general)
+	- [2.2 Debug Socket/Link](#22-debug-socketlink)
+-  [3. Support](#3-support)
+	- [3.1 Tickets](#31-tickets)
+	- [3.2 IRC](#32-irc)
+-  [4. Greets](#4-greets)
 ##Vous pouvez trouver les sources de Eva Service sur :
 ```
 https://github.com/MalaGaM/tcl-eva
