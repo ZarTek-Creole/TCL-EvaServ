@@ -77,10 +77,6 @@ if { ![file exists "[eva:scriptdir]db/client.db"] } {
 	set c_client	[open "[eva:scriptdir]db/client.db" a+];
 	close $c_client
 }
-if { ![file exists "[eva:scriptdir]db/secu.db"] } {
-	set c_secu		[open "[eva:scriptdir]db/secu.db" a+];
-	close $c_secu
-}
 if { ![file exists "[eva:scriptdir]db/close.db"] } {
 	set c_close		[open "[eva:scriptdir]db/close.db" a+];
 	close $c_close
@@ -127,7 +123,6 @@ set eva(protection)		1
 set eva(debug)			0
 set eva(aclone)			0
 set eva(aclient)		0
-set eva(secu)			0
 
 ####################
 # Eva DB Variables #
@@ -298,9 +293,9 @@ proc eva:FCT:Remove_visuals { data } {
 ##############
 proc eva:config { } {
 	global eva
-	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(secuco)] || ![info exists eva(secutime)] || ![info exists eva(secuon)] || ![info exists eva(secuoff)] || ![info exists eva(secustop)] || ![info exists eva(numavert)] || ![info exists eva(numclone)] || ![info exists eva(rhost)] || ![info exists eva(rident)] || ![info exists eva(rreal)] || ![info exists eva(ruser)] || ![info exists eva(ravert)] || ![info exists eva(rclone)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
+	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(numavert)] || ![info exists eva(numclone)] || ![info exists eva(rhost)] || ![info exists eva(rident)] || ![info exists eva(rreal)] || ![info exists eva(ruser)] || ![info exists eva(ravert)] || ![info exists eva(rclone)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
 		return ok
-	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(secuco) == "" || $eva(secutime) == "" || $eva(secuon) == "" || $eva(secuoff) == "" || $eva(secustop) == "" || $eva(numavert) == "" || $eva(numclone) == ""	 || $eva(ravert) == "" || $eva(rclone) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
+	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(numavert) == "" || $eva(numclone) == ""	 || $eva(ravert) == "" || $eva(rclone) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
 		return ok
 	}
 }
@@ -348,7 +343,6 @@ proc eva:gestion { } {
 	puts $sv "eva(login) $eva(login)"
 	puts $sv "eva(aclone) $eva(aclone)"
 	puts $sv "eva(aclient) $eva(aclient)"
-	puts $sv "eva(secu) $eva(secu)"
 	close $sv
 }
 
@@ -362,7 +356,6 @@ proc eva:dbback { min h d m y } {
 	exec cp -f [eva:scriptdir]db/gestion.db [eva:scriptdir]db/gestion.bak
 	exec cp -f [eva:scriptdir]db/chan.db [eva:scriptdir]db/chan.bak
 	exec cp -f [eva:scriptdir]db/client.db [eva:scriptdir]db/client.bak
-	exec cp -f [eva:scriptdir]db/secu.db [eva:scriptdir]db/secu.bak
 	exec cp -f [eva:scriptdir]db/close.db [eva:scriptdir]db/close.bak
 	exec cp -f [eva:scriptdir]db/nick.db [eva:scriptdir]db/nick.bak
 	exec cp -f [eva:scriptdir]db/ident.db [eva:scriptdir]db/ident.bak
@@ -595,30 +588,6 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		}
 		catch { close $liste5 }
 	}
-	if { ![info exists eva(throttle)] } {
-		set eva(throttle)		1;
-		utimer 2 [list unset eva(throttle)]
-	} elseif { $eva(throttle)<$eva(secuco) } {
-		incr eva(throttle) 1
-	} else {
-		if { ![info exists eva(maxthrottle)] } {
-			eva:FCT:SENT:NOTICE "$*.*" " $eva(secuon)"
-			catch { open "[eva:scriptdir]db/secu.db" r } liste
-			while { ![eof $liste] } {
-				gets $liste salon;
-				if { $salon != "" } {
-					eva:FCT:SENT:MODE $salon "+msi"
-				}
-			}
-			catch { close $liste }
-		}
-		set eva(maxthrottle)		1
-		utimer $eva(secutime) eva:secu
-	}
-	if { [info exists eva(maxthrottle)] } {
-		eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [ex[unixtime] + $eva(secutime)] [unixtime] :$eva(secustop)";
-		return 0;
-	}
 }
 
 proc eva:protection { user level } {
@@ -679,26 +648,6 @@ proc eva:rnick { user } {
 	if { $eva(rnick) == 1 } { return "($user)" }
 }
 
-############
-# Eva Secu #
-############
-
-proc eva:secu { } {
-	global eva
-	if { [info exists eva(maxthrottle)] } {
-
-		eva:FCT:SENT:NOTICE "$*.*" " $eva(secuoff)"
-		catch { open "[eva:scriptdir]db/secu.db" r } liste
-		while { ![eof $liste] } {
-			gets $liste salon;
-			if { $salon != "" } {
-				eva:FCT:SENT:MODE $salon "-msi"
-			}
-		}
-		catch { close $liste }
-		unset eva(maxthrottle)
-	}
-}
 #################
 # Eva Prerehash #
 #################
@@ -1359,7 +1308,6 @@ proc eva:cmds { arg } {
 			exec cp -f [eva:scriptdir]db/gestion.db [eva:scriptdir]db/gestion.bak
 			exec cp -f [eva:scriptdir]db/chan.db [eva:scriptdir]db/chan.bak
 			exec cp -f [eva:scriptdir]db/client.db [eva:scriptdir]db/client.bak
-			exec cp -f [eva:scriptdir]db/secu.db [eva:scriptdir]db/secu.bak
 			exec cp -f [eva:scriptdir]db/close.db [eva:scriptdir]db/close.bak
 			exec cp -f [eva:scriptdir]db/real.db [eva:scriptdir]db/real.bak
 			exec cp -f [eva:scriptdir]db/ident.db [eva:scriptdir]db/ident.bak
@@ -1437,12 +1385,6 @@ proc eva:cmds { arg } {
 				if { $schans != "" } { incr numchan 1 }
 			}
 			catch { close $liste2 }
-			catch { open [eva:scriptdir]db/secu.db r } liste3
-			while { ![eof $liste3] } {
-				gets $liste3 ssalons;
-				if { $ssalons != "" } { incr numsalon 1 }
-			}
-			catch { close $liste3 }
 			catch { open [eva:scriptdir]db/salon.db r } liste4
 			while { ![eof $liste4] } {
 				gets $liste4 ssalon;
@@ -1519,12 +1461,6 @@ proc eva:cmds { arg } {
 			} else {
 				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clients IRC : <c04>Off"
 			}
-			if { $eva(secu) == 1 } {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Sécurité Salons : <c03>On"
-			} else {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Sécurité Salons : <c04>Off"
-			}
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Salons Sécurisés : <c01>$numsalon"
 			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Salons Fermés : <c01>$numclose"
 			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Salons Interdits : <c01>$numsalons"
 			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Pseudos Interdits : <c01>$numuser"
@@ -2750,147 +2686,6 @@ proc eva:cmds { arg } {
 				}
 			}
 		}
-		"secuadd" {
-			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande secuadd :</b> /msg $eva(pseudo) secuadd #salon";
-				return 0;
-			}
-
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon de logs";
-				return 0;
-			}
-
-			catch { open "[eva:scriptdir]db/salon.db" r } liste1
-			while { ![eof $liste1] } {
-				gets $liste1 verif1;
-				if { ![string compare -nocase $value2 $verif1] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Interdit";
-					set stop		1;
-					break
-				}
-			}
-			catch { close $liste1 }
-			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/close.db" r } liste2
-			while { ![eof $liste2] } {
-				gets $liste2 verif2;
-				if { ![string compare -nocase $value2 $verif2] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Fermé";
-					set stop		1;
-					break
-				}
-			}
-			catch { close $liste2 }
-			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/secu.db" r } liste
-			while { ![eof $liste] } {
-				gets $liste verif;
-				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des salons sécurisés.";
-					set stop		1;
-					break
-				}
-			}
-			catch { close $liste }
-			if { $stop == 1 } { return 0 }
-			set join		[open "[eva:scriptdir]db/secu.db" a];
-			puts $join $value2;
-			close $join
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des salons sécurisés."
-			if { [info exists eva(maxthrottle)] } {
-				eva:FCT:SENT:MODE $value1 "+smi"
-			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "secuadd" "$user"
-			}
-		}
-		"secudel" {
-			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande secudel :</b> /msg $eva(pseudo) secudel #salon";
-				return 0;
-			}
-
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé";
-				return 0;
-			}
-
-			catch { open "[eva:scriptdir]db/secu.db" r } liste
-			while { ![eof $liste] } {
-				gets $liste verif;
-				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
-				if { [string compare -nocase $value2 $verif] && $verif != "" } { lappend salle "$verif" }
-			}
-			catch { close $liste }
-			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des salons sécurisés.";
-				return 0;
-			} else {
-				if { [info exists salle] } {
-					set del		[open "[eva:scriptdir]db/secu.db" w+];
-					foreach chandel $salle { puts $del "$chandel" }
-					close $del
-				} else {
-					set del		[open "[eva:scriptdir]db/secu.db" w+];
-					close $del
-				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des salons sécurisés."
-				if { [info exists eva(maxthrottle)] } {
-					eva:FCT:SENT:MODE $value1 "-smi"
-				}
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "secudel" "$user"
-				}
-			}
-		}
-		"seculist" {
-			catch { open "[eva:scriptdir]db/secu.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>-------- <c0>Salons Sécurisés <c1>--------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
-			while { ![eof $liste] } {
-				gets $liste salon;
-				if { $salon != "" } {
-					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $salon"
-				}
-			}
-			catch { close $liste }
-			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Salon"
-			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Seculist" "$user"
-			}
-		}
-		"secu" {
-			if { $value2 != "on" && $value2 != "off" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Secu :</b> /msg $eva(pseudo) secu on/off";
-				return 0;
-			}
-
-			if { $value2 == "on" } {
-				if { $eva(secu) == 0 } {
-					set eva(secu)		1;
-					eva:FCT:SENT:NOTICE $vuser "Système de sécurité des salons activé"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Secu" "$user"
-					}
-				} else {
-					eva:FCT:SENT:NOTICE $vuser "Le système de sécurité des salons est déjà activé."
-				}
-			} elseif { $value2 == "off" } {
-				if { $eva(secu) == 1 } {
-					set eva(secu)		0;
-					eva:FCT:SENT:NOTICE $vuser "Système de sécurité des salons désactivé"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Secu" "$user"
-					}
-				} else {
-					eva:FCT:SENT:NOTICE $vuser "Le système de sécurité des salons est déjà désactivé."
-				}
-			}
-		}
 		"client" {
 			if { $value2 != "on" && $value2 != "off" } {
 				eva:FCT:SENT:NOTICE $vuser "<b>Commande Client :</b> /msg $eva(pseudo) client on/off";
@@ -2970,17 +2765,6 @@ proc eva:cmds { arg } {
 				}
 			}
 			catch { close $liste1 }
-			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/secu.db" r } liste2
-			while { ![eof $liste2] } {
-				gets $liste2 verif2;
-				if { ![string compare -nocase $value2 $verif2] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Sécurisé";
-					set stop		1;
-					break
-				}
-			}
-			catch { close $liste2 }
 			if { $stop == 1 } { return 0 }
 			catch { open "[eva:scriptdir]db/chan.db" r } liste3
 			while { ![eof $liste3] } {
@@ -3461,17 +3245,6 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste2 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/secu.db" r } liste3
-			while { ![eof $liste3] } {
-				gets $liste3 verif3;
-				if { [string match *[string trimleft $value2 #]* [string trimleft $verif3 #]] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Sécurisé";
-					set stop		1;
-					break
-				}
-			}
-			catch { close $liste3 }
-			if { $stop == 1 } { return 0 }
 			catch { open "[eva:scriptdir]db/salon.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
@@ -3894,7 +3667,6 @@ proc eva:help:description:part {}			{
 }
 proc eva:help:description:reallist {}		{ return "Permet de voir la liste des realnames interdits." }
 proc eva:help:description:say {}			{ return "Permet d'envoyer un message sur un salon." }
-proc eva:help:description:seculist {}		{ return "Permet de voir la liste des salons sécurisés." }
 proc eva:help:description:status {}			{ return "Permet de voir les informations de Eva Service." }
 proc eva:help:description:svsjoin {}		{ return "Permet de forcer un utilisateur à joindre un salon." }
 proc eva:help:description:svsnick {}		{ return "Permet de changer le pseudo d'un utilisateur."}
@@ -3908,7 +3680,6 @@ proc eva:help:description:hostadd {}		{ return "Permet d'ajouter une hostname in
 proc eva:help:description:identadd {}		{ return "Permet d'ajouter un ident interdit." }
 proc eva:help:description:nickadd {}		{ return "Permet d'ajouter un pseudo interdit." }
 proc eva:help:description:realadd {}		{ return "Permet d'ajouter un realname interdit." }
-proc eva:help:description:secuadd {}		{ return "Permet d'ajouter un salon sécurisé." }
 proc eva:help:description:trustadd {}		{ return "Permet d'ajouter un trust sur un mask." }
 proc eva:help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
 proc eva:help:description:chanlog {}		{
@@ -3925,14 +3696,12 @@ proc eva:help:description:hostdel {}		{ return "Permet de supprimer une hostname
 proc eva:help:description:identdel {}		{ return "Permet de supprimer un ident interdit." }
 proc eva:help:description:nickdel {}		{ return "Permet de supprimer un pseudo interdit." }
 proc eva:help:description:realdel {}		{ return "Permet de supprimer un realname interdit." }
-proc eva:help:description:secudel {}		{ return "Permet de supprimer un salon sécurisé." }
 proc eva:help:description:trustdel {}		{ return "Permet de supprimer le trust d'un mask." }
 proc eva:help:description:die {}			{ return "Permet d'arrêter Eva Service." }
 proc eva:help:description:maxlogin {}		{ return "Permet d'activer où désactiver la protection max login." }
 proc eva:help:description:accessmod {}		{ return "Permet de modifier un accès de Eva Service." }
 proc eva:help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
 proc eva:help:description:restart {}		{ return "Permet de redémarrer Eva Service." }
-proc eva:help:description:secu {}			{ return "Permet d'activer ou désactiver le système de sécurité des salons." }
 proc eva:help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
 
 
@@ -4240,10 +4009,6 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) say #salon message"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:say]
 		}
-		"seculist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) seculist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:seculist]
-		}
 		"status" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) status"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:status]
@@ -4295,10 +4060,6 @@ proc eva:hcmds { arg } {
 		"realadd" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realadd realname"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realadd]
-		}
-		"secuadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secuadd #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secuadd]
 		}
 		"trustadd" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustadd mask"
@@ -4356,10 +4117,6 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realdel realname"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realdel]
 		}
-		"secudel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secudel #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secudel]
-		}
 		"trustdel" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustdel mask"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustdel]
@@ -4389,10 +4146,6 @@ proc eva:hcmds { arg } {
 		"restart" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) restart"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:restart]
-		}
-		"secu" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secu on/off"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secu]
 		}
 	}
 }
