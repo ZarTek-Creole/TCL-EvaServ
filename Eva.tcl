@@ -274,10 +274,40 @@ set scoredb(last)		""
 ##############
 proc eva:config { } {
 	global eva
-	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
-		return ok
-	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
-		return ok
+	set CONF_LIST	[list 					\
+							"link"			\
+							"ip"			\
+							"port"			\
+							"pass"			\
+							"info"			\
+							"SID"			\
+							"pseudo"		\
+							"sdebug"		\
+							"ident"			\
+							"host"			\
+							"real"			\
+							"salon"			\
+							"smode"			\
+							"cmode"			\
+							"prefix"		\
+							"rnick"			\
+							"fraz"			\
+							"duree"			\
+							"ignore"		\
+							"rclient"		\
+							"raison"		\
+							"console_com"	\
+							"console_deco"	\
+							"console_txt"];
+	foreach CONF $CONF_LIST {
+		if { ![info exists eva($CONF)] } {
+			putlog "\[ Erreur \] Configuration de Eva Service Incorrecte... '$CONF' Paramettre manquant"
+			exit
+		}
+		if { $eva($CONF) == "" } {
+			putlog "\[ Erreur \] Configuration de Eva Service Incorrecte... '$CONF' Valeur vide"
+			exit
+		}
 	}
 }
 
@@ -382,21 +412,18 @@ proc eva:duree { temps } {
 ##################
 # Eva Chargement #
 ##################
-
 proc eva:chargement { } {
 	global eva trust
-	if { ![info exists trust($hosts)] } {
-		catch { open [eva:scriptdir]db/trust.db r } protection
-		while { ![eof $protection] } {
-			gets $protection hosts;
-			if { $hosts != "" } { set trust($hosts)	1 }
-		}
-		catch { close $protection }
+	catch { open [eva:scriptdir]db/trust.db r } protection
+	while { ![eof $protection] } {
+		gets $protection hosts;
+		if { $hosts != "" && ![info exists trust($hosts)] } { set trust($hosts)	1 }
 	}
+	catch { close $protection }
 	catch { open [eva:scriptdir]db/gestion.db r } gestion
 	while { ![eof $gestion] } {
 		gets $gestion var2;
-		if { $var2 != "" } { set [lindex $var2 0] [lindex $var2 1] }
+		if { $var2 != "" } { set [lindex		$var2 0] [lindex $var2 1] }
 	}
 	catch { close $gestion }
 }
@@ -665,25 +692,23 @@ proc eva:eva { nick idx arg } {
 proc eva:connect { nick idx arg } {
 	global eva
 	set eva(counter)		0
-	if { [eva:config] != "ok" } {
-		if { ![info exists eva(idx)] } {
+	eva:config
+	if { ![info exists eva(idx)] } {
+		eva:sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de Eva Service...";
+		eva:connexion
+		set eva(dem)		1;
+		utimer $eva(timerdem) [list set eva(dem)		0]
+	} else {
+		if { ![valididx $eva(idx)] } {
 			eva:sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de Eva Service...";
 			eva:connexion
 			set eva(dem)		1;
 			utimer $eva(timerdem) [list set eva(dem)		0]
 		} else {
-			if { ![valididx $eva(idx)] } {
-				eva:sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de Eva Service...";
-				eva:connexion
-				set eva(dem)		1;
-				utimer $eva(timerdem) [list set eva(dem)		0]
-			} else {
-				eva:sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> Eva Service est déjà connecté..."
-			}
+			eva:sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> Eva Service est déjà connecté..."
 		}
-	} else {
-		eva:sent2ppl $idx "<c01>\[ <c04>Erreur<c01> \] <c01> Configuration de Eva Service Incorrecte..."
 	}
+
 }
 
 #################
@@ -1288,9 +1313,8 @@ proc eva:cmds { arg } {
 			}
 			if { [info exists eva(idx)] } { unset eva(idx)		}
 			set eva(counter)		0;
-			if { [eva:config] != "ok" } {
-				utimer 1 eva:connexion
-			}
+			eva:config
+			utimer 1 eva:connexion
 		}
 		"die" {
 			if { [eva:console 1] == "ok" } {
@@ -4119,7 +4143,7 @@ proc eva:connexion { } {
 		if { [info exists netadmin] }	{ unset netadmin	}
 		set eva(init)			1;
 		set eva(cmd)			"closeadd";
-		utimer $eva(timerinit) [list set eva(init)		0]
+		utimer $eva(timerinit) [list set eva(init) 0]
 		utimer $eva(timerinit) [list unset eva(cmd)];
 		eva:chargement;
 		set eva(uptime)			[clock seconds]
@@ -4143,10 +4167,8 @@ proc eva:connexion { } {
 ######################
 
 proc eva:initialisation { arg } {
-	global eva
-	if { [eva:config] != "ok" } {
-		eva:connexion
-	}
+	eva:config
+	eva:connexion
 }
 
 ####################
@@ -4159,9 +4181,8 @@ proc eva:verif { } {
 		utimer $eva(timerco) eva:verif
 	} else {
 		if { $eva(counter)<="10" } {
-			if { [eva:config] != "ok" } {
-				eva:connexion
-			}
+			eva:config
+			eva:connexion
 		} else {
 			foreach kill [utimers] {
 				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
@@ -4785,9 +4806,8 @@ proc eva:link { idx arg } {
 			}
 			if { [info exists eva(idx)] } { unset eva(idx)		}
 			set eva(counter)		0;
-			if { [eva:config] != "ok" } {
-				utimer 1 eva:connexion
-			}
+			eva:config
+			utimer 1 eva:connexion
 		}
 	}
 	"GLOBOPS" {
