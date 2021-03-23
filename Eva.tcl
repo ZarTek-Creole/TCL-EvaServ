@@ -111,120 +111,6 @@ if { ![file exists "[eva:scriptdir]db/trust.db"] } {
 }
 
 #################
-# Eva Commandes #
-#################
-
-set ceva(auth)			0
-set ceva(deauth)		0
-set ceva(copyright)		0
-set ceva(help)			0
-set ceva(showcommands)	0
-set ceva(seen)			0
-set ceva(access)		2
-set ceva(map)			1
-set ceva(whois)			1
-set ceva(newpass)		2
-set ceva(owner)			2
-set ceva(deowner)		2
-set ceva(protect)		2
-set ceva(deprotect)		2
-set ceva(ownerall)		2
-set ceva(deownerall)	2
-set ceva(protectall)	2
-set ceva(deprotectall)	2
-set ceva(op)			2
-set ceva(deop)			2
-set ceva(halfop)		2
-set ceva(dehalfop)		2
-set ceva(voice)			2
-set ceva(devoice)		2
-set ceva(opall)			2
-set ceva(deopall)		2
-set ceva(halfopall)		2
-set ceva(dehalfopall)	2
-set ceva(voiceall)		2
-set ceva(devoiceall)	2
-set ceva(kick)			2
-set ceva(kickall)		2
-set ceva(ban)			2
-set ceva(nickban)		2
-set ceva(kickban)		2
-set ceva(unban)			2
-set ceva(clearbans)		2
-set ceva(kill)			2
-set ceva(mode)			2
-set ceva(clearmodes)	2
-set ceva(clearallmodes)	2
-set ceva(topic)			2
-set ceva(inviteme)		2
-set ceva(invite)		2
-set ceva(wallops)		2
-set ceva(globops)		2
-set ceva(gline)			2
-set ceva(ungline)		2
-set ceva(shun)			2
-set ceva(unshun)		2
-set ceva(shunlist)		2
-set ceva(glinelist)		2
-set ceva(kline)			2
-set ceva(unkline)		2
-set ceva(klinelist)		2
-set ceva(clientlist)	3
-set ceva(trustlist)		3
-set ceva(say)			3
-set ceva(svsnick)		3
-set ceva(svsjoin)		3
-set ceva(svspart)		3
-set ceva(notice)		3
-set ceva(clearkline)	3
-set ceva(cleargline)	3
-set ceva(changline)		3
-set ceva(chankill)		3
-set ceva(join)			3
-set ceva(part)			3
-set ceva(list)			3
-set ceva(status)		3
-set ceva(close)			3
-set ceva(unclose)		3
-set ceva(closelist)		3
-set ceva(clearclose)	3
-set ceva(nicklist)		3
-set ceva(identlist)		3
-set ceva(reallist)		3
-set ceva(hostlist)		3
-set ceva(chanlist)		3
-set ceva(seculist)		3
-set ceva(addnick)		4
-set ceva(delnick)		4
-set ceva(addident)		4
-set ceva(delident)		4
-set ceva(addreal)		4
-set ceva(delreal)		4
-set ceva(addhost)		4
-set ceva(delhost)		4
-set ceva(addchan)		4
-set ceva(delchan)		4
-set ceva(addsecu)		4
-set ceva(delsecu)		4
-set ceva(secu)			4
-set ceva(addtrust)		4
-set ceva(deltrust)		4
-set ceva(addclient)		4
-set ceva(delclient)		4
-set ceva(client)		4
-set ceva(clone)			4
-set ceva(chanlog)		4
-set ceva(console)		4
-set ceva(backup)		4
-set ceva(restart)		4
-set ceva(die)			4
-set ceva(maxlogin)		4
-set ceva(protection)	4
-set ceva(addaccess)		4
-set ceva(delaccess)		4
-set ceva(modaccess)		4
-
-#################
 # Eva Variables #
 #################
 
@@ -254,6 +140,43 @@ set scoredb(last)		""
 # Eva fonctions #
 #################
 
+proc eva:SHOW:CMD:BY:LEVEL { DEST LEVEL } {
+	global ceva
+	set max				6;
+	set l_espace		13;
+	set CMD_LIST		""
+	eva:FCT:SENT:NOTICE $DEST "<c01>\[ Level [dict get $ceva $LEVEL name] - Niveau $LEVEL \]"
+	foreach CMD [dict get $ceva $LEVEL cmd] {
+		lappend CMD_LIST	"<c02>[eva:FCT:TXT:ESPACE:DISPLAY $CMD $l_espace]<c01>"
+		if { [incr i] > $max-1 } {
+			unset i
+			eva:FCT:SENT:NOTICE $DEST [join $CMD_LIST " | "];
+			set CMD_LIST	""
+		}
+	}
+	eva:FCT:SENT:NOTICE $DEST [join $CMD_LIST " | "];
+	eva:FCT:SENT:NOTICE $DEST "<c>";
+}
+proc eva:CMD:LIST { } {
+	global ceva
+	foreach level [dict keys $::ceva] {
+		lappend CMD_LIST {*}[dict get $::ceva $level cmd]
+	}
+	return $CMD_LIST
+}
+proc eva:CMD:TO:LEVEL { CMD } {
+	global ceva
+	foreach level [dict keys $::ceva] {
+		if { [lsearch -nocase [dict get $::ceva $level cmd] $CMD] != "-1" } { 
+			return $level 
+		}
+	}
+	return -1
+}
+proc eva:CMD:EXIST { CMD } {
+	if { [lsearch -nocase [eva:CMD:LIST] $CMD] == "-1" } { return 0 }
+	return 1
+}
 proc eva:UID:CONVERT { ID } {
 	global UID_DB
 	if { [info exists UID_DB([string toupper $ID])] } {
@@ -791,9 +714,9 @@ proc eva:debug { nick idx arg } {
 # Eva Authed #
 ##############
 
-proc eva:authed { user level } {
+proc eva:authed { user cmd } {
 	global eva admins
-	switch -exact $level {
+	switch -exact [eva:CMD:TO:LEVEL $cmd] {
 		0 { return ok }
 		1 {
 			if { [info exists admins($user)] && [matchattr $admins($user) p] } {
@@ -828,6 +751,14 @@ proc eva:authed { user level } {
 				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
 				return 0;
 			}
+		}
+		-1 {
+			eva:FCT:SENT:NOTICE "$user" "Command inconnue";
+			return 0;
+		}
+		default {
+			eva:FCT:SENT:NOTICE "$user" "Niveau inconnue";
+			return 0;
 		}
 	}
 }
@@ -880,7 +811,7 @@ proc eva:nettoyage { pseudo } {
 ############
 
 proc eva:cmds { arg } {
-	global eva ceva ueva admin admins vhost protect trust
+	global eva ueva admin admins vhost protect trust
 	set arg		[split $arg]
 	set cmd		[lindex $arg 0]
 	set user	[lindex $arg 1]
@@ -895,8 +826,7 @@ proc eva:cmds { arg } {
 	set value8	[lindex $arg 4]
 	set value9	[string tolower [lindex $arg 4]]
 	set stop	0
-
-	if { [eva:authed $vuser $ceva($cmd)] != "ok" } { return 0 }
+	if { [eva:authed $vuser $cmd] != "ok" } { return 0 }
 	switch -exact $cmd {
 		"auth" {
 			if { [lindex $arg 2] == "" || [lindex $arg 3] == "" } {
@@ -1297,47 +1227,18 @@ proc eva:cmds { arg } {
 		"help" {
 			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
 			eva:FCT:SENT:NOTICE $vuser "<c>"
-			eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Utilisateur \]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "AUTH" 15 ]<c01> \[<c04> 0 <c01>\] | <c02>COPYRIGHT<c01> \[<c04> 0 <c01>\] | <c02>DEAUTH<c01> \[<c04> 0 <c01>\] | <c02>HELP<c01> \[<c04> 0 <c01>\]"
-			eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SEEN" 15 ]<c01> \[<c04> 0 <c01>\] | <c02>SHOWCOMMANDS<c01> \[<c04> 0 <c01>\]"
-			eva:FCT:SENT:NOTICE $vuser "<c>"
+			eva:SHOW:CMD:BY:LEVEL $vuser 0
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
-				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Helpeur \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MAP" 15 ]<c01> \[<c04> 1 <c01>\] | <c02>WHOIS<c01> \[<c04> 1 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c>"
+				eva:SHOW:CMD:BY:LEVEL $vuser 1
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
-				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Géofront \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ACCESS" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>BAN<c01> \[<c04> 2 <c01>\] | <c02>CLEARALLMODES<c01> \[<c04> 2 <c01>\] | <c02>CLEARBANS<c01> \[<c04> 2 <c01>\] | <c02>CLEARMODES<c01> \[<c04> 2 <c01>\] | <c02>DEHALFOP<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEHALFOPALL" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>DEOP<c01> \[<c04> 2 <c01>\] | <c02>DEOPALL<c01> \[<c04> 2 <c01>\] | <c02>DEOWNER<c01> \[<c04> 2 <c01>\] | <c02>DEOWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DEPROTECT" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>DEPROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>DEVOICE<c01> \[<c04> 2 <c01>\] | <c02>DEVOICEALL<c01> \[<c04> 2 <c01>\] | <c02>GLINE<c01> \[<c04> 2 <c01>\] | <c02>SHUN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "GLINELIST" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>GLOBOPS<c01> \[<c04> 2 <c01>\] | <c02>HALFOP<c01> \[<c04> 2 <c01>\] | <c02>HALFOPALL<c01> \[<c04> 2 <c01>\] | <c02>INVITE<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "INVITEME" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>KICK<c01> \[<c04> 2 <c01>\] | <c02>KICKALL<c01> \[<c04> 2 <c01>\] | <c02>KICKBAN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "KILL" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>KLINE<c01> \[<c04> 2 <c01>\] | <c02>KLINELIST<c01> \[<c04> 2 <c01>\] | <c02>MODE<c01> \[<c04> 2 <c01>\] | <c02>NEWPASS<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "NICKBAN" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>OP<c01> \[<c04> 2 <c01>\] | <c02>OPALL<c01> \[<c04> 2 <c01>\] | <c02>OWNER<c01> \[<c04> 2 <c01>\] | <c02>OWNERALL<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECT" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>PROTECTALL<c01> \[<c04> 2 <c01>\] | <c02>TOPIC<c01> \[<c04> 2 <c01>\] | <c02>UNBAN<c01> \[<c04> 2 <c01>\] | <c02>UNGLINE<c01> \[<c04> 2 <c01>\] | <c02>UNSHUN<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNKLINE" 15 ]<c01> \[<c04> 2 <c01>\] | <c02>VOICE<c01> \[<c04> 2 <c01>\] | <c02>VOICEALL<c01> \[<c04> 2 <c01>\] | <c02>WALLOPS<c01> \[<c04> 2 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c>"
+				eva:SHOW:CMD:BY:LEVEL $vuser 2
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
-				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Ircop \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANGLINE" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>CHANKILL<c01> \[<c04> 3 <c01>\] | <c02>CHANLIST<c01> \[<c04> 3 <c01>\] | <c02>CLEARCLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLEARGLINE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARKLINE" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>CLIENTLIST<c01> \[<c04> 3 <c01>\] | <c02>CLOSE<c01> \[<c04> 3 <c01>\] | <c02>CLOSELIST<c01> \[<c04> 3 <c01>\] | <c02>HOSTLIST<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "IDENTLIST" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>JOIN<c01> \[<c04> 3 <c01>\] | <c02>LIST<c01> \[<c04> 3 <c01>\] | <c02>NICKLIST<c01> \[<c04> 3 <c01>\] | <c02>NOTICE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PART" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>REALLIST<c01> \[<c04> 3 <c01>\] | <c02>SAY<c01> \[<c04> 3 <c01>\] | <c02>SECULIST<c01> \[<c04> 3 <c01>\] | <c02>STATUS<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSJOIN" 15 ]<c01> \[<c04> 3 <c01>\] | <c02>SVSNICK<c01> \[<c04> 3 <c01>\] | <c02>SVSPART<c01> \[<c04> 3 <c01>\] | <c02>TRUSTLIST<c01> \[<c04> 3 <c01>\] | <c02>UNCLOSE<c01> \[<c04> 3 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c>"
+				eva:SHOW:CMD:BY:LEVEL $vuser 3
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
-				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Admin \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDACCESS" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>ADDCHAN<c01> \[<c04> 4 <c01>\] | <c02>ADDCLIENT<c01> \[<c04> 4 <c01>\] | <c02>ADDHOST<c01> \[<c04> 4 <c01>\] | <c02>ADDIDENT<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDNICK" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>ADDREAL<c01> \[<c04> 4 <c01>\] | <c02>ADDSECU<c01> \[<c04> 4 <c01>\] | <c02>ADDTRUST<c01> \[<c04> 4 <c01>\] | <c02>BACKUP<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANLOG" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>CLIENT<c01> \[<c04> 4 <c01>\] | <c02>CLONE<c01> \[<c04> 4 <c01>\] | <c02>CONSOLE<c01> \[<c04> 4 <c01>\] | <c02>DELACCESS<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCHAN" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>DELCLIENT<c01> \[<c04> 4 <c01>\] | <c02>DELHOST<c01> \[<c04> 4 <c01>\] | <c02>DELIDENT<c01> \[<c04> 4 <c01>\] | <c02>DELNICK<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELREAL" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>DELSECU<c01> \[<c04> 4 <c01>\] | <c02>DELTRUST<c01> \[<c04> 4 <c01>\] | <c02>DIE<c01> \[<c04> 4 <c01>\] | <c02>MAXLOGIN<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MODACCESS" 15 ]<c01> \[<c04> 4 <c01>\] | <c02>PROTECTION<c01> \[<c04> 4 <c01>\] | <c02>RESTART<c01> \[<c04> 4 <c01>\] | <c02>SECU<c01> \[<c04> 4 <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c>"
-				eva:FCT:SENT:NOTICE $vuser "Liste des commandes: /msg $eva(pseudo) showcommands"
+				eva:SHOW:CMD:BY:LEVEL $vuser 4
 			}
 			if { [eva:console 1] == "ok" } {
 				eva:FCT:SENT:PRIVMSG $eva(salon) "<c$eva(console_com)>Help <c$eva(console_deco)>:<c$eva(console_txt)> $user"
@@ -3957,12 +3858,12 @@ proc eva:help:description:shun {}			{ return "Permet de shun un utilisateur du s
 # Eva Hcmds #
 #############
 proc eva:hcmds { arg } {
-	global eva ceva
+	global eva
 	set arg			[split $arg]
 	set hcmd		[lindex $arg 0]
 	set vuser		[string tolower [lindex $arg 1]]
 	set vuserUID	[eva:UID:CONVERT $vuser]
-	if { [eva:authed $vuser $ceva($hcmd)] != "ok" } { return 0 }
+	if { [eva:authed $vuser $hcmd] != "ok" } { return 0 }
 	switch -exact $hcmd {
 		"help" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) help nom-de-la-commande"
@@ -5066,13 +4967,13 @@ proc eva:link { idx arg } {
 				return 0;
 				# verifie si c une command eva :
 
-			} elseif { [info exists ceva($cmds)] } {
+			} elseif { [eva:CMD:EXIST $cmds] } {
 
 				# si c help
 				if { $cmds == "help" && $hcmds != "" } {
 
 					# verifie si c une command eva
-					if { [info exists ceva($hcmds)] } {
+					if { [eva:CMD:EXIST $hcmds] } {
 						eva:hcmds "$hcmds $user $data"
 					} else {
 						eva:FCT:SENT:NOTICE "$user" "Aide <b>$hcmds</b> Inconnue."
@@ -5086,9 +4987,9 @@ proc eva:link { idx arg } {
 		}
 		if { [string index $cmds 0] == $eva(prefix) } {
 			if { [eva:flood $vuser] != "ok" } { return 0 }
-			if { [info exists ceva($pcmds)] } {
+			if { [eva:CMD:EXIST $pcmds] } {
 				if { $pcmds == "help" && $hcmds != "" } {
-					if { [info exists ceva($hcmds)] } {
+					if { [eva:CMD:EXIST $hcmds] } {
 						eva:hcmds "$hcmds $user $data"
 					}
 				} else {
