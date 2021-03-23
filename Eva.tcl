@@ -61,75 +61,6 @@ proc eva:sent2ppl { IDX MSG } {
 }
 source [eva:scriptdir]Eva.conf
 
-###############
-# Eva Fichier #
-###############
-if { [file isdirectory "[eva:scriptdir]db"] } { file mkdir "[eva:scriptdir]db" }
-if { ![file exists "[eva:scriptdir]db/gestion.db"] } {
-	set c_gestion	[open "[eva:scriptdir]db/gestion.db" a+];
-	close $c_gestion
-}
-if { ![file exists "[eva:scriptdir]db/chan.db"] } {
-	set c_chan		[open "[eva:scriptdir]db/chan.db" a+];
-	close $c_chan
-}
-if { ![file exists "[eva:scriptdir]db/client.db"] } {
-	set c_client	[open "[eva:scriptdir]db/client.db" a+];
-	close $c_client
-}
-if { ![file exists "[eva:scriptdir]db/close.db"] } {
-	set c_close		[open "[eva:scriptdir]db/close.db" a+];
-	close $c_close
-}
-if { ![file exists "[eva:scriptdir]db/salon.db"] } {
-	set c_salon		[open "[eva:scriptdir]db/salon.db" a+];
-	close $c_salon
-}
-if { ![file exists "[eva:scriptdir]db/ident.db"] } {
-	set c_ident		[open "[eva:scriptdir]db/ident.db" a+];
-	close $c_ident
-}
-if { ![file exists "[eva:scriptdir]db/real.db"] } {
-	set c_real		[open "[eva:scriptdir]db/real.db" a+];
-	close $c_real
-}
-if { ![file exists "[eva:scriptdir]db/host.db"] } {
-	set c_host		[open "[eva:scriptdir]db/host.db" a+];
-	close $c_host
-}
-if { ![file exists "[eva:scriptdir]db/nick.db"] } {
-	set c_nick		[open "[eva:scriptdir]db/nick.db" a+];
-	close $c_nick
-}
-if { ![file exists "[eva:scriptdir]db/trust.db"] } {
-	set c_trust		[open "[eva:scriptdir]db/trust.db" a+];
-	close $c_trust
-}
-
-#################
-# Eva Variables #
-#################
-
-set eva(version)		"1.4"
-set eva(timerco)		30
-set eva(timerdem)		5
-set eva(timerinit)		10
-set eva(counter)		0
-set eva(dem)			0
-set eva(init)			0
-set eva(console)		1
-set eva(login)			1
-set eva(protection)		1
-set eva(debug)			0
-set eva(aclient)		0
-
-####################
-# Eva DB Variables #
-####################
-array set DBU_INFO		""
-array set UID_DB		""
-set scoredb(last)		""
-
 #################
 # Eva fonctions #
 #################
@@ -287,6 +218,57 @@ proc eva:FCT:Remove_visuals { data } {
 	regsub -all -nocase {<i>|</i>} $data "" data
 	return [regsub -all -nocase {<s>} $data ""]
 }
+proc eva:FCT:DB:INIT { LISTDB } {
+	foreach DB_NAME $LISTDB {
+		if { ![file exists "[eva:scriptdir]db/${DB_NAME}.db"] } {
+			set FILE_PIPE	[open "[eva:scriptdir]db/${DB_NAME}.db" a+];
+			close $FILE_PIPE
+		}
+
+	}
+}
+###############
+# Eva Fichier #
+###############
+if { [file isdirectory "[eva:scriptdir]db"] } { file mkdir "[eva:scriptdir]db" }
+# generer les db
+eva:FCT:DB:INIT [list \
+					"gestion"	\
+					"chan"		\
+					"client"	\
+					"close"		\
+					"salon"		\
+					"ident"		\
+					"real"		\
+					"host"		\
+					"nick"		\
+					"trust"		
+				];
+
+#################
+# Eva Variables #
+#################
+
+set eva(version)		"1.4"
+set eva(timerco)		30
+set eva(timerdem)		5
+set eva(timerinit)		10
+set eva(counter)		0
+set eva(dem)			0
+set eva(init)			0
+set eva(console)		1
+set eva(login)			1
+set eva(protection)		1
+set eva(debug)			0
+set eva(aclient)		0
+
+####################
+# Eva DB Variables #
+####################
+array set DBU_INFO		""
+array set UID_DB		""
+set scoredb(last)		""
+
 ##############
 # Eva Config #
 ##############
@@ -294,7 +276,7 @@ proc eva:config { } {
 	global eva
 	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
 		return ok
-	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(numavert) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
+	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
 		return ok
 	}
 }
