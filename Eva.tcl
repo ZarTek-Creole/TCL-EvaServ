@@ -333,16 +333,10 @@ proc eva:gestion { } {
 proc eva:dbback { min h d m y } {
 	global eva
 	eva:gestion
-	exec cp -f [eva:scriptdir]db/gestion.db [eva:scriptdir]db/gestion.bak
-	exec cp -f [eva:scriptdir]db/chan.db [eva:scriptdir]db/chan.bak
-	exec cp -f [eva:scriptdir]db/client.db [eva:scriptdir]db/client.bak
-	exec cp -f [eva:scriptdir]db/close.db [eva:scriptdir]db/close.bak
-	exec cp -f [eva:scriptdir]db/nick.db [eva:scriptdir]db/nick.bak
-	exec cp -f [eva:scriptdir]db/ident.db [eva:scriptdir]db/ident.bak
-	exec cp -f [eva:scriptdir]db/real.db [eva:scriptdir]db/real.bak
-	exec cp -f [eva:scriptdir]db/host.db [eva:scriptdir]db/host.bak
-	exec cp -f [eva:scriptdir]db/salon.db [eva:scriptdir]db/salon.bak
-	exec cp -f [eva:scriptdir]db/trust.db [eva:scriptdir]db/trust.bak
+	set DB_LIST	[list "gestion" "chan" "client" "close" "nick" "ident" "real" "host" "salon" "trust"]
+	foreach DB_NAME $DB_LIST {
+		exec cp -f [eva:scriptdir]db/${DB_NAME}.db [eva:scriptdir]db/${DB_NAME}.bak
+	}
 	if { [eva:console 1] == "ok" } {
 		eva:SHOW:INFO:TO:CHANLOG "Backup" "Sauvegarde des databases."
 	}
@@ -391,16 +385,18 @@ proc eva:duree { temps } {
 
 proc eva:chargement { } {
 	global eva trust
-	catch { open [eva:scriptdir]db/trust.db r } protection
-	while { ![eof $protection] } {
-		gets $protection hosts;
-		if { $hosts != "" && ![info exists trust($hosts)] } { set trust($hosts)	1 }
+	if { ![info exists trust($hosts)] } {
+		catch { open [eva:scriptdir]db/trust.db r } protection
+		while { ![eof $protection] } {
+			gets $protection hosts;
+			if { $hosts != "" } { set trust($hosts)	1 }
+		}
+		catch { close $protection }
 	}
-	catch { close $protection }
 	catch { open [eva:scriptdir]db/gestion.db r } gestion
 	while { ![eof $gestion] } {
 		gets $gestion var2;
-		if { $var2 != "" } { set [lindex		$var2 0] [lindex $var2 1] }
+		if { $var2 != "" } { set [lindex $var2 0] [lindex $var2 1] }
 	}
 	catch { close $gestion }
 }
