@@ -146,7 +146,7 @@ proc eva:SHOW:CMD:BY:LEVEL { DEST LEVEL } {
 	set l_espace		13;
 	set CMD_LIST		""
 	eva:FCT:SENT:NOTICE $DEST "<c01>\[ Level [dict get $ceva $LEVEL name] - Niveau $LEVEL \]"
-	foreach CMD [dict get $ceva $LEVEL cmd] {
+	foreach CMD [lsort [dict get $ceva $LEVEL cmd]] {
 		lappend CMD_LIST	"<c02>[eva:FCT:TXT:ESPACE:DISPLAY $CMD $l_espace]<c01>"
 		if { [incr i] > $max-1 } {
 			unset i
@@ -163,7 +163,7 @@ proc eva:SHOW:CMD:DESCRIPTION:BY:LEVEL { DEST LEVEL } {
 	set l_espace		13;
 	set CMD_LIST		""
 	eva:FCT:SENT:NOTICE $DEST "<c01>\[ Level [dict get $ceva $LEVEL name] - Niveau $LEVEL \]"
-	foreach CMD [dict get $ceva $LEVEL cmd] {
+	foreach CMD [lsort [dict get $ceva $LEVEL cmd]] {
 		set CMD_LOWER	[string tolower $CMD];
 		set CMD_UPPER	[string toupper $CMD];
 		if { [info commands [subst eva:help:description:${CMD_LOWER}]] != "" } {
