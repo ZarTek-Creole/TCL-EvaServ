@@ -57,7 +57,7 @@ proc eva:sent2socket { MSG } {
 	putdcc $eva(idx)  $MSG
 }
 proc eva:sent2ppl { IDX MSG } {
-	putdcc $MSG
+	putdcc $IDX $MSG
 }
 source [eva:scriptdir]Eva.conf
 
