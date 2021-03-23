@@ -38,7 +38,7 @@ Cinquième étape, connectez vous en party-line avec votre eggdrop puis tapez le
 
 Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line ( .evadebug on ) pour voir les erreurs directement dans le fichier "/logs/Eva.debug".
 
-Mode super debug changer dans eva.conf "set eva(debug) 0" en mettant 1 a la place de 0
+Mode super debug changer dans eva.conf "set eva(sdebug) 0" en mettant 1 a la place de 0
 
 # 2. support
 Signalez tout bugs, toutes idées

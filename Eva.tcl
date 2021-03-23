@@ -51,7 +51,7 @@ proc eva:scriptdir { } {
 }
 proc eva:sent2socket { MSG } {
 	global eva
-	if { $eva(debug) } {
+	if { $eva(sdebug) } {
 		putlog "Sent: $MSG"
 	}
 	putdcc $eva(idx)  $MSG
@@ -298,9 +298,9 @@ proc eva:FCT:Remove_visuals { data } {
 ##############
 proc eva:config { } {
 	global eva
-	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(debug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(secuco)] || ![info exists eva(secutime)] || ![info exists eva(secuon)] || ![info exists eva(secuoff)] || ![info exists eva(secustop)] || ![info exists eva(numavert)] || ![info exists eva(numclone)] || ![info exists eva(rhost)] || ![info exists eva(rident)] || ![info exists eva(rreal)] || ![info exists eva(ruser)] || ![info exists eva(ravert)] || ![info exists eva(rclone)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
+	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(secuco)] || ![info exists eva(secutime)] || ![info exists eva(secuon)] || ![info exists eva(secuoff)] || ![info exists eva(secustop)] || ![info exists eva(numavert)] || ![info exists eva(numclone)] || ![info exists eva(rhost)] || ![info exists eva(rident)] || ![info exists eva(rreal)] || ![info exists eva(ruser)] || ![info exists eva(ravert)] || ![info exists eva(rclone)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
 		return ok
-	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(debug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(secuco) == "" || $eva(secutime) == "" || $eva(secuon) == "" || $eva(secuoff) == "" || $eva(secustop) == "" || $eva(numavert) == "" || $eva(numclone) == ""	 || $eva(ravert) == "" || $eva(rclone) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
+	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(secuco) == "" || $eva(secutime) == "" || $eva(secuon) == "" || $eva(secuoff) == "" || $eva(secustop) == "" || $eva(numavert) == "" || $eva(numclone) == ""	 || $eva(ravert) == "" || $eva(rclone) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
 		return ok
 	}
 }
@@ -1087,7 +1087,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists salle] } {
 					set del		[open "[eva:scriptdir]db/chan.db" w+];
-					foreach delchan $salle { puts $del "$delchan" }
+					foreach chandel $salle { puts $del "$chandel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/chan.db" w+];
@@ -1197,7 +1197,7 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARGLINE" 15 ]<c01> \[<c04> [eva:help:description:cleargline] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLEARKLINE" 15 ]<c01> \[<c04> [eva:help:description:clearkline] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLIENTLIST" 15 ]<c01> \[<c04> [eva:help:description:clientlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLOSE" 15 ]<c01> \[<c04> [eva:help:description:close] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "closeadd" 15 ]<c01> \[<c04> [eva:help:description:close] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLOSELIST" 15 ]<c01> \[<c04> [eva:help:description:closelist] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "HOSTLIST" 15 ]<c01> \[<c04> [eva:help:description:hostlist] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "IDENTLIST" 15 ]<c01> \[<c04> [eva:help:description:identlist] <c01>\]";
@@ -1214,37 +1214,37 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSNICK" 15 ]<c01> \[<c04> [eva:help:description:svsnick] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SVSPART" 15 ]<c01> \[<c04> [eva:help:description:svspart] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "TRUSTLIST" 15 ]<c01> \[<c04> [eva:help:description:trustlist] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "UNCLOSE" 15 ]<c01> \[<c04> [eva:help:description:unclose] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "closedel" 15 ]<c01> \[<c04> [eva:help:description:closedel] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c>"
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
 				eva:FCT:SENT:NOTICE $vuser "<c01>\[ Level Admin \]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDACCESS" 15 ]<c01> \[<c04> [eva:help:description:addaccess] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDCHAN" 15 ]<c01> \[<c04> [eva:help:description:addchan] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDCLIENT" 15 ]<c01> \[<c04> [eva:help:description:addclient] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDHOST" 15 ]<c01> \[<c04> [eva:help:description:addhost] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDIDENT" 15 ]<c01> \[<c04> [eva:help:description:addident] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDNICK" 15 ]<c01> \[<c04> [eva:help:description:addnick] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDREAL" 15 ]<c01> \[<c04> [eva:help:description:addreal] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDSECU" 15 ]<c01> \[<c04> [eva:help:description:addsecu] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "ADDTRUST" 15 ]<c01> \[<c04> [eva:help:description:addtrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "accessadd" 15 ]<c01> \[<c04> [eva:help:description:accessadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "chanadd" 15 ]<c01> \[<c04> [eva:help:description:chanadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "clientadd" 15 ]<c01> \[<c04> [eva:help:description:clientadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "hostadd" 15 ]<c01> \[<c04> [eva:help:description:hostadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "identadd" 15 ]<c01> \[<c04> [eva:help:description:identadd] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "nickadd" 15 ]<c01> \[<c04> [eva:help:description:nickadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "realadd" 15 ]<c01> \[<c04> [eva:help:description:realadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "secuadd" 15 ]<c01> \[<c04> [eva:help:description:secuadd] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "trustadd" 15 ]<c01> \[<c04> [eva:help:description:trustadd] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "BACKUP" 15 ]<c01> \[<c04> [eva:help:description:backup] <c01>\]"
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CHANLOG" 15 ]<c01> \[<c04> [eva:help:description:chanlog] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLIENT" 15 ]<c01> \[<c04> [eva:help:description:client] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CLONE" 15 ]<c01> \[<c04> [eva:help:description:clone] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "CONSOLE" 15 ]<c01> \[<c04> [eva:help:description:console] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELACCESS" 15 ]<c01> \[<c04> [eva:help:description:delaccess] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCHAN" 15 ]<c01> \[<c04> [eva:help:description:delchan] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELCLIENT" 15 ]<c01> \[<c04> [eva:help:description:delclient] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELHOST" 15 ]<c01> \[<c04> [eva:help:description:delhost] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELIDENT" 15 ]<c01> \[<c04> [eva:help:description:delident] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELNICK" 15 ]<c01> \[<c04> [eva:help:description:delnick] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELREAL" 15 ]<c01> \[<c04> [eva:help:description:delreal] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELSECU" 15 ]<c01> \[<c04> [eva:help:description:delsecu] <c01>\]";
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DELTRUST" 15 ]<c01> \[<c04> [eva:help:description:deltrust] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "accessdel" 15 ]<c01> \[<c04> [eva:help:description:accessdel] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "chandel" 15 ]<c01> \[<c04> [eva:help:description:chandel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "clientdel" 15 ]<c01> \[<c04> [eva:help:description:clientdel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "hostdel" 15 ]<c01> \[<c04> [eva:help:description:hostdel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "identdel" 15 ]<c01> \[<c04> [eva:help:description:identdel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "nickdel" 15 ]<c01> \[<c04> [eva:help:description:nickdel] <c01>\]"
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "realdel" 15 ]<c01> \[<c04> [eva:help:description:realdel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "secudel" 15 ]<c01> \[<c04> [eva:help:description:secudel] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "trustdel" 15 ]<c01> \[<c04> [eva:help:description:trustdel] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "DIE" 15 ]<c01> \[<c04> [eva:help:description:die] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MAXLOGIN" 15 ]<c01> \[<c04> [eva:help:description:maxlogin] <c01>\]"
-				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "MODACCESS" 15 ]<c01> \[<c04> [eva:help:description:modaccess] <c01>\]";
+				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "accessmod" 15 ]<c01> \[<c04> [eva:help:description:accessmod] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "PROTECTION" 15 ]<c01> \[<c04> [eva:help:description:protection] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "RESTART" 15 ]<c01> \[<c04> [eva:help:description:restart] <c01>\]";
 				eva:FCT:SENT:NOTICE $vuser "<c02>[eva:FCT:TXT:ESPACE:DISPLAY "SECU" 15 ]<c01> \[<c04> [eva:help:description:secu] <c01>\]"
@@ -2644,9 +2644,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Clientlist" "$user"
 			}
 		}
-		"addclient" {
+		"clientadd" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addclient :</b> /msg $eva(pseudo) addclient version";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande clientadd :</b> /msg $eva(pseudo) clientadd version";
 				return 0;
 			}
 
@@ -2666,12 +2666,12 @@ proc eva:cmds { arg } {
 			close $bclient
 			eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> a bien été ajouté à la liste des clients IRC interdits."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addclient" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "clientadd" "$user"
 			}
 		}
-		"delclient" {
+		"clientdel" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delclient :</b> /msg $eva(pseudo) delclient version";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande clientdel :</b> /msg $eva(pseudo) clientdel version";
 				return 0;
 			}
 
@@ -2688,7 +2688,7 @@ proc eva:cmds { arg } {
 			} else {
 				if [info exists vers] {
 					set del		[open "[eva:scriptdir]db/client.db" w+];
-					foreach delclient $vers { puts $del "$delclient" }
+					foreach clientdel $vers { puts $del "$clientdel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/client.db" w+];
@@ -2696,13 +2696,13 @@ proc eva:cmds { arg } {
 				}
 				eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> a bien été supprimé de la liste des clients IRC interdits."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delclient" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "clientdel" "$user"
 				}
 			}
 		}
-		"addsecu" {
+		"secuadd" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addsecu :</b> /msg $eva(pseudo) addsecu #salon";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande secuadd :</b> /msg $eva(pseudo) secuadd #salon";
 				return 0;
 			}
 
@@ -2752,12 +2752,12 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:MODE $value1 "+smi"
 			}
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addsecu" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "secuadd" "$user"
 			}
 		}
-		"delsecu" {
+		"secudel" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delsecu :</b> /msg $eva(pseudo) delsecu #salon";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande secudel :</b> /msg $eva(pseudo) secudel #salon";
 				return 0;
 			}
 
@@ -2779,7 +2779,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists salle] } {
 					set del		[open "[eva:scriptdir]db/secu.db" w+];
-					foreach delchan $salle { puts $del "$delchan" }
+					foreach chandel $salle { puts $del "$chandel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/secu.db" w+];
@@ -2790,7 +2790,7 @@ proc eva:cmds { arg } {
 					eva:FCT:SENT:MODE $value1 "-smi"
 				}
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delsecu" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "secudel" "$user"
 				}
 			}
 		}
@@ -2897,8 +2897,8 @@ proc eva:cmds { arg } {
 				}
 			}
 		}
-		"close" {
-			set eva(cmd)		"close";
+		"closeadd" {
+			set eva(cmd)		"closeadd";
 			set eva(rep)		$user
 			if { [string index $value1 0] != "#" } {
 				eva:FCT:SENT:NOTICE $vuser "<b>Commande Close :</b> /msg $eva(pseudo) close #salon";
@@ -2963,12 +2963,12 @@ proc eva:cmds { arg } {
 			eva:FCT:SET:TOPIC $value1 "<c1>Salon Fermé le [eva:duree [unixtime]]"
 			eva:sent2socket ":$eva(link) NAMES $value1"
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Close" "$value1 par $user"
+				eva:SHOW:INFO:TO:CHANLOG "closeadd" "$value1 par $user"
 			}
 		}
-		"unclose" {
+		"closedel" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Unclose :</b> /msg $eva(pseudo) unclose #salon";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande closedel :</b> /msg $eva(pseudo) closedel #salon";
 				return 0;
 			}
 
@@ -2985,7 +2985,7 @@ proc eva:cmds { arg } {
 			} else {
 				if [info exists salon] {
 					set del		[open "[eva:scriptdir]db/close.db" w+];
-					foreach delchan $salon { puts $del "$delchan" }
+					foreach chandel $salon { puts $del "$chandel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/close.db" w+];
@@ -2996,7 +2996,7 @@ proc eva:cmds { arg } {
 				eva:FCT:SET:TOPIC $value1 "Bienvenue sur $value1"
 				eva:sent2socket ":$eva(server_id) PART $value1"
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Unclose" "$value1 par $user"
+					eva:SHOW:INFO:TO:CHANLOG "closedel" "$value1 par $user"
 				}
 			}
 		}
@@ -3037,9 +3037,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Clearclose" "$user"
 			}
 		}
-		"addnick" {
+		"nickadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addnick :</b> /msg $eva(pseudo) addnick pseudo";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande nickadd :</b> /msg $eva(pseudo) nickadd pseudo";
 				return 0;
 			}
 
@@ -3078,12 +3078,12 @@ proc eva:cmds { arg } {
 			close $nick
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des pseudos interdits."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addnick" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "nickadd" "$user"
 			}
 		}
-		"delnick" {
+		"nickdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delnick :</b> /msg $eva(pseudo) delnick pseudo";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande nickdel :</b> /msg $eva(pseudo) nickdel pseudo";
 				return 0;
 			}
 
@@ -3100,7 +3100,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists pseudo] } {
 					set del		[open "[eva:scriptdir]db/nick.db" w+];
-					foreach delnick $pseudo { puts $del "$delnick" }
+					foreach nickdel $pseudo { puts $del "$nickdel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/nick.db" w+];
@@ -3108,7 +3108,7 @@ proc eva:cmds { arg } {
 				}
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des pseudos interdits."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delnick" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "nickdel" "$user"
 				}
 			}
 		}
@@ -3131,9 +3131,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Nicklist" "$user"
 			}
 		}
-		"addident" {
+		"identadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addident :</b> /msg $eva(pseudo) addident ident";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande identadd :</b> /msg $eva(pseudo) identadd ident";
 				return 0;
 			}
 
@@ -3158,12 +3158,12 @@ proc eva:cmds { arg } {
 			close $ident
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des idents interdits."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addident" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "identadd" "$user"
 			}
 		}
-		"delident" {
+		"identdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delident :</b> /msg $eva(pseudo) delident ident";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande identdel :</b> /msg $eva(pseudo) identdel ident";
 				return 0;
 			}
 
@@ -3180,7 +3180,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists ident] } {
 					set del		[open "[eva:scriptdir]db/ident.db" w+];
-					foreach delident $ident { puts $del "$delident" }
+					foreach identdel $ident { puts $del "$identdel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/ident.db" w+];
@@ -3188,7 +3188,7 @@ proc eva:cmds { arg } {
 				}
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des idents interdits."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delident" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "identdel" "$user"
 				}
 			}
 		}
@@ -3211,9 +3211,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Identlist" "$user"
 			}
 		}
-		"addreal" {
+		"realadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addreal :</b> /msg $eva(pseudo) addreal realname";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande realadd :</b> /msg $eva(pseudo) realadd realname";
 				return 0;
 			}
 
@@ -3238,12 +3238,12 @@ proc eva:cmds { arg } {
 			close $real
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des realnames interdits."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addreal" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "realadd" "$user"
 			}
 		}
-		"delreal" {
+		"realdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delreal :</b> /msg $eva(pseudo) delreal realname";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande realdel :</b> /msg $eva(pseudo) realdel realname";
 				return 0;
 			}
 
@@ -3260,7 +3260,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists real] } {
 					set del		[open "[eva:scriptdir]db/real.db" w+];
-					foreach delreal $real { puts $del "$delreal" }
+					foreach realdel $real { puts $del "$realdel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/real.db" w+];
@@ -3268,7 +3268,7 @@ proc eva:cmds { arg } {
 				}
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des realnames interdits."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delreal" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "realdel" "$user"
 				}
 			}
 		}
@@ -3291,9 +3291,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Reallist" "$user"
 			}
 		}
-		"addhost" {
+		"hostadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addhost :</b> /msg $eva(pseudo) addhost hostname";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande hostadd :</b> /msg $eva(pseudo) hostadd hostname";
 				return 0;
 			}
 
@@ -3325,12 +3325,12 @@ proc eva:cmds { arg } {
 			close $host
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des hostnames interdites."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addhost" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "hostadd" "$user"
 			}
 		}
-		"delhost" {
+		"hostdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delhost :</b> /msg $eva(pseudo) delhost hostname";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande hostdel :</b> /msg $eva(pseudo) hostdel hostname";
 				return 0;
 			}
 
@@ -3347,7 +3347,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists host] } {
 					set del		[open "[eva:scriptdir]db/host.db" w+];
-					foreach delhost $host { puts $del "$delhost" }
+					foreach hostdel $host { puts $del "$hostdel" }
 					close $del
 				} else {
 					set del		[open "[eva:scriptdir]db/host.db" w+];
@@ -3355,7 +3355,7 @@ proc eva:cmds { arg } {
 				}
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des hostnames interdites."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delhost" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "hostdel" "$user"
 				}
 			}
 		}
@@ -3378,9 +3378,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Hostlist" "$user"
 			}
 		}
-		"addchan" {
+		"chanadd" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addchan :</b> /msg $eva(pseudo) addchan #salon";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande chanadd :</b> /msg $eva(pseudo) chanadd #salon";
 				return 0;
 			}
 
@@ -3438,12 +3438,12 @@ proc eva:cmds { arg } {
 			close $chan
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des salons interdits."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addchan" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "chanadd" "$user"
 			}
 		}
-		"delchan" {
+		"chandel" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delchan :</b> /msg $eva(pseudo) delchan #salon";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande chandel :</b> /msg $eva(pseudo) chandel #salon";
 				return 0;
 			}
 
@@ -3460,7 +3460,7 @@ proc eva:cmds { arg } {
 			} else {
 				if { [info exists chan] } {
 					set FILE_PIPE		[open "[eva:scriptdir]db/salon.db" w+];
-					foreach delchan $chan { puts $FILE_PIPE "$delchan" }
+					foreach chandel $chan { puts $FILE_PIPE "$chandel" }
 					close $FILE_PIPE
 				} else {
 					set FILE_PIPE		[open "[eva:scriptdir]db/salon.db" w+];
@@ -3469,7 +3469,7 @@ proc eva:cmds { arg } {
 				eva:sent2socket ":$eva(server_id) PART $value1"
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des salons interdits."
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Delchan" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "chandel" "$user"
 				}
 			}
 		}
@@ -3492,9 +3492,9 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Chanlist" "$user"
 			}
 		}
-		"addtrust" {
+		"trustadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addtrust :</b> /msg $eva(pseudo) addtrust mask";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande trustadd :</b> /msg $eva(pseudo) trustadd mask";
 				return 0;
 			}
 
@@ -3526,12 +3526,12 @@ proc eva:cmds { arg } {
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajoutée dans la trustlist."
 			if { ![info exists trust($value2)] } { set trust($value2)		1 }
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addtrust" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "trustadd" "$user"
 			}
 		}
-		"deltrust" {
+		"trustdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deltrust :</b> /msg $eva(pseudo) deltrust mask";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande trustdel :</b> /msg $eva(pseudo) trustdel mask";
 				return 0;
 			}
 
@@ -3557,7 +3557,7 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimée de la trustlist."
 				if { [info exists trust($value2)] } { unset trust($value2)		}
 				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Deltrust" "$user"
+					eva:SHOW:INFO:TO:CHANLOG "trustdel" "$user"
 				}
 			}
 		}
@@ -3580,14 +3580,14 @@ proc eva:cmds { arg } {
 				eva:SHOW:INFO:TO:CHANLOG "Trustlist" "$user"
 			}
 		}
-		"addaccess" {
+		"accessadd" {
 			if {
 				$value2 == "" || \
 					$value4 == "" || \
 					$value8 == "" || \
 					[regexp \[^1-4\] $value8]
 			} {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Addaccess :</b> /msg $eva(pseudo) addaccess pseudo password level"
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessadd :</b> /msg $eva(pseudo) accessadd pseudo password level"
 				eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
 				eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Géofront"
 				eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> IRCop"
@@ -3635,12 +3635,12 @@ proc eva:cmds { arg } {
 			}
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des $lvl."
 			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Addaccess" "$user"
+				eva:SHOW:INFO:TO:CHANLOG "accessadd" "$user"
 			}
 		}
-		"delaccess" {
+		"accessdel" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Delaccess :</b> /msg $eva(pseudo) delaccess pseudo";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessdel :</b> /msg $eva(pseudo) accessdel pseudo";
 				return 0;
 			}
 
@@ -3657,17 +3657,17 @@ proc eva:cmds { arg } {
 					deluser $value2
 					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des accès."
 					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Delaccess" "$user"
+						eva:SHOW:INFO:TO:CHANLOG "accessdel" "$user"
 					}
 					return 0
 				}
 			}
 			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des accès."
 		}
-		"modaccess" {
+		"accessmod" {
 			if { $value2 != "level" && $value2 != "pass" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Modaccess Pass :</b> /msg $eva(pseudo) modaccess pass pseudo mot-de-passe"
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Modaccess Level :</b> /msg $eva(pseudo) modaccess level pseudo level"
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Pass :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe"
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Level :</b> /msg $eva(pseudo) accessmod level pseudo level"
 				return 0
 			}
 			switch -exact $value2 {
@@ -3677,7 +3677,7 @@ proc eva:cmds { arg } {
 							$value8 == "" || \
 							[regexp \[^1-4\] $value8]
 					} {
-						eva:FCT:SENT:NOTICE $vuser "<b>Commande Modaccess Level :</b> /msg $eva(pseudo) modaccess level pseudo level"
+						eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Level :</b> /msg $eva(pseudo) accessmod level pseudo level"
 						eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
 						eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Géofront"
 						eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> IRCop"
@@ -3711,7 +3711,7 @@ proc eva:cmds { arg } {
 							}
 							eva:FCT:SENT:NOTICE $vuser "Changement du level de <b>$value4</b> reussi."
 							if { [eva:console 1] == "ok" } {
-								eva:SHOW:INFO:TO:CHANLOG "Modaccess" "$user"
+								eva:SHOW:INFO:TO:CHANLOG "accessmod" "$user"
 							}
 							return 0
 						}
@@ -3721,7 +3721,7 @@ proc eva:cmds { arg } {
 				}
 				"pass" {
 					if { $value4 == "" || $value8 == "" } {
-						eva:FCT:SENT:NOTICE $vuser "<b>Commande Modaccess Pass :</b> /msg $eva(pseudo) modaccess pass pseudo mot-de-passe";
+						eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Pass :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe";
 						return 0;
 					}
 
@@ -3739,7 +3739,7 @@ proc eva:cmds { arg } {
 							setuser $value3 PASS $value8
 							eva:FCT:SENT:NOTICE $vuser "Changement du mot de passe de <b>$value4</b> reussi."
 							if { [eva:console 1] == "ok" } {
-								eva:SHOW:INFO:TO:CHANLOG "Modaccess" "$user"
+								eva:SHOW:INFO:TO:CHANLOG "accessmod" "$user"
 							}
 							return 0
 						}
@@ -3850,16 +3850,16 @@ proc eva:help:description:svsjoin {}		{ return "Permet de forcer un utilisateur 
 proc eva:help:description:svsnick {}		{ return "Permet de changer le pseudo d'un utilisateur."}
 proc eva:help:description:svspart {}		{ return "Permet de forcer un utilisateur à partir d'un salon." }
 proc eva:help:description:trustlist {}		{ return "Permet de voir la liste des trusts." }
-proc eva:help:description:unclose {}		{ return "Permet d'ouvrir un salon fermé." }
-proc eva:help:description:addaccess {}		{ return "Permet d'ajouter un accès sur Eva Service." }
-proc eva:help:description:addchan {}		{ return "Permet d'ajouter un salon interdit." }
-proc eva:help:description:addclient {}		{ return "Permet d'ajouter un client IRC interdit." }
-proc eva:help:description:addhost {}		{ return "Permet d'ajouter une hostname interdite." }
-proc eva:help:description:addident {}		{ return "Permet d'ajouter un ident interdit." }
-proc eva:help:description:addnick {}		{ return "Permet d'ajouter un pseudo interdit." }
-proc eva:help:description:addreal {}		{ return "Permet d'ajouter un realname interdit." }
-proc eva:help:description:addsecu {}		{ return "Permet d'ajouter un salon sécurisé." }
-proc eva:help:description:addtrust {}		{ return "Permet d'ajouter un trust sur un mask." }
+proc eva:help:description:closedel {}		{ return "Permet d'ouvrir un salon fermé." }
+proc eva:help:description:accessadd {}		{ return "Permet d'ajouter un accès sur Eva Service." }
+proc eva:help:description:chanadd {}		{ return "Permet d'ajouter un salon interdit." }
+proc eva:help:description:clientadd {}		{ return "Permet d'ajouter un client IRC interdit." }
+proc eva:help:description:hostadd {}		{ return "Permet d'ajouter une hostname interdite." }
+proc eva:help:description:identadd {}		{ return "Permet d'ajouter un ident interdit." }
+proc eva:help:description:nickadd {}		{ return "Permet d'ajouter un pseudo interdit." }
+proc eva:help:description:realadd {}		{ return "Permet d'ajouter un realname interdit." }
+proc eva:help:description:secuadd {}		{ return "Permet d'ajouter un salon sécurisé." }
+proc eva:help:description:trustadd {}		{ return "Permet d'ajouter un trust sur un mask." }
 proc eva:help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
 proc eva:help:description:chanlog {}		{
 	global eva
@@ -3868,18 +3868,18 @@ proc eva:help:description:chanlog {}		{
 proc eva:help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
 proc eva:help:description:clone {}			{ return "Permet d'activer ou désactiver la protection clone." }
 proc eva:help:description:console {}		{ return "Permet d'activer la console des logs en fonction du level." }
-proc eva:help:description:delaccess {}		{ return "Permet de supprimer un accès de Eva Service." }
-proc eva:help:description:delchan {}		{ return "Permet de supprimer un salon interdit." }
-proc eva:help:description:delclient {}		{ return "Permet de supprimer un client IRC interdit." }
-proc eva:help:description:delhost {}		{ return "Permet de supprimer une hostname interdite." }
-proc eva:help:description:delident {}		{ return "Permet de supprimer un ident interdit." }
-proc eva:help:description:delnick {}		{ return "Permet de supprimer un pseudo interdit." }
-proc eva:help:description:delreal {}		{ return "Permet de supprimer un realname interdit." }
-proc eva:help:description:delsecu {}		{ return "Permet de supprimer un salon sécurisé." }
-proc eva:help:description:deltrust {}		{ return "Permet de supprimer le trust d'un mask." }
+proc eva:help:description:accessdel {}		{ return "Permet de supprimer un accès de Eva Service." }
+proc eva:help:description:chandel {}		{ return "Permet de supprimer un salon interdit." }
+proc eva:help:description:clientdel {}		{ return "Permet de supprimer un client IRC interdit." }
+proc eva:help:description:hostdel {}		{ return "Permet de supprimer une hostname interdite." }
+proc eva:help:description:identdel {}		{ return "Permet de supprimer un ident interdit." }
+proc eva:help:description:nickdel {}		{ return "Permet de supprimer un pseudo interdit." }
+proc eva:help:description:realdel {}		{ return "Permet de supprimer un realname interdit." }
+proc eva:help:description:secudel {}		{ return "Permet de supprimer un salon sécurisé." }
+proc eva:help:description:trustdel {}		{ return "Permet de supprimer le trust d'un mask." }
 proc eva:help:description:die {}			{ return "Permet d'arrêter Eva Service." }
 proc eva:help:description:maxlogin {}		{ return "Permet d'activer où désactiver la protection max login." }
-proc eva:help:description:modaccess {}		{ return "Permet de modifier un accès de Eva Service." }
+proc eva:help:description:accessmod {}		{ return "Permet de modifier un accès de Eva Service." }
 proc eva:help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
 proc eva:help:description:restart {}		{ return "Permet de redémarrer Eva Service." }
 proc eva:help:description:secu {}			{ return "Permet d'activer ou désactiver le système de sécurité des salons." }
@@ -4146,7 +4146,7 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientlist"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientlist]
 		}
-		"close" {
+		"closeadd" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) close #salon"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:close]
 		}
@@ -4214,45 +4214,45 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustlist"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustlist]
 		}
-		"unclose" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unclose #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unclose]
+		"closedel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closedel #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closedel]
 		}
-		"addaccess" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addaccess pseudo password level"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addaccess]
+		"accessadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessadd pseudo password level"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessadd]
 		}
-		"addchan" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addchan #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addchan]
+		"chanadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanadd #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanadd]
 		}
-		"addclient" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addclient version"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addclient]
+		"clientadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientadd version"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientadd]
 		}
-		"addhost" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addhost hostname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addhost]
+		"hostadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostadd hostname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostadd]
 		}
-		"addident" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addident ident"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addident]
+		"identadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identadd ident"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identadd]
 		}
-		"addnick" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addnick pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addnick]
+		"nickadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickadd pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickadd]
 		}
-		"addreal" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addreal realname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addreal]
+		"realadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realadd realname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realadd]
 		}
-		"addsecu" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addsecu #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addsecu]
+		"secuadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secuadd #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secuadd]
 		}
-		"addtrust" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) addtrust mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:addtrust]
+		"trustadd" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustadd mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustadd]
 		}
 		"backup" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) backup"
@@ -4278,41 +4278,41 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 3 <c04>:<c01> Toutes les consoles"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:console]
 		}
-		"delaccess" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delaccess pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delaccess]
+		"accessdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessdel pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessdel]
 		}
-		"delchan" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delchan #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delchan]
+		"chandel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chandel #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chandel]
 		}
-		"delclient" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delclient version"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delclient]
+		"clientdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientdel version"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientdel]
 		}
-		"delhost" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delhost hostname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delhost]
+		"hostdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostdel hostname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostdel]
 		}
-		"delident" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delident ident"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delident]
+		"identdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identdel ident"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identdel]
 		}
-		"delnick" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delnick pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delnick]
+		"nickdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickdel pseudo"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickdel]
 		}
-		"delreal" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delreal realname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delreal]
+		"realdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realdel realname"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realdel]
 		}
-		"delsecu" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) delsecu #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:delsecu]
+		"secudel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) secudel #salon"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:secudel]
 		}
-		"deltrust" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deltrust mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deltrust]
+		"trustdel" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustdel mask"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustdel]
 		}
 		"die" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) die"
@@ -4322,10 +4322,10 @@ proc eva:hcmds { arg } {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) maxlogin on/off"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:maxlogin]
 		}
-		"modaccess" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) modaccess pass pseudo mot-de-passe"
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) modaccess level pseudo level"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:modaccess]
+		"accessmod" {
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe"
+			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessmod level pseudo level"
+			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessmod]
 		}
 		"protection" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protection 0/1/2/3/4"
@@ -4392,13 +4392,13 @@ proc eva:connexion:server { } {
 proc eva:connexion { } {
 	global eva vhost protect ueva netadmin UID_DB
 	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
-		if { $eva(debug) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
+		if { $eva(sdebug) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
 		control $eva(idx) eva:link
 		if { [info exists vhost] }		{ unset vhost		}
 		if { [info exists ueva] }		{ unset ueva		}
 		if { [info exists netadmin] }	{ unset netadmin	}
 		set eva(init)			1;
-		set eva(cmd)			"close";
+		set eva(cmd)			"closeadd";
 		utimer $eva(timerinit) [list set eva(init)		0]
 		utimer $eva(timerinit) [list unset eva(cmd)];
 		eva:chargement;
@@ -4462,7 +4462,7 @@ proc remove_modenicklist { data } {
 
 proc eva:link { idx arg } {
 	global eva ceva admins netadmin vhost protect ueva trust UID_DB scoredb DBU_INFO
-	if { $eva(debug) } { putlog "Received: $arg" }
+	if { $eva(sdebug) } { putlog "Received: $arg" }
 	set arg	[split $arg]
 	if { $eva(debug) == 1 } {
 		eva:putdebug "[join [lrange $arg 0 end]]"
@@ -4673,7 +4673,7 @@ proc eva:link { idx arg } {
 					![info exists ueva($nickname)] && \
 					![info exists protect($hostname)]
 			} {
-				eva:FCT:SENT:PRIVMSG $nickname "VERSION"
+				eva:FCT:SENT:PRIVMSG $nickname "\001VERSION\001"
 			}
 			if {
 				$eva(aclone) == 1 && \
@@ -4918,7 +4918,7 @@ proc eva:link { idx arg } {
 			} {
 				eva:sent2socket ":$eva(server_id) KICK $chan $n Salon Interdit"
 			} elseif {
-				$eva(cmd) == "close" && \
+				$eva(cmd) == "closeadd" && \
 					![info exists ueva($n)] && \
 					$n!=[string tolower $eva(pseudo)] && \
 					![info exists admins($n)] && \
