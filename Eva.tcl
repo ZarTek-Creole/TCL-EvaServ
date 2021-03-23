@@ -4442,16 +4442,16 @@ proc eva:link { idx arg } {
 			if { [eva:console 2] == "ok" && $eva(init) == 0 } {
 				set MSG_CONNECT		"[eva:DBU:GET $uid NICK]"
 				append MSG_CONNECT	" ([eva:DBU:GET $uid IDENT]@[eva:DBU:GET $uid VHOST]) "
-				append MSG_CONNECT	"- (Serveur : $eva(ircdservname)) "
+				append MSG_CONNECT	"- Serveur : $eva(ircdservname) "
 				if { $scoredb(last) != "" } {
 					if { ![info exists DBU_INFO($uid,REPUTATION)] } {
 						set TMP	[split $scoredb(last) "|"]
 						set DBU_INFO($uid,IP)			[lindex $TMP 0]
 						set DBU_INFO($uid,REPUTATION)	[lindex $TMP 1]
 					}
-					append MSG_CONNECT	" - (Score: [eva:DBU:GET $uid REPUTATION]) "
+					append MSG_CONNECT	"- Score: [eva:DBU:GET $uid REPUTATION] "
 				}
-				append MSG_CONNECT	"- (realname: [eva:DBU:GET $uid REALNAME]) "
+				append MSG_CONNECT	"- realname: [eva:DBU:GET $uid REALNAME] "
 				eva:SHOW:INFO:TO:CHANLOG $stype $MSG_CONNECT
 			}
 			foreach { mask num } [array get trust] {
@@ -4854,11 +4854,12 @@ proc eva:link { idx arg } {
 		set vdata		[string trim [join [lrange $arg 4 end]] \001]
 		if { [eva:flood $vuser] != "ok" } { return 0 }
 		if { $eva(aclient) == 1 && $version == "\001VERSION" } {
-			eva:SHOW:INFO:TO:CHANLOG "Client Version" "$vuser ($vdata)"
+			eva:SHOW:INFO:TO:CHANLOG "Client Version" "$vuser : $vdata"
 			catch { open [eva:scriptdir]db/client.db r } vcli
 			while { ![eof $vcli] } {
 				gets $vcli verscli
-				if { [string match *$verscli* $vdata] && $verscli != "" } {
+				if {$verscli != "" } { continue }
+				if { [string match *$verscli* $vdata] } {
 					if { [eva:console 3] == "ok" && $eva(init) == 0 } {
 						eva:SHOW:INFO:TO:CHANLOG "Kill" "$user a été killé : $eva(rclient)"
 					}
