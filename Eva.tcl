@@ -121,7 +121,6 @@ set eva(console)		1
 set eva(login)			1
 set eva(protection)		1
 set eva(debug)			0
-set eva(aclone)			0
 set eva(aclient)		0
 
 ####################
@@ -293,9 +292,9 @@ proc eva:FCT:Remove_visuals { data } {
 ##############
 proc eva:config { } {
 	global eva
-	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(numavert)] || ![info exists eva(numclone)] || ![info exists eva(rhost)] || ![info exists eva(rident)] || ![info exists eva(rreal)] || ![info exists eva(ruser)] || ![info exists eva(ravert)] || ![info exists eva(rclone)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
+	if { ![info exists eva(link)] || ![info exists eva(ip)] || ![info exists eva(port)] || ![info exists eva(pass)] || ![info exists eva(info)] || ![info exists eva(SID)] || ![info exists eva(pseudo)] || ![info exists eva(sdebug)] || ![info exists eva(ident)] || ![info exists eva(host)] || ![info exists eva(real)] || ![info exists eva(salon)] || ![info exists eva(smode)] || ![info exists eva(cmode)] || ![info exists eva(prefix)] || ![info exists eva(rnick)] || ![info exists eva(fraz)] || ![info exists eva(duree)] || ![info exists eva(ignore)] || ![info exists eva(rclient)] || ![info exists eva(raison)] || ![info exists eva(console_com)] || ![info exists eva(console_deco)] || ![info exists eva(console_txt)] } {
 		return ok
-	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(numavert) == "" || $eva(numclone) == ""	 || $eva(ravert) == "" || $eva(rclone) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
+	} elseif { $eva(link) == "" || $eva(ip) == "" || $eva(port) == "" || $eva(pass) == "" || $eva(info) == "" || $eva(SID) == "" || $eva(pseudo) == "" || $eva(sdebug) == "" || $eva(ident) == "" || $eva(host) == "" || $eva(real) == "" || $eva(salon) == "" || $eva(smode) == "" || $eva(cmode) == "" || $eva(numavert) == "" || $eva(prefix) == "" || $eva(rnick) == "" || $eva(fraz) == "" || $eva(duree) == "" || $eva(ignore) == "" || $eva(rclient) == "" || $eva(raison) == "" || $eva(rhost) == "" || $eva(rident) == "" || $eva(rreal) == "" || $eva(ruser) == "" || $eva(console_com) == "" || $eva(console_deco) == "" || $eva(console_txt) == "" } {
 		return ok
 	}
 }
@@ -341,7 +340,6 @@ proc eva:gestion { } {
 	puts $sv "eva(console) $eva(console)"
 	puts $sv "eva(protection) $eva(protection)"
 	puts $sv "eva(login) $eva(login)"
-	puts $sv "eva(aclone) $eva(aclone)"
 	puts $sv "eva(aclient) $eva(aclient)"
 	close $sv
 }
@@ -471,12 +469,6 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 	} else {
 		lappend MSG_security_check "Client version: Off";
 	}
-	# verif clone? (session)
-	if { $eva(aclone) == 1 } {
-		lappend MSG_security_check "Clone: On";
-	} else {
-		lappend MSG_security_check "Clone: Off";
-	}
 	# verif host?
 	if { $eva(ahost) == 1 } {
 		lappend MSG_security_check "Host: On";
@@ -509,21 +501,6 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		eva:FCT:SENT:PRIVMSG $nickname "\001VERSION\001"
 	}
 
-	# verif clone? (session)
-	if { $eva(aclone) == 1 	} {
-		set clone		0
-		foreach { u h } [array get vhost] {
-			if { $h==$hostname } { incr clone 1 }
-		}
-		if { $clone==$eva(numavert) } {
-			eva:FCT:SENT:NOTICE "$nickname" "$eva(ravert)"
-		}
-		if { $clone==$eva(numclone) } {
-			eva:sent2socket ":$eva(link) TKL + G * $hostname $eva(pseudo) [exp[unixtime] + $eva(duree)] [unixtime] :$eva(rclone) (Expire l[eva:duree [expr [unixtime] + $eva(duree)]])";
-			return 0;
-
-		}
-	}
 	if { $eva(ahost) == 1 	} {
 		catch { open [eva:scriptdir]db/host.db r } liste2
 		while { ![eof $liste2] } {
@@ -1450,11 +1427,6 @@ proc eva:cmds { arg } {
 				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Maxlogin : <c03>On"
 			} else {
 				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Maxlogin : <c04>Off"
-			}
-			if { $eva(aclone) == 1 } {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clones : <c03>On"
-			} else {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clones : <c04>Off"
 			}
 			if { $eva(aclient) == 1 } {
 				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clients IRC : <c03>On"
@@ -2714,34 +2686,6 @@ proc eva:cmds { arg } {
 				}
 			}
 		}
-		"clone" {
-			if { $value2 != "on" && $value2 != "off" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Clone :</b> /msg $eva(pseudo) clone on/off";
-				return 0;
-			}
-
-			if { $value2 == "on" } {
-				if { $eva(aclone) == 0 } {
-					set eva(aclone)		1;
-					eva:FCT:SENT:NOTICE $vuser "Protection clone activée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Clone" "$user"
-					}
-				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection clone est déjà activée."
-				}
-			} elseif { $value2 == "off" } {
-				if { $eva(aclone) == 1 } {
-					set eva(aclone)		0;
-					eva:FCT:SENT:NOTICE $vuser "Protection clone désactivée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Clone" "$user"
-					}
-				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection clone est déjà désactivée."
-				}
-			}
-		}
 		"closeadd" {
 			set eva(cmd)		"closeadd";
 			set eva(rep)		$user
@@ -3687,7 +3631,6 @@ proc eva:help:description:chanlog {}		{
 	return "Permet de changer le salon de log de $eva(pseudo)."
 }
 proc eva:help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
-proc eva:help:description:clone {}			{ return "Permet d'activer ou désactiver la protection clone." }
 proc eva:help:description:console {}		{ return "Permet d'activer la console des logs en fonction du level." }
 proc eva:help:description:accessdel {}		{ return "Permet de supprimer un accès de Eva Service." }
 proc eva:help:description:chandel {}		{ return "Permet de supprimer un salon interdit." }
@@ -4076,10 +4019,6 @@ proc eva:hcmds { arg } {
 		"client" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) client on/off"
 			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:client]
-		}
-		"clone" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clone on/off"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clone]
 		}
 		"console" {
 			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) console 0/1/2/3"
