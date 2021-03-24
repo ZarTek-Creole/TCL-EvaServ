@@ -4272,6 +4272,8 @@ proc eva:link { idx arg } {
 
 			if { ![info exists ueva($nickname)] && [string match *+*S* $umodes] } {
 				set ueva($nickname)		on
+			}
+			if { ![info exists ueva($nickname)] } { 
 				eva:connexion:user:security:check $nickname $hostname $username $gecos
 			}
 			if { [string match *+*z* $umodes] } {
