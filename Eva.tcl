@@ -2425,7 +2425,7 @@ proc eva:cmds { arg } {
 		}
 		"gline" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Gline :</b> /msg $eva(pseudo) <gline ou ip> pseudo raison";
+				eva:FCT:SENT:NOTICE $vuser "<b>Commande Gline :</b> /msg $eva(pseudo) gline <pseudo ou ip> raison";
 				return 0;
 			}
 
