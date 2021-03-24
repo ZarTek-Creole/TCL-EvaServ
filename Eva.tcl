@@ -249,7 +249,7 @@ eva:FCT:DB:INIT [list \
 # Eva Variables #
 #################
 
-set eva(version)		"1.4"
+set eva(version)		"1.5RC"
 set eva(timerco)		30
 set eva(timerdem)		5
 set eva(timerinit)		10
