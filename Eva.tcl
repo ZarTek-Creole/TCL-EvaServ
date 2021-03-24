@@ -451,13 +451,13 @@ proc eva:console { level } {
 # Eva Verification de securité utilisateur a la connexion #
 ###########################################################
 proc eva:connexion:user:security:check { nickname hostname username gecos } {
-	global eva ueva
+	global eva 
 	# default
 	set eva(ahost)			1
 	set eva(aident)			1
 	set eva(areal)			1
 	set eva(anick)			1
-	set MSG_security_check	""
+	
 	# Lors de l'init (connexion au irc du service) on verifie rien
 	if { $eva(init) == 1 } { return 0 }
 
@@ -466,40 +466,23 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		eva:SHOW:INFO:TO:CHANLOG "Security Check" "Aucune verification de sécurité sur $hostname, le hostname protegé"
 		return 0
 	}
-	# ueva ??
-	if { [info exists ueva($nickname)] } { return 0 }
+	
+	set MSG_security_check	""
 	# Version client ?
-	if { $eva(aclient) == 1 } {
-		lappend MSG_security_check "Client version: On";
-	} else {
-		lappend MSG_security_check "Client version: Off";
-	}
+	if { $eva(aclient) == 1 } { lappend MSG_security_check "Client version: On"; } else { lappend MSG_security_check "Client version: Off"; }
 	# verif host?
-	if { $eva(ahost) == 1 } {
-		lappend MSG_security_check "Host: On";
-	} else {
-		lappend MSG_security_check "Host: Off";
-	}
+	if { $eva(ahost) == 1 } { lappend MSG_security_check "Host: On"; } else { lappend MSG_security_check "Host: Off"; }
 	# verif ident?
-	if { $eva(aident) == 1 } {
-		lappend MSG_security_check "Ident: On";
-	} else {
-		lappend MSG_security_check "Ident: Off";
-	}
+	if { $eva(aident) == 1 } { lappend MSG_security_check "Ident: On"; } else { lappend MSG_security_check "Ident: Off"; }
 	# verif areal?
-	if { $eva(areal) == 1 } {
-		lappend MSG_security_check "Realname: On";
-	} else {
-		lappend MSG_security_check "Realname: Off";
-	}
+	if { $eva(areal) == 1 } { lappend MSG_security_check "Realname: On"; } else { lappend MSG_security_check "Realname: Off"; }
 	# verif nick?
-	if { $eva(anick) == 1 } {
-		lappend MSG_security_check "Nick: On";
-	} else {
-		lappend MSG_security_check "Nick: Off";
-	}
+	if { $eva(anick) == 1 } { lappend MSG_security_check "Nick: On"; } else { lappend MSG_security_check "Nick: Off"; }
 
-	eva:SHOW:INFO:TO:CHANLOG "Security Check" [join $MSG_security_check " | "]
+	if { [eva:console 2] == "ok" } {
+		eva:SHOW:INFO:TO:CHANLOG "Security Check" [join $MSG_security_check " | "]
+	}
+	
 
 	# Version client
 	if { $eva(aclient) == 1	} {
@@ -4289,9 +4272,8 @@ proc eva:link { idx arg } {
 
 			if { ![info exists ueva($nickname)] && [string match *+*S* $umodes] } {
 				set ueva($nickname)		on
+				eva:connexion:user:security:check $nickname $hostname $username $gecos
 			}
-			eva:connexion:user:security:check $nickname $hostname $username $gecos
-
 			if { [string match *+*z* $umodes] } {
 				set stype		"Connexion SSL"
 			} else {
