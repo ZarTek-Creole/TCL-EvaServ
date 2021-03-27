@@ -4710,6 +4710,15 @@ proc eva:link { idx arg } {
 	"NICK" {
 		set new			[lindex $arg 2]
 		set vnew		[string tolower [lindex $arg 2]]
+		
+		set NICK_NEW	[lindex $arg 2]
+		set NICK_OLD	[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
+		set UID			[eva:UID:CONVERT $vuser]
+		set UID_DB([string toupper $UID])		$NICK_NEW
+		set UID_DB([string toupper $NICK_NEW])	$UID
+		set	unset UID_DB([string toupper $NICK_OLD])
+
+		# [21:54:07] Received: :001PSYE4B NICK Amand[CoucouHibou] 1616792047
 		if { [info exists ueva($vuser)] && $vuser!=$vnew } {
 			set ueva($vnew)		on;
 			unset ueva($vuser)
