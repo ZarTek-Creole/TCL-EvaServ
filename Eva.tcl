@@ -423,7 +423,7 @@ proc eva:chargement { } {
 	catch { open [eva:scriptdir]db/gestion.db r } gestion
 	while { ![eof $gestion] } {
 		gets $gestion var2;
-		if { $var2 != "" } { set [lindex		$var2 0] [lindex $var2 1] }
+		if { $var2 != "" } { set [lindex $var2 0] [lindex $var2 1] }
 	}
 	catch { close $gestion }
 }
@@ -451,7 +451,7 @@ proc eva:console { level } {
 # Eva Verification de securité utilisateur a la connexion #
 ###########################################################
 proc eva:connexion:user:security:check { nickname hostname username gecos } {
-	global eva 
+	global eva trust
 	# default
 	set eva(ahost)			1
 	set eva(aident)			1
@@ -460,7 +460,13 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 	
 	# Lors de l'init (connexion au irc du service) on verifie rien
 	if { $eva(init) == 1 } { return 0 }
-
+	# on verifie si l'host est trusted
+	foreach { mask num } [array get trust] {
+		if { [string match *$mask* $hostname] } {
+			eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
+			return 0
+		}
+	}
 	# Si l'utilisateur est proteger, on skip les verification
 	if { [info exists protect($hostname)] } {
 		eva:SHOW:INFO:TO:CHANLOG "Security Check" "Aucune verification de sécurité sur $hostname, le hostname protegé"
@@ -4116,6 +4122,7 @@ proc eva:connexion:server { } {
 	incr eva(counter) 1
 	utimer $eva(timerco) eva:verif
 }
+
 proc eva:connexion { } {
 	global eva vhost protect ueva netadmin UID_DB
 	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
@@ -4295,12 +4302,6 @@ proc eva:link { idx arg } {
 				}
 				append MSG_CONNECT	"- realname: [eva:DBU:GET $uid REALNAME] "
 				eva:SHOW:INFO:TO:CHANLOG $stype $MSG_CONNECT
-			}
-			foreach { mask num } [array get trust] {
-				if { [string match *$mask* $hostname] } {
-					eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
-					return 0
-				}
 			}
 		}
 		"219" {
