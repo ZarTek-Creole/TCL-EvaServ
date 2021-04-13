@@ -462,7 +462,7 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 	if { $eva(init) == 1 } { return 0 }
 	# on verifie si l'host est trusted
 	foreach { mask num } [array get trust] {
-		if { [string match *$mask* $hostname] } {
+		if { [string match -nocase *$mask* $hostname] } {
 			eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
 			return 0
 		}
@@ -499,7 +499,7 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		catch { open [eva:scriptdir]db/host.db r } liste2
 		while { ![eof $liste2] } {
 			gets $liste2 verif2
-			if { [string match *$verif2* $hostname] && $verif2 != "" } {
+			if { [string match -nocase *$verif2* $hostname] && $verif2 != "" } {
 				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
 					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(rhost)"
 				}
@@ -515,7 +515,7 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		catch { open [eva:scriptdir]db/ident.db r } liste3
 		while { ![eof $liste3] } {
 			gets $liste3 verif3
-			if { [string match *$verif3* $username] && $verif3 != "" } {
+			if { [string match -nocase *$verif3* $username] && $verif3 != "" } {
 				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
 					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname ($verif3) a été killé : $eva(rident)"
 				}
@@ -531,7 +531,7 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		catch { open [eva:scriptdir]db/real.db r } liste4
 		while { ![eof $liste4] } {
 			gets $liste4 verif4
-			if { [string match *$verif4* $gecos] && $verif4 != "" } {
+			if { [string match -nocase *$verif4* $gecos] && $verif4 != "" } {
 				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
 					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname (Realname: $verif4) a été killé : $eva(rreal)"
 				}
@@ -547,7 +547,7 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 		catch { open [eva:scriptdir]db/nick.db r } liste5
 		while { ![eof $liste5] } {
 			gets $liste5 verif5
-			if { [string match $verif5 $nickname] && $verif5 != "" } {
+			if { [string match -nocase $verif5 $nickname] && $verif5 != "" } {
 				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
 					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(ruser)"
 				}
