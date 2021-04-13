@@ -59,7 +59,7 @@ proc eva:sent2socket { MSG } {
 proc eva:sent2ppl { IDX MSG } {
 	putdcc $IDX $MSG
 }
-source [eva:scriptdir]Eva.conf
+source [eva:scriptdir]EvaServ.conf
 
 #################
 # Eva fonctions #
@@ -316,7 +316,7 @@ proc eva:config { } {
 ################
 
 proc eva:putdebug { string } {
-	set deb		[open logs/Eva.debug a]
+	set deb		[open logs/EvaServ.debug a]
 	puts $deb "[clock format [clock seconds] -format "\[%H:%M\]"] $string"
 	close $deb
 }
@@ -781,8 +781,8 @@ proc eva:infos { nick idx arg } {
 	eva:sent2ppl $idx "<c01> Tcl Lib : $tcl_library"
 	eva:sent2ppl $idx "<c01> Encodage : [encoding system]"
 	eva:sent2ppl $idx "<c01> Eggdrop Version : [lindex $version 0]"
-	eva:sent2ppl $idx "<c01> Config : [eva:scriptdir]Eva.conf"
-	eva:sent2ppl $idx "<c01> Noyau : [eva:scriptdir]Eva.tcl"
+	eva:sent2ppl $idx "<c01> Config : [eva:scriptdir]EvaServ.conf"
+	eva:sent2ppl $idx "<c01> Noyau : [eva:scriptdir]EvaServ.tcl"
 	eva:sent2ppl $idx "<c>"
 }
 
@@ -810,7 +810,7 @@ proc eva:debug { nick idx arg } {
 		if { $eva(debug) == 1 } {
 			set eva(debug)		0;
 			eva:sent2ppl $idx "<c01>\[ <c03>Debug<c01> \] <c01> Désactivé"
-			if { [file exists "logs/Eva.debug"] } { exec rm -rf logs/Eva.debug }
+			if { [file exists "logs/EvaServ.debug"] } { exec rm -rf logs/EvaServ.debug }
 		} else {
 			eva:sent2ppl $idx "Le mode debug est déjà désactivé."
 		}
