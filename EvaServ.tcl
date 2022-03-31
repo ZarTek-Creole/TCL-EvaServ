@@ -1,130 +1,591 @@
-######################################
-##			 ____					##
-##			|  __|_ _ ___			##
-##			|  __| | | .'|			##
-##			|____|\_/|__,|			##
-##									##
-##		Auteur	: TiSmA/MalaGaM		##
-##		Email	: TiSmA@eXolia.fr	##
-##		Licence : GNU / GPL			##
-##									##
-######################################
-# Version 1.4 et +	:
+##############################################################
+# ███████╗██╗   ██╗ █████╗ ███████╗███████╗██████╗ ██╗   ██╗ #
+# ██╔════╝██║   ██║██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║ #
+# █████╗  ██║   ██║███████║███████╗█████╗  ██████╔╝██║   ██║ #
+# ██╔══╝  ╚██╗ ██╔╝██╔══██║╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝ #
+# ███████╗ ╚████╔╝ ██║  ██║███████║███████╗██║  ██║ ╚████╔╝  #
+# ╚══════╝  ╚═══╝  ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝   #
+##############################################################
 #
 #	Auteur	:
-#		https://github.com/MalaGaM/tcl-eva
+#		-> MalaGaM (MalaGaM.ARTiSPRETiS@GMail.Com)
+#
+#	Website :
+#		-> https://github.com/MalaGaM/TCL-EvaServ
+#
 #	Support	:
-#		https://github.com/MalaGaM/tcl-eva/issues
+#		-> https://github.com/MalaGaM/TCL-EvaServ/issues
 #
-#	Change:
-#		+ Prise en charge des nouveau protocol IRC
-#		-> https://github.com/MalaGaM/tcl-eva/commits/main
+#	Docs	:
+#		-> https://github.com/MalaGaM/TCL-EvaServ/wiki
 #
-############
-# Eva Bind #
-############
-bind time - "00 00 * * *" eva:dbback
-bind evnt n init-server eva:initialisation
-bind evnt n prerestart eva:evenement
-bind evnt n sighup eva:evenement
-bind evnt n sigterm eva:evenement
-bind evnt n sigill eva:evenement
-bind evnt n sigquit eva:evenement
-bind evnt n prerehash eva:prerehash
-bind evnt n rehash eva:rehash
-bind dcc n eva eva:eva
-bind dcc n evaconnect eva:connect
-bind dcc n evadeconnect eva:deconnect
-bind dcc n evauptime eva:uptime
-bind dcc n evaversion eva:version
-bind dcc n evainfos eva:infos
-bind dcc n evadebug eva:debug
+#	LICENSE :
+#		-> GNU General Public License v3.0
+#		-> https://github.com/MalaGaM/TCL-EvaServ/blob/main/LICENSE.txt
+#
+#	Code origine:
+#		-> TiSmA (TiSmA@eXolia.fr)
+#
+##############################################################
 
-#################
-# Eva Scriptdir #
-#################
+if { [info commands ::EvaServ::uninstall] eq "::EvaServ::uninstall" } { ::EvaServ::uninstall }
+namespace eval ::EvaServ {
+	variable config
+	set config(scriptname)	"EvaServ Service"
+	set config(version)		"1.5.20210421"
+	set config(auteur)		"MalaGaM"
 
-set eva(path)	"[file dirname [info script]]/"
-proc eva:scriptdir { } {
-	global eva;
-	return $eva(path)
+	set config(path)		"[file dirname [info script]]/"
+	set config(timerco)		30
+	set config(timerdem)	5
+	set config(timerinit)	10
+	set config(counter)		0
+	set config(dem)			0
+	set config(init)		0
+	set config(console)		1
+	set config(login)		1
+	set config(protection)	1
+	set config(debug)		0
+	set config(aclient)		0
+	array set DBU_INFO		""
+	array set UID_DB		""
+	set scoredb(last)		""
+
+	proc uninstall {args} {
+		variable config
+		variable CONNECT_ID
+
+		::EvaServ::putlog "Désallocation des ressources de \002[set config(scriptname)]\002..." info
+		$CONNECT_ID destroy
+		foreach binding [lsearch -inline -all -regexp [binds *[set ns [::tcl::string::range [namespace current] 2 end]]*] " \{?(::)?$ns"] {
+			unbind [lindex $binding 0] [lindex $binding 1] [lindex $binding 2] [lindex $binding 4]
+		}
+		# Arrêt des timers en cours.
+		foreach running_timer [timers] {
+			if { [::tcl::string::match "*[namespace current]::*" [lindex $running_timer 1]] } { killtimer [lindex $running_timer 2] }
+		}
+		namespace delete ::EvaServ
+	}
+	
+	foreach {color_name value} { red 1 yellow 3 cyan 5 magenta 6 blue 4 green 2 } {
+		proc color_$color_name {} "return \033\\\[01\\;3${value}m"
+	}
+	proc colors_end {} {
+		return \033\[\;0m
+	}
+	proc putlog { text {level_name ""} {text_name ""} } {
+		variable config
+		if { $text_name == "" } {
+			if { $level_name != "" } {
+				set text_name " - $level_name"
+			} else {
+				set text_name ""
+			}
+		} else {
+			set text_name " - $text_name"
+		}
+		switch -nocase $level_name {
+			"error"		{ puts "[color_red]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			"warning"	{ puts "[color_yellow]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			"notice"	{ puts "[color_cyan]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			"debug"		{ puts "[color_magenta]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			"info"		{ puts "[color_blue]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			"success"	{ puts "[color_green]\[[set config(scriptname)]$text_name\][colors_end] [color_blue]$text[colors_end]" }
+			default		{ puts "\[[set config(scriptname)]$text_name\] [color_blue]$text[colors_end]" }
+		}
+	}
 }
-proc eva:sent2socket { MSG } {
-	global eva
-	if { $eva(sdebug) } {
+proc ::EvaServ::INIT { } {
+	variable config
+	variable FloodControl
+	variable commands
+	
+	if { [ catch { source [::EvaServ::Script:Get:Directory]EvaServ.conf } err ] } { 
+		::EvaServ::putlog "Probleme de chargement de '[::EvaServ::Script:Get:Directory]EvaServ.conf':\n$err" error
+		exit
+	} 
+	bind time	- "00 00 * * *"	::EvaServ::dbback
+	#bind evnt	n init-server	::EvaServ::initialisation
+	bind evnt	n prerestart	::EvaServ::evenement
+	bind evnt	n sighup		::EvaServ::evenement
+	bind evnt	n sigterm		::EvaServ::evenement
+	bind evnt	n sigill		::EvaServ::evenement
+	bind evnt	n sigquit		::EvaServ::evenement
+	bind evnt	n prerehash		::EvaServ::prerehash
+	bind evnt	n rehash		::EvaServ::rehash
+	bind dcc	n eva			::EvaServ::eva
+	bind dcc	n evaconnect	::EvaServ::connect
+	bind dcc	n evadeconnect	::EvaServ::deconnect
+	bind dcc	n evauptime		::EvaServ::uptime
+	bind dcc	n evaversion	::EvaServ::version
+	bind dcc	n evainfos		::EvaServ::infos
+	bind dcc	n evadebug		::EvaServ::debug
+	
+	::EvaServ::Config:File:Check
+	if { [file isdirectory "[::EvaServ::Script:Get:Directory]db"] } { file mkdir "[::EvaServ::Script:Get:Directory]db" }
+
+	# generer les db
+	::EvaServ::Database:initialisation [list \
+						"gestion"	\
+						"chan"		\
+						"client"	\
+						"close"		\
+						"salon"		\
+						"ident"		\
+						"real"		\
+						"host"		\
+						"nick"		\
+						"trust"		
+					];
+	
+	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'https://github.com/MalaGaM/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
+
+	::EvaServ::Database:Load:Data
+	::EvaServ::Service:Connexion
+	::EvaServ::putlog "v[set config(version)] par [set config(auteur)] OK." success
+}
+proc ::EvaServ::Service:Connexion { } {
+	variable config
+	variable CONNECT_ID
+	variable BOT_ID
+	
+	if { $config(uplink_ssl) == 1		} { set config(uplink_port) "+$config(uplink_port)" }
+	if { $config(serverinfo_id) != ""	} { set config(uplink_ts6) 1 } else { set config(uplink_ts6) 0 }
+	
+	set CONNECT_ID [::IRCServices::connection]; # Creer une instance services
+	::EvaServ::putlog:info "Connexion du link service $config(serverinfo_name)"
+	$CONNECT_ID connect $config(uplink_host) $config(uplink_port) $config(uplink_password) $config(uplink_ts6) $config(serverinfo_name) $config(serverinfo_id); # Connexion de l'instance service
+	if { $config(uplink_debug) == 1} { $CONNECT_ID config logger 1; $CONNECT_ID config debug 1; }
+
+	set BOT_ID [$CONNECT_ID bot]; #Creer une instance bot dans linstance services
+	
+	::EvaServ::putlog:info "Creation du bot service $config(service_nick)"
+	$BOT_ID create $config(service_nick) $config(service_user) $config(service_host) $config(service_gecos) $config(service_modes)]; # Creation d'un bot service
+	$BOT_ID join $config(service_channel)
+	$BOT_ID registerevent EOS {
+		global ::EvaServ::config
+		[sid] mode $config(service_channel) $config(service_chanmodes)
+		if { $config(service_usermodes) != "" } { 
+			[sid] mode $config(service_channel) $config(service_usermodes) $config(service_nick)
+		}
+		
+		
+	}
+	$BOT_ID registerevent PRIVMSG {
+		set cmd		[lindex [msg] 0]
+		set data	[lrange [msg] 1 end]
+		##########################
+		#--> Commandes Privés <--#
+		##########################
+		# si [target] ne commence pas par # c'est un pseudo
+		if { [string index [target] 0] != "#"} {
+			::EvaServ::IRC:CMD:MSG:PRIV [who2] [target] $cmd $data 
+		}
+		##########################
+		#--> Commandes Salons <--#
+		##########################
+		# si [target] commence par # c'est un salon
+		if { [string index [target] 0] == "#"} {
+			::EvaServ::IRC:CMD:MSG:PUB [who] [target] $cmd $data 
+		}
+	}; # Creer un event sur PRIVMSG
+	
+}
+proc ::EvaServ::IRC:CMD:MSG:PRIV { sender destination cmd data } {
+	variable config
+	if { [::EvaServ::FloodControl:Check $sender] != "ok" } {
+		return 0
+	}
+	putlog "::EvaServ::IRC:CMD:MSG:PRIV $sender $destination $cmd $data"
+	switch -nocase $cmd {
+		"PING"	{
+			::EvaServ::SENT:NOTICE $sender "\001PING $data\001";
+		}
+		"TIME"	{
+			::EvaServ::SENT:NOTICE $sender "\001TIME [clock format [clock seconds]]\001";
+		}
+		"VERSION"	{
+			::EvaServ::SENT:NOTICE $sender "\001VERSION $config(scriptname) v$config(version) by $config(auteur) © Visit: https://git.io/JOG1k\001";
+		}
+		"SOURCE"	{
+			::EvaServ::SENT:NOTICE $sender "\001SOURCE https://git.io/JOG1k\001";
+		}
+		"FINGER"	{
+			::EvaServ::SENT:NOTICE $sender "\001FINGER [string map {" " "_"} $config(scriptname)] $config(version)\001";
+		}
+		"USERINFO"	{
+			::EvaServ::SENT:NOTICE $sender "\001USERINFO [string map {" " "_"} $config(scriptname)] (v$config(version) - Visit: https://git.io/JOG1k)\001";
+		}
+		"CLIENTINFO"	{
+			::EvaServ::SENT:NOTICE $sender "\001CLIENTINFO CLIENTINFO PING TIME VERSION FINGER USERINFO\001";
+		}
+		default		{
+			if { [::EvaServ::CMD:EXIST $cmd] } { 
+				set CommandHelp [lindex $data 0]
+				if { $cmd == "help" && $CommandHelp != "" } {
+	 				if { [::EvaServ::CMD:EXIST $CommandHelp] } {
+	 					::EvaServ::Commands:Help $sender $data
+	 				} else {
+	 					::EvaServ::SENT:MSG:TO:USER $user "Aide <b>$CommandHelp</b> Inconnue."
+	 				}
+	 			} else {
+	 				::EvaServ::cmds "$cmds $user $data"
+	 			}
+				::EvaServ::Commands:Help $sender $data
+			} else {
+ 				::EvaServ::SENT:MSG:TO:USER $sender "Commande <b>$cmd</b> Inconnue."
+			}
+		}
+	}
+}
+proc ::EvaServ::IRC:CMD:MSG:PUB { sender destination cmd data } {
+	variable config
+	if { [::EvaServ::FloodControl:Check $sender] != "ok" } { 
+		return 0
+	}
+	putlog "::EvaServ::IRC:CMD:MSG:PUB $sender $destination $cmd $data"
+
+}
+	# "PRIVMSG" {
+	# 	set vuser		[string tolower $user]
+	# 	set robotUID	[string tolower [lindex $arg 2]]
+	# 	set cmds		[string tolower [string trim [lindex $arg 3] :]]
+	# 	set CommandHelp	[string tolower [lindex $arg 4]]
+	# 	set pcmds		[string trim $cmds $config(prefix)]
+	# 	set data		[join [lrange $arg 4 end]]
+	# 	if { [string toupper $robotUID] == [::EvaServ::UID:CONVERT $config(service_nick)] } {
+			
+
+	# 		if { $cmds == "ping" } {
+	# 			::EvaServ::SENT:MSG:TO:USER $user "\001PING [clock seconds]\001";
+	# 			return 0;
+	# 		} elseif { $cmds == "version" } {
+	# 			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/MalaGaM<c03>©";
+	# 			return 0;
+	# 			# verifie si c une command eva :
+
+	# 		} elseif { [::EvaServ::CMD:EXIST $cmds] } {
+
+	# 			# si c help
+	# 			if { $cmds == "help" && $CommandHelp != "" } {
+
+	# 				# verifie si c une command eva
+	# 				if { [::EvaServ::CMD:EXIST $CommandHelp] } {
+	# 					::EvaServ::Commands:Help "$CommandHelp $user $data"
+	# 				} else {
+	# 					::EvaServ::SENT:MSG:TO:USER $user "Aide <b>$CommandHelp</b> Inconnue."
+	# 				}
+	# 			} else {
+	# 				::EvaServ::cmds "$cmds $user $data"
+	# 			}
+	# 		} else {
+	# 			::EvaServ::SENT:MSG:TO:USER $user "Commande <b>$cmds</b> Inconnue."
+	# 		}
+	# 	}
+	# 	if { [string index $cmds 0] == $config(prefix) } {
+	# 		if { [::EvaServ::FloodControl:Check $vuser] != "ok" } { return 0 }
+	# 		if { [::EvaServ::CMD:EXIST $pcmds] } {
+	# 			if { $pcmds == "help" && $CommandHelp != "" } {
+	# 				if { [::EvaServ::CMD:EXIST $CommandHelp] } {
+	# 					::EvaServ::Commands:Help "$CommandHelp $user $data"
+	# 				}
+	# 			} else {
+	# 				::EvaServ::cmds "$pcmds $user $data"
+	# 			}
+	# 		}
+	# 	}
+	# }
+proc ::EvaServ::Config:File:Check { } {
+	variable config
+	variable FloodControl
+	set CONF_LIST	[list 							\
+							"uplink_host"			\
+							"uplink_ssl"			\
+							"uplink_port"			\
+							"uplink_password"		\
+							"serverinfo_name"		\
+							"serverinfo_descr"		\
+							"serverinfo_id"			\
+							"uplink_useprivmsg"		\
+							"uplink_debug"			\
+							"service_nick"			\
+							"service_user"			\
+							"service_host"			\
+							"service_gecos"			\
+							"service_modes"			\
+							"service_channel"		\
+							"service_chanmodes"		\
+							"service_usermodes"		\
+							"prefix"				\
+							"rnick"					\
+							"duree"					\
+							"rclient"				\
+							"rhost"					\
+							"rident"				\
+							"rreal"					\
+							"ruser"					\
+							"raison"				\
+							"console_com"			\
+							"console_deco"			\
+							"console_txt"];
+	foreach CONF $CONF_LIST {
+		if { ![info exists config($CONF)] } {
+			::EvaServ::putlog "Configuration de $config(scriptname) Incorrecte... 'config($CONF)' Paramettre manquant" error
+			exit
+		}
+		if { $config($CONF) == "" } {
+			::EvaServ::putlog "Configuration de $config(scriptname) Incorrecte... 'config($CONF)' Valeur vide" error
+			exit
+		}
+	}
+	set FloodControl_LIST	[list 					\
+								"Throttling"		\
+								"IgnoreTime"];
+	foreach CONF $FloodControl_LIST {
+		putlog "[array get FloodControl]"
+		if { ![info exists FloodControl($CONF)] } {
+			::EvaServ::putlog "Configuration de $config(scriptname) Incorrecte... 'FloodControl($CONF)' Paramettre manquant" error
+			exit
+		}
+		if { $FloodControl($CONF) == "" } {
+			::EvaServ::putlog "Configuration de $config(scriptname) Incorrecte... 'FloodControl($CONF)' Valeur vide" error
+			exit
+		}
+	}
+}
+proc ::EvaServ::Script:Get:Directory { } {
+	variable config;
+	return $config(path)
+}
+proc ::EvaServ::Database:initialisation { LISTDB } {
+	foreach DB_NAME $LISTDB {
+		if { ![file exists "[::EvaServ::Script:Get:Directory]db/${DB_NAME}.db"] } {
+			set FILE_PIPE	[open "[::EvaServ::Script:Get:Directory]db/${DB_NAME}.db" a+];
+			close $FILE_PIPE
+		}
+
+	}
+}
+proc ::EvaServ::Database:Load:Data { } {
+	variable config
+	variable trust
+
+	catch { open [::EvaServ::Script:Get:Directory]db/trust.db r } protection
+	while { ![eof $protection] } {
+		gets $protection hosts;
+		if { $hosts != "" && ![info exists trust($hosts)] } { 
+			set trust($hosts)	1
+			::EvaServ::putlog:info "L'host '$hosts' est chargement comme TRUST."
+		}
+	}
+	catch { close $protection }
+	catch { open [::EvaServ::Script:Get:Directory]db/gestion.db r } gestion
+	while { ![eof $gestion] } {
+		gets $gestion var2;
+		if { $var2 != "" } { set [lindex $var2 0] [lindex $var2 1] }
+	}
+	catch { close $gestion }
+}
+proc ::EvaServ::putlog:info { MSG } {
+	variable config
+	if { [info exists config(putlog_info)] && $config(putlog_info) == 1 } { 
+		::EvaServ::putlog $MSG info
+	}
+}
+proc ::EvaServ::SENT:NOTICE { DEST MSG } {
+	variable BOT_ID
+	$BOT_ID	notice $DEST [::EvaServ::FCT:apply_visuals $MSG]
+}
+
+proc ::EvaServ::SENT:PRIVMSG { DEST MSG } {
+	variable BOT_ID
+	$BOT_ID	privmsg $DEST [::EvaServ::FCT:apply_visuals $MSG]
+}
+proc ::EvaServ::SENT:MSG:TO:USER { DEST MSG } {
+	variable config
+	if { $config(uplink_useprivmsg) == 1 } {
+		::EvaServ::SENT:PRIVMSG $DEST $MSG;
+	} else {
+		::EvaServ::SENT:NOTICE $DEST $MSG;
+	}
+}
+proc ::EvaServ::FloodControl:Check { pseudo } {
+	variable FloodControl
+	if { ![info exists FloodControl(flood:$pseudo)] } {
+		set FloodControl(flood:$pseudo)		1;
+		utimer 3 [list ::EvaServ::FloodControl:NoticeUser $pseudo];
+		return ok
+	} elseif { $FloodControl(flood:$pseudo) < $FloodControl(Throttling) } {
+		incr FloodControl(flood:$pseudo) 1;
+		return ok
+	} else {
+		if { ![info exists FloodControl(stopflood:$pseudo)] } { 
+			set FloodControl(stopflood:$pseudo)		1 
+		}
+	}
+}
+proc ::EvaServ::FloodControl:NoticeUser { pseudo }		{
+	variable FloodControl
+	if { [info exists FloodControl(stopflood:$pseudo)] } {
+		::EvaServ::SENT:MSG:TO:USER $pseudo "Vous êtes ignoré pendant $FloodControl(IgnoreTime) secondes.";
+		utimer $FloodControl(IgnoreTime) [list ::EvaServ::FloodControl:Reset $pseudo];
+	} else {
+		unset FloodControl(flood:$pseudo)
+	}
+}
+proc ::EvaServ::FloodControl:Reset { pseudo } {
+	variable FloodControl
+	if { [info exists FloodControl(stopflood:$pseudo)] }	{ unset FloodControl(stopflood:$pseudo) }
+	if { [info exists FloodControl(flood:$pseudo)] }		{ unset FloodControl(flood:$pseudo) }
+	::EvaServ::SENT:MSG:TO:USER $pseudo "Vous n'êtes plus ignoré.";
+	
+}
+###############################################################################
+### Substitution des symboles couleur/gras/soulignement/...
+###############################################################################
+# Modification de la fonction de MenzAgitat
+# <cXX> : Ajouter un Couleur avec le code XX : <c01>; <c02,01>
+# </c>  : Enlever la Couleur (refermer la deniere declaration <cXX>) : </c>
+# <b>   : Ajouter le style Bold/gras
+# </b>  : Enlever le style Bold/gras
+# <u>   : Ajouter le style Underline/souligner
+# </u>  : Enlever le style Underline/souligner
+# <i>   : Ajouter le style Italic/Italique
+# <s>   : Enlever les styles precedent
+proc ::EvaServ::FCT:apply_visuals { data } {
+	regsub -all -nocase {<c([0-9]{0,2}(,[0-9]{0,2})?)?>|</c([0-9]{0,2}(,[0-9]{0,2})?)?>} $data "\003\\1" data
+	regsub -all -nocase {<b>|</b>} $data "\002" data
+	regsub -all -nocase {<u>|</u>} $data "\037" data
+	regsub -all -nocase {<i>|</i>} $data "\026" data
+	return [regsub -all -nocase {<s>} $data "\017"]
+}
+proc ::EvaServ::FCT:Remove_visuals { data } {
+	regsub -all -nocase {<c([0-9]{0,2}(,[0-9]{0,2})?)?>|</c([0-9]{0,2}(,[0-9]{0,2})?)?>} $data "" data
+	regsub -all -nocase {<b>|</b>} $data "" data
+	regsub -all -nocase {<u>|</u>} $data "" data
+	regsub -all -nocase {<i>|</i>} $data "" data
+	return [regsub -all -nocase {<s>} $data ""]
+}
+proc ::EvaServ::authed { user cmd } {
+	variable admins
+	switch -exact [::EvaServ::CMD:TO:LEVEL $cmd] {
+		0 { return ok }
+		1 {
+			if { [info exists admins($user)] && [matchattr $admins($user) p] } {
+				return ok
+			} else {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
+				return 0
+			}
+		}
+		2 {
+			if { [info exists admins($user)] && [matchattr $admins($user) o] } {
+				return ok
+			} else {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
+				return 0;
+			}
+		}
+		3 {
+			if { [info exists admins($user)] && [matchattr $admins($user) m] } {
+				return ok;
+			} else {
+
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
+				return 0;
+			}
+		}
+		4 {
+			if { [info exists admins($user)] && [matchattr $admins($user) n] } {
+				return ok;
+			} else {
+
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
+				return 0;
+			}
+		}
+		-1 {
+			::EvaServ::SENT:MSG:TO:USER $user "Command inconnue";
+			return 0;
+		}
+		default {
+			::EvaServ::SENT:MSG:TO:USER $user "Niveau inconnue";
+			return 0;
+		}
+	}
+}
+###################################################################################################################################################################################################
+
+proc ::EvaServ::sent2socket { MSG } {
+	variable config
+	if { $config(sdebug) } {
 		putlog "Sent: $MSG"
 	}
-	putdcc $eva(idx)  $MSG
+	putdcc $config(idx)  $MSG
 }
-proc eva:sent2ppl { IDX MSG } {
+proc ::EvaServ::sent2ppl { IDX MSG } {
 	putdcc $IDX $MSG
 }
-source [eva:scriptdir]EvaServ.conf
-
-#################
-# Eva fonctions #
-#################
-
-proc eva:SHOW:CMD:BY:LEVEL { DEST LEVEL } {
-	global ceva
+proc ::EvaServ::SHOW:CMD:BY:LEVEL { DEST LEVEL } {
+	variable commands
 	set max				6;
 	set l_espace		13;
 	set CMD_LIST		""
-	eva:FCT:SENT:NOTICE $DEST "<c01>\[ Level [dict get $ceva $LEVEL name] - Niveau $LEVEL \]"
-	foreach CMD [lsort [dict get $ceva $LEVEL cmd]] {
-		lappend CMD_LIST	"<c02>[eva:FCT:TXT:ESPACE:DISPLAY $CMD $l_espace]<c01>"
+	::EvaServ::SENT:MSG:TO:USER $DEST "<c01>\[ Level [dict get $commands $LEVEL name] - Niveau $LEVEL \]"
+	foreach CMD [lsort [dict get $commands $LEVEL cmd]] {
+		lappend CMD_LIST	"<c02>[::EvaServ::FCT:TXT:ESPACE:DISPLAY $CMD $l_espace]<c01>"
 		if { [incr i] > $max-1 } {
 			unset i
-			eva:FCT:SENT:NOTICE $DEST [join $CMD_LIST " | "];
+			::EvaServ::SENT:MSG:TO:USER $DEST [join $CMD_LIST " | "];
 			set CMD_LIST	""
 		}
 	}
-	eva:FCT:SENT:NOTICE $DEST [join $CMD_LIST " | "];
-	eva:FCT:SENT:NOTICE $DEST "<c>";
+	::EvaServ::SENT:MSG:TO:USER $DEST [join $CMD_LIST " | "];
+	::EvaServ::SENT:MSG:TO:USER $DEST "<c>";
 }
-proc eva:SHOW:CMD:DESCRIPTION:BY:LEVEL { DEST LEVEL } {
-	global ceva
+proc ::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL { DEST LEVEL } {
+	variable commands
 	set max				6;
 	set l_espace		13;
 	set CMD_LIST		""
-	eva:FCT:SENT:NOTICE $DEST "<c01>\[ Level [dict get $ceva $LEVEL name] - Niveau $LEVEL \]"
-	foreach CMD [lsort [dict get $ceva $LEVEL cmd]] {
+	::EvaServ::SENT:MSG:TO:USER $DEST "<c01>\[ Level [dict get $commands $LEVEL name] - Niveau $LEVEL \]"
+	foreach CMD [lsort [dict get $commands $LEVEL cmd]] {
 		set CMD_LOWER	[string tolower $CMD];
 		set CMD_UPPER	[string toupper $CMD];
-		if { [info commands [subst eva:help:description:${CMD_LOWER}]] != "" } {
-			eva:FCT:SENT:NOTICE $DEST "<c02>[eva:FCT:TXT:ESPACE:DISPLAY $CMD_UPPER $l_espace]<c01> \[<c04> [[subst eva:help:description:${CMD_LOWER}]] <c01>\]";
+		if { [info commands [subst ::EvaServ::help:description:${CMD_LOWER}]] != "" } {
+			::EvaServ::SENT:MSG:TO:USER $DEST "<c02>[::EvaServ::FCT:TXT:ESPACE:DISPLAY $CMD_UPPER $l_espace]<c01> \[<c04> [[subst ::EvaServ::help:description:${CMD_LOWER}]] <c01>\]";
 		} else {
-			eva:FCT:SENT:NOTICE $DEST "<c02>[eva:FCT:TXT:ESPACE:DISPLAY $CMD_UPPER $l_espace]<c01> \[<c07> Aucune description disponibles <c01>\]";
+			::EvaServ::SENT:MSG:TO:USER $DEST "<c02>[::EvaServ::FCT:TXT:ESPACE:DISPLAY $CMD_UPPER $l_espace]<c01> \[<c07> Aucune description disponibles <c01>\]";
 		}
 	}
-	eva:FCT:SENT:NOTICE $DEST "<c>";
+	::EvaServ::SENT:MSG:TO:USER $DEST "<c>";
 }
-proc eva:SHOW:INFO:TO:CHANLOG { TYPE DATA } {
-	global eva
-	eva:FCT:SENT:PRIVMSG $eva(salon) "<c$eva(console_com)>[eva:FCT:TXT:ESPACE:DISPLAY $TYPE 16]<c$eva(console_deco)>:<c$eva(console_txt)> $DATA"
+proc ::EvaServ::SHOW:INFO:TO:CHANLOG { TYPE DATA } {
+	variable config
+	::EvaServ::SENT:MSG:TO:USER $config(salon) "<c$config(console_com)>[::EvaServ::FCT:TXT:ESPACE:DISPLAY $TYPE 16]<c$config(console_deco)>:<c$config(console_txt)> $DATA"
 }
-proc eva:CMD:LIST { } {
-	global ceva
-	foreach level [dict keys $::ceva] {
-		lappend CMD_LIST {*}[dict get $::ceva $level cmd]
+proc ::EvaServ::CMD:LIST { } {
+	variable commands
+	foreach level [dict keys $commands] {
+		lappend CMD_LIST {*}[dict get $commands $level cmd]
 	}
 	return $CMD_LIST
 }
-proc eva:CMD:TO:LEVEL { CMD } {
-	global ceva
-	foreach level [dict keys $::ceva] {
-		if { [lsearch -nocase [dict get $::ceva $level cmd] $CMD] != "-1" } {
+proc ::EvaServ::CMD:TO:LEVEL { CMD } {
+	variable commands
+	foreach level [dict keys $commands] {
+		if { [lsearch -nocase [dict get $commands $level cmd] $CMD] != "-1" } {
 			return $level
 		}
 	}
 	return -1
 }
-proc eva:CMD:EXIST { CMD } {
-	if { [lsearch -nocase [eva:CMD:LIST] $CMD] == "-1" } { return 0 }
+proc ::EvaServ::CMD:EXIST { CMD } {
+	if { [lsearch -nocase [::EvaServ::CMD:LIST] $CMD] == "-1" } { return 0 }
 	return 1
 }
-proc eva:UID:CONVERT { ID } {
-	global UID_DB
+proc ::EvaServ::UID:CONVERT { ID } {
+	variable UID_DB
 	if { [info exists UID_DB([string toupper $ID])] } {
 		return "$UID_DB([string toupper $ID])"
 	} else {
@@ -132,49 +593,41 @@ proc eva:UID:CONVERT { ID } {
 	}
 }
 
-proc eva:DBU:GET { UID WHAT } {
-	global DBU_INFO
-	set UID	[eva:FCT:DATA:TO:UID [string toupper $UID]]
+proc ::EvaServ::DBU:GET { UID WHAT } {
+	variable DBU_INFO
+	set UID	[::EvaServ::FCT:DATA:TO:UID [string toupper $UID]]
 	if { [info exists DBU_INFO($UID,$WHAT)] } {
 		return "$DBU_INFO($UID,$WHAT)";
 	} else {
 		return -1;
 	}
 }
-proc eva:FCT:SENT:NOTICE { WHO MSG } {
-	global eva
-	eva:sent2socket ":$eva(server_id) NOTICE $WHO :[eva:FCT:apply_visuals $MSG]"
-}
 
-proc eva:FCT:SENT:PRIVMSG { DEST MSG } {
-	global eva
-	eva:sent2socket ":$eva(server_id) PRIVMSG $DEST :[eva:FCT:apply_visuals $MSG]"
+proc ::EvaServ::FCT:SENT:MODE { DEST {MODE ""} {CIBLE ""} } {
+	variable config
+	::EvaServ::sent2socket ":$config(server_id) MODE $DEST $MODE $CIBLE"
 }
-proc eva:FCT:SENT:MODE { DEST {MODE ""} {CIBLE ""} } {
-	global eva
-	eva:sent2socket ":$eva(server_id) MODE $DEST $MODE $CIBLE"
+proc ::EvaServ::FCT:SET:TOPIC { DEST TOPIC } {
+	variable config
+	::EvaServ::sent2socket ":$config(server_id) TOPIC $DEST :[::EvaServ::FCT:apply_visuals $TOPIC]"
 }
-proc eva:FCT:SET:TOPIC { DEST TOPIC } {
-	global eva
-	eva:sent2socket ":$eva(server_id) TOPIC $DEST :[eva:FCT:apply_visuals $TOPIC]"
-}
-proc eva:FCT:DATA:TO:NICK { DATA } {
+proc ::EvaServ::FCT:DATA:TO:NICK { DATA } {
 	if { [string range $DATA 0 0] == 0 } {
-		set user		[eva:UID:CONVERT $DATA]
+		set user		[::EvaServ::UID:CONVERT $DATA]
 	} else {
 		set user		$DATA
 	}
 	return $user;
 }
-proc eva:FCT:DATA:TO:UID { DATA } {
+proc ::EvaServ::FCT:DATA:TO:UID { DATA } {
 	if { [string range $DATA 0 0] == 0 } {
 		set UID		$DATA
 	} else {
-		set UID		[eva:UID:CONVERT $DATA]
+		set UID		[::EvaServ::UID:CONVERT $DATA]
 	}
 	return $UID;
 }
-proc eva:FCT:TXT:ESPACE:DISPLAY { text length } {
+proc ::EvaServ::FCT:TXT:ESPACE:DISPLAY { text length } {
 	set text			[string trim $text]
 	set text_length		[string length $text];
 	set espace_length	[expr ($length - $text_length)/2.0]
@@ -192,150 +645,33 @@ proc eva:FCT:TXT:ESPACE:DISPLAY { text length } {
 	}
 
 }
-###############################################################################
-### Substitution des symboles couleur/gras/soulignement/...
-###############################################################################
-# Modification de la fonction de MenzAgitat
-# <cXX> : Ajouter un Couleur avec le code XX : <c01>; <c02,01>
-# </c>  : Enlever la Couleur (refermer la deniere declaration <cXX>) : </c>
-# <b>   : Ajouter le style Bold/gras
-# </b>  : Enlever le style Bold/gras
-# <u>   : Ajouter le style Underline/souligner
-# </u>  : Enlever le style Underline/souligner
-# <i>   : Ajouter le style Italic/Italique
-# <s>   : Enlever les styles precedent
-proc eva:FCT:apply_visuals { data } {
-	regsub -all -nocase {<c([0-9]{0,2}(,[0-9]{0,2})?)?>|</c([0-9]{0,2}(,[0-9]{0,2})?)?>} $data "\003\\1" data
-	regsub -all -nocase {<b>|</b>} $data "\002" data
-	regsub -all -nocase {<u>|</u>} $data "\037" data
-	regsub -all -nocase {<i>|</i>} $data "\026" data
-	return [regsub -all -nocase {<s>} $data "\017"]
-}
-proc eva:FCT:Remove_visuals { data } {
-	regsub -all -nocase {<c([0-9]{0,2}(,[0-9]{0,2})?)?>|</c([0-9]{0,2}(,[0-9]{0,2})?)?>} $data "" data
-	regsub -all -nocase {<b>|</b>} $data "" data
-	regsub -all -nocase {<u>|</u>} $data "" data
-	regsub -all -nocase {<i>|</i>} $data "" data
-	return [regsub -all -nocase {<s>} $data ""]
-}
-proc eva:FCT:DB:INIT { LISTDB } {
-	foreach DB_NAME $LISTDB {
-		if { ![file exists "[eva:scriptdir]db/${DB_NAME}.db"] } {
-			set FILE_PIPE	[open "[eva:scriptdir]db/${DB_NAME}.db" a+];
-			close $FILE_PIPE
-		}
 
-	}
-}
-###############
-# Eva Fichier #
-###############
-if { [file isdirectory "[eva:scriptdir]db"] } { file mkdir "[eva:scriptdir]db" }
-# generer les db
-eva:FCT:DB:INIT [list \
-					"gestion"	\
-					"chan"		\
-					"client"	\
-					"close"		\
-					"salon"		\
-					"ident"		\
-					"real"		\
-					"host"		\
-					"nick"		\
-					"trust"		
-				];
 
-#################
-# Eva Variables #
-#################
 
-set eva(version)		"1.5RC"
-set eva(timerco)		30
-set eva(timerdem)		5
-set eva(timerinit)		10
-set eva(counter)		0
-set eva(dem)			0
-set eva(init)			0
-set eva(console)		1
-set eva(login)			1
-set eva(protection)		1
-set eva(debug)			0
-set eva(aclient)		0
 
-####################
-# Eva DB Variables #
-####################
-array set DBU_INFO		""
-array set UID_DB		""
-set scoredb(last)		""
 
-##############
-# Eva Config #
-##############
-proc eva:config { } {
-	global eva
-	set CONF_LIST	[list 					\
-							"link"			\
-							"ip"			\
-							"port"			\
-							"pass"			\
-							"info"			\
-							"SID"			\
-							"pseudo"		\
-							"sdebug"		\
-							"ident"			\
-							"host"			\
-							"real"			\
-							"salon"			\
-							"smode"			\
-							"cmode"			\
-							"prefix"		\
-							"rnick"			\
-							"fraz"			\
-							"duree"			\
-							"ignore"		\
-							"rclient"		\
-							"raison"		\
-							"console_com"	\
-							"console_deco"	\
-							"console_txt"];
-	foreach CONF $CONF_LIST {
-		if { ![info exists eva($CONF)] } {
-			putlog "\[ Erreur \] Configuration de Eva Service Incorrecte... '$CONF' Paramettre manquant"
-			exit
-		}
-		if { $eva($CONF) == "" } {
-			putlog "\[ Erreur \] Configuration de Eva Service Incorrecte... '$CONF' Valeur vide"
-			exit
-		}
-	}
-}
 
-################
-# Eva Putdebug #
-################
-
-proc eva:putdebug { string } {
+proc ::EvaServ::putdebug { string } {
 	set deb		[open logs/EvaServ.debug a]
 	puts $deb "[clock format [clock seconds] -format "\[%H:%M\]"] $string"
 	close $deb
 }
 
-###############
-# Eva Refresh #
-###############
-
-proc eva:refresh { pseudo } {
-	global netadmin admins vhost protect ueva
+proc ::EvaServ::refresh { pseudo } {
+	variable netadmin 
+	variable admins 
+	variable vhost 
+	variable protect 
+	variable users
 	set vuser	[string tolower $pseudo]
 	if { [info exists vhost($vuser)] } {
 		if { [info exists protect($vhost($vuser))] && [info exists admins($vuser)] } {
-			eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
 			unset protect($vhost($vuser))
 		}
 		unset vhost($vuser)
 	}
-	if { [info exists ueva($vuser)] } { unset ueva($vuser)		}
+	if { [info exists users($vuser)] } { unset users($vuser)		}
 	if { [info exists netadmin($vuser)] } { unset netadmin($vuser)		}
 	if { [info exists admins($vuser)] } { unset admins($vuser)		}
 }
@@ -344,39 +680,31 @@ proc eva:refresh { pseudo } {
 # Eva Gestion #
 ###############
 
-proc eva:gestion { } {
-	global eva
-	set sv		[open [eva:scriptdir]db/gestion.db w+]
-	puts $sv "eva(salon) $eva(salon)"
-	puts $sv "eva(debug) $eva(debug)"
-	puts $sv "eva(console) $eva(console)"
-	puts $sv "eva(protection) $eva(protection)"
-	puts $sv "eva(login) $eva(login)"
-	puts $sv "eva(aclient) $eva(aclient)"
+proc ::EvaServ::gestion { } {
+	variable config
+	set sv		[open [::EvaServ::Script:Get:Directory]db/gestion.db w+]
+	puts $sv "config(salon) $config(salon)"
+	puts $sv "config(debug) $config(debug)"
+	puts $sv "config(console) $config(console)"
+	puts $sv "config(protection) $config(protection)"
+	puts $sv "config(login) $config(login)"
+	puts $sv "config(aclient) $config(aclient)"
 	close $sv
 }
 
-##############
-# Eva Dbback #
-##############
-
-proc eva:dbback { min h d m y } {
-	global eva
-	eva:gestion
+proc ::EvaServ::dbback { min h d m y } {
+	variable config
+	::EvaServ::gestion
 	set DB_LIST	[list "gestion" "chan" "client" "close" "nick" "ident" "real" "host" "salon" "trust"]
 	foreach DB_NAME $DB_LIST {
-		exec cp -f [eva:scriptdir]db/${DB_NAME}.db [eva:scriptdir]db/${DB_NAME}.bak
+		exec cp -f [::EvaServ::Script:Get:Directory]db/${DB_NAME}.db [::EvaServ::Script:Get:Directory]db/${DB_NAME}.bak
 	}
-	if { [eva:console 1] == "ok" } {
-		eva:SHOW:INFO:TO:CHANLOG "Backup" "Sauvegarde des databases."
+	if { [::EvaServ::console 1] == "ok" } {
+		::EvaServ::SHOW:INFO:TO:CHANLOG "Backup" "Sauvegarde des databases."
 	}
 }
 
-#############
-# Eva Duree #
-#############
-
-proc eva:duree { temps } {
+proc ::EvaServ::duree { temps } {
 	switch -exact [lindex [ctime $temps] 1] {
 		"Jan" { set mois	"01" }
 		"Feb" { set mois	"02" }
@@ -409,40 +737,18 @@ proc eva:duree { temps } {
 	return $seen
 }
 
-##################
-# Eva Chargement #
-##################
-proc eva:chargement { } {
-	global eva trust
-	catch { open [eva:scriptdir]db/trust.db r } protection
-	while { ![eof $protection] } {
-		gets $protection hosts;
-		if { $hosts != "" && ![info exists trust($hosts)] } { set trust($hosts)	1 }
-	}
-	catch { close $protection }
-	catch { open [eva:scriptdir]db/gestion.db r } gestion
-	while { ![eof $gestion] } {
-		gets $gestion var2;
-		if { $var2 != "" } { set [lindex $var2 0] [lindex $var2 1] }
-	}
-	catch { close $gestion }
-}
 
-###############
-# Eva Console #
-###############
-
-proc eva:console { level } {
-	global eva
+proc ::EvaServ::console { level } {
+	variable config
 	switch -exact $level {
 		1	{
-			if { $eva(console)>=1 } { return ok }
+			if { $config(console)>=1 } { return ok }
 		}
 		2	{
-			if { $eva(console)>=2 } { return ok }
+			if { $config(console)>=2 } { return ok }
 		}
 		3	{
-			if { $eva(console)>=3 } { return ok }
+			if { $config(console)>=3 } { return ok }
 		}
 	}
 }
@@ -450,110 +756,111 @@ proc eva:console { level } {
 ###########################################################
 # Eva Verification de securité utilisateur a la connexion #
 ###########################################################
-proc eva:connexion:user:security:check { nickname hostname username gecos } {
-	global eva trust
+proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos } {
+	variable config
+	variable trust
 	# default
-	set eva(ahost)			1
-	set eva(aident)			1
-	set eva(areal)			1
-	set eva(anick)			1
+	set config(ahost)			1
+	set config(aident)			1
+	set config(areal)			1
+	set config(anick)			1
 	
 	# Lors de l'init (connexion au irc du service) on verifie rien
-	if { $eva(init) == 1 } { return 0 }
+	if { $config(init) == 1 } { return 0 }
 	# on verifie si l'host est trusted
 	foreach { mask num } [array get trust] {
 		if { [string match -nocase *$mask* $hostname] } {
-			eva:SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Hostname Trustée" "$mask"
 			return 0
 		}
 	}
 	# Si l'utilisateur est proteger, on skip les verification
 	if { [info exists protect($hostname)] } {
-		eva:SHOW:INFO:TO:CHANLOG "Security Check" "Aucune verification de sécurité sur $hostname, le hostname protegé"
+		::EvaServ::SHOW:INFO:TO:CHANLOG "Security Check" "Aucune verification de sécurité sur $hostname, le hostname protegé"
 		return 0
 	}
 	
 	set MSG_security_check	""
 	# Version client ?
-	if { $eva(aclient) == 1 } { lappend MSG_security_check "Client version: On"; } else { lappend MSG_security_check "Client version: Off"; }
+	if { $config(aclient) == 1 } { lappend MSG_security_check "Client version: On"; } else { lappend MSG_security_check "Client version: Off"; }
 	# verif host?
-	if { $eva(ahost) == 1 } { lappend MSG_security_check "Host: On"; } else { lappend MSG_security_check "Host: Off"; }
+	if { $config(ahost) == 1 } { lappend MSG_security_check "Host: On"; } else { lappend MSG_security_check "Host: Off"; }
 	# verif ident?
-	if { $eva(aident) == 1 } { lappend MSG_security_check "Ident: On"; } else { lappend MSG_security_check "Ident: Off"; }
+	if { $config(aident) == 1 } { lappend MSG_security_check "Ident: On"; } else { lappend MSG_security_check "Ident: Off"; }
 	# verif areal?
-	if { $eva(areal) == 1 } { lappend MSG_security_check "Realname: On"; } else { lappend MSG_security_check "Realname: Off"; }
+	if { $config(areal) == 1 } { lappend MSG_security_check "Realname: On"; } else { lappend MSG_security_check "Realname: Off"; }
 	# verif nick?
-	if { $eva(anick) == 1 } { lappend MSG_security_check "Nick: On"; } else { lappend MSG_security_check "Nick: Off"; }
+	if { $config(anick) == 1 } { lappend MSG_security_check "Nick: On"; } else { lappend MSG_security_check "Nick: Off"; }
 
-	if { [eva:console 2] == "ok" } {
-		eva:SHOW:INFO:TO:CHANLOG "Security Check" [join $MSG_security_check " | "]
+	if { [::EvaServ::console 2] == "ok" } {
+		::EvaServ::SHOW:INFO:TO:CHANLOG "Security Check" [join $MSG_security_check " | "]
 	}
 	
 
 	# Version client
-	if { $eva(aclient) == 1	} {
-		eva:FCT:SENT:PRIVMSG $nickname "\001VERSION\001"
+	if { $config(aclient) == 1	} {
+		::EvaServ::SENT:MSG:TO:USER $nickname "\001VERSION\001"
 	}
 
-	if { $eva(ahost) == 1 	} {
-		catch { open [eva:scriptdir]db/host.db r } liste2
+	if { $config(ahost) == 1 	} {
+		catch { open [::EvaServ::Script:Get:Directory]db/host.db r } liste2
 		while { ![eof $liste2] } {
 			gets $liste2 verif2
 			if { [string match -nocase *$verif2* $hostname] && $verif2 != "" } {
-				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(rhost)"
+				if { [::EvaServ::console 1] == "ok" && $config(init) == 0 } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $config(rhost)"
 				}
-				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rhost)";
+				::EvaServ::sent2socket ":$config(server_id) KILL $nickname $config(rhost)";
 				break;
-				eva:refresh $nickname;
+				::EvaServ::refresh $nickname;
 				return 0
 			}
 		}
 		catch { close $liste2 }
 	}
-	if { $eva(aident) == 1 	} {
-		catch { open [eva:scriptdir]db/ident.db r } liste3
+	if { $config(aident) == 1 	} {
+		catch { open [::EvaServ::Script:Get:Directory]db/ident.db r } liste3
 		while { ![eof $liste3] } {
 			gets $liste3 verif3
 			if { [string match -nocase *$verif3* $username] && $verif3 != "" } {
-				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname ($verif3) a été killé : $eva(rident)"
+				if { [::EvaServ::console 1] == "ok" && $config(init) == 0 } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$nickname ($verif3) a été killé : $config(rident)"
 				}
-				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rident)";
+				::EvaServ::sent2socket ":$config(server_id) KILL $nickname $config(rident)";
 				break ;
-				eva:refresh $nickname;
+				::EvaServ::refresh $nickname;
 				return 0;
 			}
 		}
 		catch { close $liste3 }
 	}
-	if { $eva(areal) == 1 	} {
-		catch { open [eva:scriptdir]db/real.db r } liste4
+	if { $config(areal) == 1 	} {
+		catch { open [::EvaServ::Script:Get:Directory]db/real.db r } liste4
 		while { ![eof $liste4] } {
 			gets $liste4 verif4
 			if { [string match -nocase *$verif4* $gecos] && $verif4 != "" } {
-				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname (Realname: $verif4) a été killé : $eva(rreal)"
+				if { [::EvaServ::console 1] == "ok" && $config(init) == 0 } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$nickname (Realname: $verif4) a été killé : $config(rreal)"
 				}
-				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(rreal)";
+				::EvaServ::sent2socket ":$config(server_id) KILL $nickname $config(rreal)";
 				break;
-				eva:refresh $nickname;
+				::EvaServ::refresh $nickname;
 				return 0;
 			}
 		}
 		catch { close $liste4 }
 	}
-	if { $eva(anick) == 1 	} {
-		catch { open [eva:scriptdir]db/nick.db r } liste5
+	if { $config(anick) == 1 	} {
+		catch { open [::EvaServ::Script:Get:Directory]db/nick.db r } liste5
 		while { ![eof $liste5] } {
 			gets $liste5 verif5
 			if { [string match -nocase $verif5 $nickname] && $verif5 != "" } {
-				if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-					eva:SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $eva(ruser)"
+				if { [::EvaServ::console 1] == "ok" && $config(init) == 0 } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$nickname a été killé : $config(ruser)"
 				}
-				eva:sent2socket ":$eva(server_id) KILL $nickname $eva(ruser)";
+				::EvaServ::sent2socket ":$config(server_id) KILL $nickname $config(ruser)";
 				break;
-				eva:refresh $nickname;
+				::EvaServ::refresh $nickname;
 				return 0;
 			}
 		}
@@ -561,8 +868,11 @@ proc eva:connexion:user:security:check { nickname hostname username gecos } {
 	}
 }
 
-proc eva:protection { user level } {
-	global eva netadmin admins vhost
+proc ::EvaServ::protection { user level } {
+	variable config
+	variable netadmin
+	variable admins
+	variable vhost
 	switch -exact $level {
 		0 {
 			if { [info exists netadmin($user)] } { return ok }
@@ -610,315 +920,195 @@ proc eva:protection { user level } {
 	}
 }
 
-#############
-# Eva Rnick #
-#############
-
-proc eva:rnick { user } {
-	global eva
-	if { $eva(rnick) == 1 } { return "($user)" }
+proc ::EvaServ::rnick { user } {
+	variable config
+	if { $config(rnick) == 1 } { return "($user)" }
 }
 
-#################
-# Eva Prerehash #
-#################
 
-proc eva:prerehash { arg } {
-	global eva
-	if { [info exists eva(idx)] && [valididx $eva(idx)] } {
-		eva:gestion
+proc ::EvaServ::prerehash { arg } {
+	variable config
+	if { [info exists config(idx)] && [valididx $config(idx)] } {
+		::EvaServ::gestion
 	}
 }
 
-##############
-# Eva Rehash #
-##############
-
-proc eva:rehash { arg } {
-	global eva
-	if { [info exists eva(idx)] && [valididx $eva(idx)] } {
-		eva:chargement
+proc ::EvaServ::rehash { arg } {
+	variable config
+	if { [info exists config(idx)] && [valididx $config(idx)] } {
+		::EvaServ::Database:Load:Data
 	}
 }
 
-#################
-# Eva Evenement #
-#################
-
-proc eva:evenement { arg } {
-	global eva
-	if { [info exists eva(idx)] && [valididx $eva(idx)] } {
-		eva:gestion
-		eva:sent2socket ":$eva(server_id) QUIT :$eva(raison)"
-		eva:sent2socket ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+proc ::EvaServ::evenement { arg } {
+	variable config
+	if { [info exists config(idx)] && [valididx $config(idx)] } {
+		::EvaServ::gestion
+		::EvaServ::sent2socket ":$config(server_id) QUIT :$config(raison)"
+		::EvaServ::sent2socket ":$config(link) SQUIT $config(link) :$config(raison)"
 		foreach kill [utimers] {
-			if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+			if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 		}
-		unset eva(idx)
+		unset config(idx)
 	}
 }
 
-#######
-# Eva #
-#######
-
-proc eva:eva { nick idx arg } {
-	eva:sent2ppl $idx "<c01,01>------------<b><c00> Commandes de Eva Service <c01>------------"
-	eva:sent2ppl $idx " "
-	eva:sent2ppl $idx "<c01> .evaconnect <c03>: <c14>Connexion de Eva Service"
-	eva:sent2ppl $idx "<c01> .evadeconnect <c03>: <c14>Déconnexion de Eva Service"
-	eva:sent2ppl $idx "<c01> .evadebug on/off <c03>: <c14>Mode debug de Eva Service"
-	eva:sent2ppl $idx "<c01> .evainfos <c03>: <c14>Voir les infos de Eva Service"
-	eva:sent2ppl $idx "<c01> .evauptime <c03>: <c14>Uptime de Eva Service"
-	eva:sent2ppl $idx "<c01> .evaversion <c03>: <c14>Version de Eva Service"
-	eva:sent2ppl $idx ""
+proc ::EvaServ::eva { nick idx arg } {
+	::EvaServ::sent2ppl $idx "<c01,01>------------<b><c00> Commandes de $config(scriptname) <c01>------------"
+	::EvaServ::sent2ppl $idx " "
+	::EvaServ::sent2ppl $idx "<c01> .evaconnect <c03>: <c14>Connexion de $config(scriptname)"
+	::EvaServ::sent2ppl $idx "<c01> .evadeconnect <c03>: <c14>Déconnexion de $config(scriptname)"
+	::EvaServ::sent2ppl $idx "<c01> .evadebug on/off <c03>: <c14>Mode debug de $config(scriptname)"
+	::EvaServ::sent2ppl $idx "<c01> .evainfos <c03>: <c14>Voir les infos de $config(scriptname)"
+	::EvaServ::sent2ppl $idx "<c01> .evauptime <c03>: <c14>Uptime de $config(scriptname)"
+	::EvaServ::sent2ppl $idx "<c01> .evaversion <c03>: <c14>Version de $config(scriptname)"
+	::EvaServ::sent2ppl $idx ""
 }
-
-###############
-# Eva Connect #
-###############
-
-proc eva:connect { nick idx arg } {
-	global eva
-	set eva(counter)		0
-	eva:config
-	if { ![info exists eva(idx)] } {
-		eva:sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de Eva Service...";
-		eva:connexion
-		set eva(dem)		1;
-		utimer $eva(timerdem) [list set eva(dem)		0]
+proc ::EvaServ::connect { nick idx arg } {
+	variable config
+	set config(counter)		0
+	if { ![info exists config(idx)] } {
+		::EvaServ::sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de $config(scriptname)...";
+		::EvaServ::connexion
+		set config(dem)		1;
+		utimer $config(timerdem) [list set config(dem)		0]
 	} else {
-		if { ![valididx $eva(idx)] } {
-			eva:sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de Eva Service...";
-			eva:connexion
-			set eva(dem)		1;
-			utimer $eva(timerdem) [list set eva(dem)		0]
+		if { ![valididx $config(idx)] } {
+			::EvaServ::sent2ppl $idx "<c01>\[ <c03>Connexion<c01> \] <c01> Lancement de $config(scriptname)...";
+			::EvaServ::connexion
+			set config(dem)		1;
+			utimer $config(timerdem) [list set config(dem)		0]
 		} else {
-			eva:sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> Eva Service est déjà connecté..."
+			::EvaServ::sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> $config(scriptname) est déjà connecté..."
 		}
 	}
 
 }
 
-#################
-# Eva Deconnect #
-#################
-
-proc eva:deconnect { nick idx arg } {
-	global eva
-	if { $eva(dem) == 0 } {
-		if { [info exists eva(idx)] && [valididx $eva(idx)] } {
-			eva:gestion
-			eva:sent2ppl $idx "<c01>\[ <c03>Déconnexion<c01> \] <c01> Arret de Eva Service..."
-			eva:sent2socket ":$eva(server_id) QUIT :$eva(raison)"
-			eva:sent2socket ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+proc ::EvaServ::deconnect { nick idx arg } {
+	variable config
+	if { $config(dem) == 0 } {
+		if { [info exists config(idx)] && [valididx $config(idx)] } {
+			::EvaServ::gestion
+			::EvaServ::sent2ppl $idx "<c01>\[ <c03>Déconnexion<c01> \] <c01> Arret de $config(scriptname)..."
+			::EvaServ::sent2socket ":$config(server_id) QUIT :$config(raison)"
+			::EvaServ::sent2socket ":$config(link) SQUIT $config(link) :$config(raison)"
 			foreach kill [utimers] {
-				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+				if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 			}
-			unset eva(idx)
+			unset config(idx)
 		} else {
-			eva:sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> Eva Service n'est pas connecté..."
+			::EvaServ::sent2ppl $idx "<c01>\[ <c04>Impossible<c01> \] <c01> $config(scriptname) n'est pas connecté..."
 		}
 	} else {
-		eva:sent2ppl $idx "<c01>\[ <c04>Erreur<c01> \] <c01> Connexion de Eva Service en cours..."
+		::EvaServ::sent2ppl $idx "<c01>\[ <c04>Erreur<c01> \] <c01> Connexion de $config(scriptname) en cours..."
 	}
 }
 
-##############
-# Eva Uptime #
-##############
-
-proc eva:uptime { nick idx arg } {
-	global eva
-	if { [info exists eva(idx)] && [valididx $eva(idx)] } {
+proc ::EvaServ::uptime { nick idx arg } {
+	variable config
+	if { [info exists config(idx)] && [valididx $config(idx)] } {
 		set show		""
-		set up		[expr ([clock seconds] - $eva(uptime))]
+		set up			[expr ([clock seconds] - $config(uptime))]
 		set jour		[expr ($up / 86400)]
-		set up		[expr ($up % 86400)]
+		set up			[expr ($up % 86400)]
 		set heure		[expr ($up / 3600)]
-		set up		[expr ($up % 3600)]
+		set up			[expr ($up % 3600)]
 		set minute		[expr ($up / 60)]
 		set seconde		[expr ($up % 60)]
 		if { $jour == 1 } { append show "$jour jour " } elseif { $jour > 1 } { append show "$jour jours " }
 		if { $heure == 1 } { append show "$heure heure " } elseif { $heure > 1 } { append show "$heure heures " }
 		if { $minute == 1 } { append show "$minute minute " } elseif { $minute > 1 } { append show "$minute minutes " }
 		if { $seconde == 1 } { append show "$seconde seconde " } elseif { $seconde > 1 } { append show "$seconde secondes " }
-		eva:sent2ppl $idx "<c01>\[ <c03>Uptime<c01> \] <c01> $show"
+		::EvaServ::sent2ppl $idx "<c01>\[ <c03>Uptime<c01> \] <c01> $show"
 	} else {
-		eva:sent2ppl $idx "<c01>\[ <c04>Uptime<c01> \] <c01> Eva Service n'est pas connecté..."
+		::EvaServ::sent2ppl $idx "<c01>\[ <c04>Uptime<c01> \] <c01> $config(scriptname) n'est pas connecté..."
 	}
 }
 
-###############
-# Eva Version #
-###############
-
-proc eva:version { nick idx arg } {
-	global eva
-	eva:sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> Eva Service $eva(version) by TiSmA/MalaGaM"
+proc ::EvaServ::version { nick idx arg } {
+	variable config
+	::EvaServ::sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> $config(scriptname) $config(version) by MalaGaM"
 }
 
-#############
-# Eva Infos #
-#############
-
-proc eva:infos { nick idx arg } {
-	global eva version tcl_patchLevel tcl_library tcl_platform
-	eva:sent2ppl $idx "<c01,01>-----------<b><c00> Infos de Eva Service <c01>-----------"
-	eva:sent2ppl $idx "<c>"
-	if { [info exists eva(idx)] }	 {
-		eva:sent2ppl $idx "<c01> Statut : <c03>Online"
+proc ::EvaServ::infos { nick idx arg } {
+	variable config
+	variable version
+	variable tcl_patchLevel
+	variable tcl_library
+	variable tcl_platform
+	::EvaServ::sent2ppl $idx "<c01,01>-----------<b><c00> Infos de $config(scriptname) <c01>-----------"
+	::EvaServ::sent2ppl $idx "<c>"
+	if { [info exists config(idx)] }	 {
+		::EvaServ::sent2ppl $idx "<c01> Statut : <c03>Online"
 	} else {
-		eva:sent2ppl $idx "<c01> Statut : <c04>Offline"
+		::EvaServ::sent2ppl $idx "<c01> Statut : <c04>Offline"
 	}
-	if { $eva(debug) == 1 } {
-		eva:sent2ppl $idx "<c01> Debug : <c03>On"
+	if { $config(debug) == 1 } {
+		::EvaServ::sent2ppl $idx "<c01> Debug : <c03>On"
 	} else {
-		eva:sent2ppl $idx "<c01> Debug : <c04>Off"
+		::EvaServ::sent2ppl $idx "<c01> Debug : <c04>Off"
 	}
-	eva:sent2ppl $idx "<c01> Os : $tcl_platform(os) $tcl_platform(osVersion)"
-	eva:sent2ppl $idx "<c01> Tcl Version : $tcl_patchLevel"
-	eva:sent2ppl $idx "<c01> Tcl Lib : $tcl_library"
-	eva:sent2ppl $idx "<c01> Encodage : [encoding system]"
-	eva:sent2ppl $idx "<c01> Eggdrop Version : [lindex $version 0]"
-	eva:sent2ppl $idx "<c01> Config : [eva:scriptdir]EvaServ.conf"
-	eva:sent2ppl $idx "<c01> Noyau : [eva:scriptdir]EvaServ.tcl"
-	eva:sent2ppl $idx "<c>"
+	::EvaServ::sent2ppl $idx "<c01> Os : $tcl_platform(os) $tcl_platform(osVersion)"
+	::EvaServ::sent2ppl $idx "<c01> Tcl Version : $tcl_patchLevel"
+	::EvaServ::sent2ppl $idx "<c01> Tcl Lib : $tcl_library"
+	::EvaServ::sent2ppl $idx "<c01> Encodage : [encoding system]"
+	::EvaServ::sent2ppl $idx "<c01> Eggdrop Version : [lindex $version 0]"
+	::EvaServ::sent2ppl $idx "<c01> Config : [::EvaServ::Script:Get:Directory]EvaServ.conf"
+	::EvaServ::sent2ppl $idx "<c01> Noyau : [::EvaServ::Script:Get:Directory]EvaServ.tcl"
+	::EvaServ::sent2ppl $idx "<c>"
 }
 
-#############
-# Eva Debug #
-#############
-
-proc eva:debug { nick idx arg } {
-	global eva
+proc ::EvaServ::debug { nick idx arg } {
+	variable config
 	set arg			[split $arg]
 	set status		[string tolower [lindex $arg 0]]
 	if { $status != "on" && $status != "off" } {
-		eva:sent2ppl $idx ".evadebug on/off";
+		::EvaServ::sent2ppl $idx ".evadebug on/off";
 		return 0;
 	}
 
 	if { $status == "on" } {
-		if { $eva(debug) == 0 } {
-			set eva(debug)		1;
-			eva:sent2ppl $idx "<c01>\[ <c03>Debug<c01> \] <c01> Activé"
+		if { $config(debug) == 0 } {
+			set config(debug)		1;
+			::EvaServ::sent2ppl $idx "<c01>\[ <c03>Debug<c01> \] <c01> Activé"
 		} else {
-			eva:sent2ppl $idx "Le mode debug est déjà activé."
+			::EvaServ::sent2ppl $idx "Le mode debug est déjà activé."
 		}
 	} elseif { $status == "off" } {
-		if { $eva(debug) == 1 } {
-			set eva(debug)		0;
-			eva:sent2ppl $idx "<c01>\[ <c03>Debug<c01> \] <c01> Désactivé"
+		if { $config(debug) == 1 } {
+			set config(debug)		0;
+			::EvaServ::sent2ppl $idx "<c01>\[ <c03>Debug<c01> \] <c01> Désactivé"
 			if { [file exists "logs/EvaServ.debug"] } { exec rm -rf logs/EvaServ.debug }
 		} else {
-			eva:sent2ppl $idx "Le mode debug est déjà désactivé."
+			::EvaServ::sent2ppl $idx "Le mode debug est déjà désactivé."
 		}
 	}
 }
 
-##############
-# Eva Authed #
-##############
 
-proc eva:authed { user cmd } {
-	global eva admins
-	switch -exact [eva:CMD:TO:LEVEL $cmd] {
-		0 { return ok }
-		1 {
-			if { [info exists admins($user)] && [matchattr $admins($user) p] } {
-				return ok
-			} else {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
-				return 0
-			}
-		}
-		2 {
-			if { [info exists admins($user)] && [matchattr $admins($user) o] } {
-				return ok
-			} else {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
-				return 0;
-			}
-		}
-		3 {
-			if { [info exists admins($user)] && [matchattr $admins($user) m] } {
-				return ok;
-			} else {
 
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
-				return 0;
-			}
-		}
-		4 {
-			if { [info exists admins($user)] && [matchattr $admins($user) n] } {
-				return ok;
-			} else {
 
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
-				return 0;
-			}
-		}
-		-1 {
-			eva:FCT:SENT:NOTICE "$user" "Command inconnue";
-			return 0;
-		}
-		default {
-			eva:FCT:SENT:NOTICE "$user" "Niveau inconnue";
-			return 0;
-		}
-	}
-}
 
-#############
-# Eva Flood #
-#############
-
-proc eva:flood { pseudo } {
-	global eva
-	if { ![info exists eva(flood:$pseudo)] } {
-		set eva(flood:$pseudo)		1;
-		utimer 3 [list eva:reset $pseudo];
-		return ok
-	} elseif { $eva(flood:$pseudo)<$eva(fraz) } {
-		incr eva(flood:$pseudo) 1;
-		return ok
-	} else {
-		if { ![info exists eva(stopflood:$pseudo)] } { set eva(stopflood:$pseudo)		1 }
-	}
-}
-
-#############
-# Eva Reset #
-#############
-
-proc eva:reset { pseudo }		{
-	global eva
-	if { [info exists eva(stopflood:$pseudo)] } {
-		eva:FCT:SENT:NOTICE "$pseudo" "Vous êtes ignoré pendant $eva(ignore) secondes.";
-		utimer $eva(ignore) [list eva:nettoyage $pseudo];
-		return 0;
-	} else {
-		unset eva(flood:$pseudo)
-	}
-}
 
 #################
 # Eva Nettoyage #
 #################
 
-proc eva:nettoyage { pseudo } {
-	global eva
-	unset eva(flood:$pseudo);
-	unset eva(stopflood:$pseudo)
-}
+
 
 ############
 # Eva Cmds #
 ############
 
-proc eva:cmds { arg } {
-	global eva ueva admin admins vhost protect trust
+proc ::EvaServ::cmds { arg } {
+	variable config
+	variable users
+	variable admin
+	variable admins
+	variable vhost
+	variable protect
+	variable trust
 	set arg		[split $arg]
 	set cmd		[lindex $arg 0]
 	set user	[lindex $arg 1]
@@ -933,19 +1123,19 @@ proc eva:cmds { arg } {
 	set value8	[lindex $arg 4]
 	set value9	[string tolower [lindex $arg 4]]
 	set stop	0
-	if { [eva:authed $vuser $cmd] != "ok" } { return 0 }
+	if { [::EvaServ::authed $vuser $cmd] != "ok" } { return 0 }
 	switch -exact $cmd {
 		"auth" {
 			if { [lindex $arg 2] == "" || [lindex $arg 3] == "" } {
-				eva:sent2socket ":$eva(server_id) NOTICE [eva:UID:CONVERT $user] :<b>Commande Auth :</b> /msg $eva(pseudo) auth pseudo password";
+				::EvaServ::sent2socket ":$config(server_id) NOTICE [::EvaServ::UID:CONVERT $user] :<b>Commande Auth :</b> /msg $config(service_nick) auth pseudo password";
 				return 0
 			}
 			if { [passwdok [lindex $arg 2] [lindex $arg 3]] } {
 				if { [matchattr [lindex $arg 2] o] || [matchattr [lindex $arg 2] m] || [matchattr [lindex $arg 2] n] } {
-					if { $eva(login) == 1 } {
+					if { $config(login) == 1 } {
 						foreach { pseudo login } [array get admins] {
 							if { $login == [string tolower [lindex $arg 2]] && $pseudo!=$vuser } {
-								eva:sent2socket ":$eva(server_id) NOTICE [eva:UID:CONVERT $vuser] :Maximum de Login atteint.";
+								::EvaServ::sent2socket ":$config(server_id) NOTICE [::EvaServ::UID:CONVERT $vuser] :Maximum de Login atteint.";
 								return 0;
 							}
 						}
@@ -953,27 +1143,27 @@ proc eva:cmds { arg } {
 					if { ![info exists admins($vuser)] } {
 						set admins($vuser)		[string tolower [lindex $arg 2]]
 						if { [info exists vhost($vuser)] && ![info exists protect($vhost($vuser))] } {
-							eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Activé)"
+							::EvaServ::SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Activé)"
 							set protect($vhost($vuser))		1
 						}
 						setuser [string tolower [lindex $arg 2]] LASTON [unixtime]
-						eva:FCT:SENT:NOTICE $vuser "Authentification Réussie."
-						eva:sent2socket ":$eva(server_id) INVITE $vuser $eva(salon)"
-						if { [eva:console 1] == "ok" } {
-							eva:SHOW:INFO:TO:CHANLOG "Auth" "$user"
+						::EvaServ::SENT:MSG:TO:USER $vuser "Authentification Réussie."
+						::EvaServ::sent2socket ":$config(server_id) INVITE $vuser $config(salon)"
+						if { [::EvaServ::console 1] == "ok" } {
+							::EvaServ::SHOW:INFO:TO:CHANLOG "Auth" "$user"
 						}
 						return 0
 					} else {
-						eva:FCT:SENT:NOTICE $vuser "Vous êtes déjà authentifié.";
+						::EvaServ::SENT:MSG:TO:USER $vuser "Vous êtes déjà authentifié.";
 						return 0;
 					}
 				} elseif { [matchattr [lindex $arg 2] p] } {
-					eva:FCT:SENT:NOTICE $vuser "Authentification Helpeur Refusée.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Authentification Helpeur Refusée.";
 					return 0;
 				}
 
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé.";
 				return 0;
 			}
 		}
@@ -981,183 +1171,183 @@ proc eva:cmds { arg } {
 			if { [info exists admins($vuser)] } {
 				if { [matchattr $admins($vuser) o] || [matchattr $admins($vuser) m] || [matchattr $admins($vuser) n] } {
 					if { [info exists vhost($vuser)] && [info exists protect($vhost($vuser))] } {
-						eva:SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost($vuser) de $vuser (Désactivé)"
 						unset protect($vhost($vuser))
 					}
 					unset admins($vuser);
-					eva:FCT:SENT:NOTICE $vuser "Déauthentification Réussie."
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Deauth" "$user"
+					::EvaServ::SENT:MSG:TO:USER $vuser "Déauthentification Réussie."
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Deauth" "$user"
 					}
 				} elseif { [matchattr $admins($vuser) p] } {
-					eva:FCT:SENT:NOTICE $vuser "Déauthentification Helpeur Refusée.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Déauthentification Helpeur Refusée.";
 					return 0;
 				}
 
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Vous n'êtes pas authentifié."
+				::EvaServ::SENT:MSG:TO:USER $vuser "Vous n'êtes pas authentifié."
 			}
 		}
 		"copyright" {
-			eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA/MalaGaM"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Copyright" "$user"
+			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/MalaGaM"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Copyright" "$user"
 			}
 		}
 		"console" {
 			if { $value2 == "" || [regexp \[^0-3\] $value2] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Console :</b> /msg $eva(pseudo) console 0/1/2/3"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 0 <c04>:<c01> Aucune console"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Console commande"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> Toutes les consoles"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Console :</b> /msg $config(service_nick) console 0/1/2/3"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 0 <c04>:<c01> Aucune console"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 1 <c04>:<c01> Console commande"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 3 <c04>:<c01> Toutes les consoles"
 				return 0
 			}
 			switch -exact $value2 {
 				0 {
-					set eva(console)		0;
-					eva:FCT:SENT:NOTICE $vuser "Level 0 : Aucune console"
-					eva:SHOW:INFO:TO:CHANLOG "Console" "$user"
+					set config(console)		0;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 0 : Aucune console"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Console" "$user"
 				}
 				1 {
-					set eva(console)		1;
-					eva:FCT:SENT:NOTICE $vuser "Level 1 : Console commande"
-					eva:SHOW:INFO:TO:CHANLOG "Console" "$user"
+					set config(console)		1;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 1 : Console commande"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Console" "$user"
 				}
 				2 {
-					set eva(console)		2;
-					eva:FCT:SENT:NOTICE $vuser "Level 2 : Console commande & connexion & déconnexion"
-					eva:SHOW:INFO:TO:CHANLOG "Console" "$user"
+					set config(console)		2;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 2 : Console commande & connexion & déconnexion"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Console" "$user"
 				}
 				3 {
-					set eva(console)		3;
-					eva:FCT:SENT:NOTICE $vuser "Level 3 : Toutes les consoles"
-					eva:SHOW:INFO:TO:CHANLOG "Console" "$user"
+					set config(console)		3;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 3 : Toutes les consoles"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Console" "$user"
 				}
 			}
 		}
 		"chanlog" {
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà le salon de log.";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà le salon de log.";
 				return 0
 			}
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Chanlog :</b> /msg $eva(pseudo) chanlog #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Chanlog :</b> /msg $config(service_nick) chanlog #salon";
 				return 0
 			}
-			catch { open "[eva:scriptdir]db/salon.db" r } liste1
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste1
 			while { ![eof $liste1] } {
 				gets $liste1 verif1;
 				if { ![string compare -nocase $value2 $verif1] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Interdit";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Interdit";
 					set stop 1;
 					break
 				}
 			}
 			catch { close $liste1 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/close.db" r } liste2
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste2
 			while { ![eof $liste2] } {
 				gets $liste2 verif2;
 				if { ![string compare -nocase $value2 $verif2] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Fermé";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Fermé";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste2 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/chan.db" r } liste3
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste3
 			while { ![eof $liste3] } {
 				gets $liste3 verif3;
 				if { ![string compare -nocase $value2 $verif3] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Autojoin";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Autojoin";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste3 }
 			if { $stop == 1 } { return 0 }
-			eva:sent2socket ":$eva(server_id) PART $eva(salon)"
-			eva:FCT:SENT:MODE $eva(salon) "-O"
-			set eva(salon)		$value1
-			eva:sent2socket ":$eva(server_id) JOIN $eva(salon)"
-			eva:FCT:SENT:MODE $eva(salon) "+$eva(smode)"
-			if { $eva(cmode) == "q" || $eva(cmode) == "a" || $eva(cmode) == "o" || $eva(cmode) == "h" || $eva(cmode) == "v" } {
-				eva:FCT:SENT:MODE $eva(salon) "+$eva(cmode)" $eva(pseudo)
+			::EvaServ::sent2socket ":$config(server_id) PART $config(salon)"
+			::EvaServ::FCT:SENT:MODE $config(salon) "-O"
+			set config(salon)		$value1
+			::EvaServ::sent2socket ":$config(server_id) JOIN $config(salon)"
+			::EvaServ::FCT:SENT:MODE $config(salon) "+$config(smode)"
+			if { $config(cmode) == "q" || $config(cmode) == "a" || $config(cmode) == "o" || $config(cmode) == "h" || $config(cmode) == "v" } {
+				::EvaServ::FCT:SENT:MODE $config(salon) "+$config(cmode)" $config(service_nick)
 			}
-			eva:FCT:SENT:NOTICE $vuser "Changement du salon de log reussi ($value1)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Chanlog" "Changement du salon de log par $user ($value1)"
+			::EvaServ::SENT:MSG:TO:USER $vuser "Changement du salon de log reussi ($value1)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Chanlog" "Changement du salon de log par $user ($value1)"
 			}
 		}
 		"join" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Join :</b> /msg $eva(pseudo) join #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Join :</b> /msg $config(service_nick) join #salon";
 				return 0
 			}
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon de logs";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon de logs";
 				return 0
 			}
-			catch { open "[eva:scriptdir]db/salon.db" r } liste1
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste1
 			while { ![eof $liste1] } {
 				gets $liste1 verif1;
 				if { ![string compare -nocase $value2 $verif1] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Interdit";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Interdit";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste1 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/close.db" r } liste2
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste2
 			while { ![eof $liste2] } {
 				gets $liste2 verif2;
 				if { ![string compare -nocase $value2 $verif2] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Fermé";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Fermé";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste2 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/chan.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "$eva(pseudo) est déjà sur <b>$value1</b>.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "$config(service_nick) est déjà sur <b>$value1</b>.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set join		[open "[eva:scriptdir]db/chan.db" a];
+			set join		[open "[::EvaServ::Script:Get:Directory]db/chan.db" a];
 			puts $join $value2;
 			close $join;
-			eva:sent2socket ":$eva(server_id) JOIN $value1"
-			if { $eva(cmode) == "q" || $eva(cmode) == "a" || $eva(cmode) == "o" || $eva(cmode) == "h" || $eva(cmode) == "v" } {
-				eva:FCT:SENT:MODE $value1 "+$eva(cmode)" $eva(pseudo)
+			::EvaServ::sent2socket ":$config(server_id) JOIN $value1"
+			if { $config(cmode) == "q" || $config(cmode) == "a" || $config(cmode) == "o" || $config(cmode) == "h" || $config(cmode) == "v" } {
+				::EvaServ::FCT:SENT:MODE $value1 "+$config(cmode)" $config(service_nick)
 			}
-			eva:FCT:SENT:NOTICE $vuser "$eva(pseudo) entre sur <b>$value1</b>"
+			::EvaServ::SENT:MSG:TO:USER $vuser "$config(service_nick) entre sur <b>$value1</b>"
 
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Join" "$value1 par $user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Join" "$value1 par $user"
 			}
 		}
 		"part" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Part :</b> /msg $eva(pseudo) part #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Part :</b> /msg $config(service_nick) part #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/chan.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -1165,158 +1355,158 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "$eva(pseudo) n'est pas sur <b>$value1</b>.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "$config(service_nick) n'est pas sur <b>$value1</b>.";
 				return 0;
 			} else {
 				if { [info exists salle] } {
-					set del		[open "[eva:scriptdir]db/chan.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/chan.db" w+];
 					foreach chandel $salle { puts $del "$chandel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/chan.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/chan.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:MODE $value1 "-sntio";
-				eva:sent2socket ":$eva(server_id) PART $value1"
-				eva:FCT:SENT:NOTICE $vuser "$eva(pseudo) part de <b>$value1</b>"
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Part" "$value1 par $user"
+				::EvaServ::FCT:SENT:MODE $value1 "-sntio";
+				::EvaServ::sent2socket ":$config(server_id) PART $value1"
+				::EvaServ::SENT:MSG:TO:USER $vuser "$config(service_nick) part de <b>$value1</b>"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Part" "$value1 par $user"
 				}
 			}
 		}
 		"list" {
-			catch { open "[eva:scriptdir]db/chan.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>--------- <c0>Autojoin salons <c1>---------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>--------- <c0>Autojoin salons <c1>---------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste salon;
 				if { $salon != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $salon"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $salon"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Salon"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Salon"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "List" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "List" "$user"
 			}
 		}
 		"showcommands" {
-			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
-			eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 0
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de $config(scriptname) <c01>---------------------------------------"
+			::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 0
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
-				eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 1
+				::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 1
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
-				eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 2
+				::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 2
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
-				eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 3
+				::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 3
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
-				eva:SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 4
+				::EvaServ::SHOW:CMD:DESCRIPTION:BY:LEVEL $vuser 4
 			}
-			eva:FCT:SENT:NOTICE $vuser "<c02>Aide sur une commande<c01> \[<c04> /msg $eva(pseudo) help <la_commande> <c01>\]"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Showcommands" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Aide sur une commande<c01> \[<c04> /msg $config(service_nick) help <la_commande> <c01>\]"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Showcommands" "$user"
 			}
 		}
 		"help" {
-			eva:FCT:SENT:NOTICE $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de Eva Service <c01>---------------------------------------"
-			eva:FCT:SENT:NOTICE $vuser "<c>"
-			eva:SHOW:CMD:BY:LEVEL $vuser 0
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c01,01>--------------------------------------- <c00>Commandes de $config(scriptname) <c01>---------------------------------------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
+			::EvaServ::SHOW:CMD:BY:LEVEL $vuser 0
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) p] } {
-				eva:SHOW:CMD:BY:LEVEL $vuser 1
+				::EvaServ::SHOW:CMD:BY:LEVEL $vuser 1
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) o] } {
-				eva:SHOW:CMD:BY:LEVEL $vuser 2
+				::EvaServ::SHOW:CMD:BY:LEVEL $vuser 2
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) m] } {
-				eva:SHOW:CMD:BY:LEVEL $vuser 3
+				::EvaServ::SHOW:CMD:BY:LEVEL $vuser 3
 			}
 			if { [info exists admins($vuser)] && [matchattr $admins($vuser) n] } {
-				eva:SHOW:CMD:BY:LEVEL $vuser 4
+				::EvaServ::SHOW:CMD:BY:LEVEL $vuser 4
 			}
-			eva:FCT:SENT:NOTICE $vuser "<c02>Listes des commandes<c01> \[<c04> /msg $eva(pseudo) showcommands <c01>\]"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Help" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Listes des commandes<c01> \[<c04> /msg $config(service_nick) showcommands <c01>\]"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Help" "$user"
 			}
 		}
 		"maxlogin" {
 			if { $value2 != "on" && $value2 != "off" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Maxlogin :</b> /msg $eva(pseudo) maxlogin on/off";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Maxlogin :</b> /msg $config(service_nick) maxlogin on/off";
 				return 0;
 			}
 
 			if { $value2 == "on" } {
-				if { $eva(login) == 0 } {
-					set eva(login)		1;
-					eva:FCT:SENT:NOTICE $vuser "Protection maxlogin activée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Maxlogin" "$user"
+				if { $config(login) == 0 } {
+					set config(login)		1;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Protection maxlogin activée"
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Maxlogin" "$user"
 					}
 				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection maxlogin est déjà activée."
+					::EvaServ::SENT:MSG:TO:USER $vuser "La protection maxlogin est déjà activée."
 				}
 			} elseif { $value2 == "off" } {
-				if { $eva(login) == 1 } {
-					set eva(login)		0;
-					eva:FCT:SENT:NOTICE $vuser "Protection maxlogin désactivée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Maxlogin" "$user"
+				if { $config(login) == 1 } {
+					set config(login)		0;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Protection maxlogin désactivée"
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Maxlogin" "$user"
 					}
 				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection maxlogin est déjà désactivée."
+					::EvaServ::SENT:MSG:TO:USER $vuser "La protection maxlogin est déjà désactivée."
 				}
 			}
 		}
 		"backup" {
-			eva:gestion
-			exec cp -f [eva:scriptdir]db/gestion.db [eva:scriptdir]db/gestion.bak
-			exec cp -f [eva:scriptdir]db/chan.db [eva:scriptdir]db/chan.bak
-			exec cp -f [eva:scriptdir]db/client.db [eva:scriptdir]db/client.bak
-			exec cp -f [eva:scriptdir]db/close.db [eva:scriptdir]db/close.bak
-			exec cp -f [eva:scriptdir]db/real.db [eva:scriptdir]db/real.bak
-			exec cp -f [eva:scriptdir]db/ident.db [eva:scriptdir]db/ident.bak
-			exec cp -f [eva:scriptdir]db/host.db [eva:scriptdir]db/host.bak
-			exec cp -f [eva:scriptdir]db/nick.db [eva:scriptdir]db/nick.bak
-			exec cp -f [eva:scriptdir]db/salon.db [eva:scriptdir]db/salon.bak
-			exec cp -f [eva:scriptdir]db/trust.db [eva:scriptdir]db/trust.bak
-			eva:FCT:SENT:NOTICE $vuser "Sauvegarde des databases réalisée."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Backup" "$user"
+			::EvaServ::gestion
+			exec cp -f [::EvaServ::Script:Get:Directory]db/gestion.db [::EvaServ::Script:Get:Directory]db/gestion.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/chan.db [::EvaServ::Script:Get:Directory]db/chan.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/client.db [::EvaServ::Script:Get:Directory]db/client.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/close.db [::EvaServ::Script:Get:Directory]db/close.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/real.db [::EvaServ::Script:Get:Directory]db/real.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/ident.db [::EvaServ::Script:Get:Directory]db/ident.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/host.db [::EvaServ::Script:Get:Directory]db/host.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/nick.db [::EvaServ::Script:Get:Directory]db/nick.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/salon.db [::EvaServ::Script:Get:Directory]db/salon.bak
+			exec cp -f [::EvaServ::Script:Get:Directory]db/trust.db [::EvaServ::Script:Get:Directory]db/trust.bak
+			::EvaServ::SENT:MSG:TO:USER $vuser "Sauvegarde des databases réalisée."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Backup" "$user"
 			}
 		}
 		"restart" {
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Restart" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Restart" "$user"
 			}
-			eva:FCT:SENT:NOTICE $vuser "Redémarrage de Eva Service."
-			eva:gestion;
-			eva:sent2socket ":$eva(server_id) QUIT $eva(raison)";
-			eva:sent2socket ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+			::EvaServ::SENT:MSG:TO:USER $vuser "Redémarrage de $config(scriptname)."
+			::EvaServ::gestion;
+			::EvaServ::sent2socket ":$config(server_id) QUIT $config(raison)";
+			::EvaServ::sent2socket ":$config(link) SQUIT $config(link) :$config(raison)"
 			foreach kill [utimers] {
-				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+				if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 			}
-			if { [info exists eva(idx)] } { unset eva(idx)		}
-			set eva(counter)		0;
-			eva:config
-			utimer 1 eva:connexion
+			if { [info exists config(idx)] } { unset config(idx)		}
+			set config(counter)		0;
+			::EvaServ::config
+			utimer 1 ::EvaServ::connexion
 		}
 		"die" {
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Die" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Die" "$user"
 			}
-			eva:FCT:SENT:NOTICE $vuser "Arrêt de Eva Service."
-			eva:gestion;
-			eva:sent2socket ":$eva(server_id) QUIT $eva(raison)";
-			eva:sent2socket ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+			::EvaServ::SENT:MSG:TO:USER $vuser "Arrêt de $config(scriptname)."
+			::EvaServ::gestion;
+			::EvaServ::sent2socket ":$config(server_id) QUIT $config(raison)";
+			::EvaServ::sent2socket ":$config(link) SQUIT $config(link) :$config(raison)"
 			foreach kill [utimers] {
-				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+				if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 			}
-			if { [info exists eva(idx)] } { unset eva(idx)		}
+			if { [info exists config(idx)] } { unset config(idx)		}
 		}
 		"status" {
 			set numuser		0;
@@ -1330,7 +1520,7 @@ proc eva:cmds { arg } {
 			set numchan		0;
 			set numclient	0;
 			set show		""
-			set up			[expr ([clock seconds] - $eva(uptime))]
+			set up			[expr ([clock seconds] - $config(uptime))]
 			set jour		[expr ($up / 86400)]
 			set up			[expr ($up % 86400)]
 			set heure		[expr ($up / 3600)]
@@ -1341,209 +1531,209 @@ proc eva:cmds { arg } {
 			if { $heure == 1 }		{ append show "$heure heure " } elseif { $heure > 1 } { append show "$heure heures " }
 			if { $minute == 1 }		{ append show "$minute minute " } elseif { $minute > 1 } { append show "$minute minutes " }
 			if { $seconde == 1 }	{ append show "$seconde seconde " } elseif { $seconde > 1 } { append show "$seconde secondes " }
-			catch { open [eva:scriptdir]db/client.db r } liste
+			catch { open [::EvaServ::Script:Get:Directory]db/client.db r } liste
 			while { ![eof $liste] } {
 				gets $liste sclients;
 				if { $sclients != "" } { incr numclient 1 }
 			}
 			catch { close $liste }
-			catch { open [eva:scriptdir]db/chan.db r } liste2
+			catch { open [::EvaServ::Script:Get:Directory]db/chan.db r } liste2
 			while { ![eof $liste2] } {
 				gets $liste2 schans;
 				if { $schans != "" } { incr numchan 1 }
 			}
 			catch { close $liste2 }
-			catch { open [eva:scriptdir]db/salon.db r } liste4
+			catch { open [::EvaServ::Script:Get:Directory]db/salon.db r } liste4
 			while { ![eof $liste4] } {
 				gets $liste4 ssalon;
 				if { $ssalon != "" } { incr numsalons 1 }
 			}
 			catch { close $liste4 }
-			catch { open [eva:scriptdir]db/close.db r } liste5
+			catch { open [::EvaServ::Script:Get:Directory]db/close.db r } liste5
 			while { ![eof $liste5] } {
 				gets $liste5 sclose;
 				if { $sclose != "" } { incr numclose 1 }
 			}
 			catch { close $liste5 }
-			catch { open [eva:scriptdir]db/nick.db r } liste6
+			catch { open [::EvaServ::Script:Get:Directory]db/nick.db r } liste6
 			while { ![eof $liste6] } {
 				gets $liste6 suser;
 				if { $suser != "" } { incr numuser 1 }
 			}
 			catch { close $liste6 }
-			catch { open [eva:scriptdir]db/ident.db r } liste7
+			catch { open [::EvaServ::Script:Get:Directory]db/ident.db r } liste7
 			while { ![eof $liste7] } {
 				gets $liste7 sident;
 				if { $sident != "" } { incr numident 1 }
 			}
 			catch { close $liste7 }
-			catch { open [eva:scriptdir]db/host.db r } liste8
+			catch { open [::EvaServ::Script:Get:Directory]db/host.db r } liste8
 			while { ![eof $liste8] } {
 				gets $liste8 shost;
 				if { $shost != "" } { incr numhost 1 }
 			}
 			catch { close $liste8 }
-			catch { open [eva:scriptdir]db/real.db r } liste9
+			catch { open [::EvaServ::Script:Get:Directory]db/real.db r } liste9
 			while { ![eof $liste9] } {
 				gets $liste9 sreal;
 				if { $sreal != "" } { incr numreal 1 }
 			}
 			catch { close $liste9 }
-			catch { open [eva:scriptdir]db/trust.db r } liste10
+			catch { open [::EvaServ::Script:Get:Directory]db/trust.db r } liste10
 			while { ![eof $liste10] } {
 				gets $liste10 strust;
 				if { $strust != "" } { incr numtrust 1 }
 			}
 			catch { close $liste10 }
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>------------------ <c0>Status de Eva Service <c1>------------------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Owner : <c01>$admin"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Salon de logs : <c01>$eva(salon)"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Salon Autojoin : <c01>$numchan"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Uptime : <c01>$show"
-			switch -exact $eva(console) {
-				0 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Console : <c01>0" }
-				1 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Console : <c01>1" }
-				2 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Console : <c01>2" }
-				3 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Console : <c01>3" }
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>------------------ <c0>Status de $config(scriptname) <c1>------------------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Owner : <c01>$admin"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Salon de logs : <c01>$config(salon)"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Salon Autojoin : <c01>$numchan"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Uptime : <c01>$show"
+			switch -exact $config(console) {
+				0 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Console : <c01>0" }
+				1 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Console : <c01>1" }
+				2 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Console : <c01>2" }
+				3 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Console : <c01>3" }
 			}
-			switch -exact $eva(protection) {
-				0 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Protection : <c01>0" }
-				1 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Protection : <c01>1" }
-				2 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Protection : <c01>2" }
-				3 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Protection : <c01>3" }
-				4 { eva:FCT:SENT:NOTICE $vuser "<c02> Level Protection : <c01>4" }
+			switch -exact $config(protection) {
+				0 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Protection : <c01>0" }
+				1 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Protection : <c01>1" }
+				2 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Protection : <c01>2" }
+				3 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Protection : <c01>3" }
+				4 { ::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Level Protection : <c01>4" }
 			}
-			if { $eva(login) == 1 } {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Maxlogin : <c03>On"
+			if { $config(login) == 1 } {
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Protection Maxlogin : <c03>On"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Maxlogin : <c04>Off"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Protection Maxlogin : <c04>Off"
 			}
-			if { $eva(aclient) == 1 } {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clients IRC : <c03>On"
+			if { $config(aclient) == 1 } {
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Protection Clients IRC : <c03>On"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "<c02> Protection Clients IRC : <c04>Off"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Protection Clients IRC : <c04>Off"
 			}
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Salons Fermés : <c01>$numclose"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Salons Interdits : <c01>$numsalons"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Pseudos Interdits : <c01>$numuser"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Idents Interdits : <c01>$numident"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Hostnames Interdites : <c01>$numhost"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Realnames Interdits : <c01>$numreal"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Clients IRC : <c01>$numclient"
-			eva:FCT:SENT:NOTICE $vuser "<c02> Nbre de Trusts : <c01>$numtrust"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Status" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Salons Fermés : <c01>$numclose"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Salons Interdits : <c01>$numsalons"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Pseudos Interdits : <c01>$numuser"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Idents Interdits : <c01>$numident"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Hostnames Interdites : <c01>$numhost"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Realnames Interdits : <c01>$numreal"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Clients IRC : <c01>$numclient"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<c02> Nbre de Trusts : <c01>$numtrust"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Status" "$user"
 			}
 		}
 		"protection" {
 			if { $value2 == "" || [regexp \[^0-4\] $value2] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Protection :</b> /msg $eva(pseudo) protection 0/1/2/3/4"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 0 <c04>:<c01> Aucune Protection"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Protection Admins"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Protection :</b> /msg $config(service_nick) protection 0/1/2/3/4"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 0 <c04>:<c01> Aucune Protection"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 1 <c04>:<c01> Protection Admins"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
 				return 0
 			}
 			switch -exact $value2 {
 				0 {
-					set eva(protection)		0;
-					eva:FCT:SENT:NOTICE $vuser "Level 0 : Aucune Protection"
-					eva:SHOW:INFO:TO:CHANLOG "Protection" "$user"
+					set config(protection)		0;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 0 : Aucune Protection"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protection" "$user"
 				}
 				1 {
-					set eva(protection)		1;
-					eva:FCT:SENT:NOTICE $vuser "Level 1 : Protection Admins"
-					eva:SHOW:INFO:TO:CHANLOG "Protection" "$user"
+					set config(protection)		1;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 1 : Protection Admins"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protection" "$user"
 				}
 				2 {
-					set eva(protection)		2;
-					eva:FCT:SENT:NOTICE $vuser "Level 2 : Protection Admins + Ircops"
-					eva:SHOW:INFO:TO:CHANLOG "Protection" "$user"
+					set config(protection)		2;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 2 : Protection Admins + Ircops"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protection" "$user"
 				}
 				3 {
-					set eva(protection)		3;
-					eva:FCT:SENT:NOTICE $vuser "Level 3 : Protection Admins + Ircops + Géofronts"
-					eva:SHOW:INFO:TO:CHANLOG "Protection" "$user"
+					set config(protection)		3;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 3 : Protection Admins + Ircops + Géofronts"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protection" "$user"
 				}
 				4 {
-					set eva(protection)		4;
-					eva:FCT:SENT:NOTICE $vuser "Level 4 : Protection de tous les accès"
-					eva:SHOW:INFO:TO:CHANLOG "Protection" "$user"
+					set config(protection)		4;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Level 4 : Protection de tous les accès"
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protection" "$user"
 				}
 			}
 		}
 		"newpass" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Newpass :</b> /msg $eva(pseudo) newpass mot-de-passe";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Newpass :</b> /msg $config(service_nick) newpass mot-de-passe";
 				return 0;
 			}
 
 			if { [string length $value1] <= 5 } {
-				eva:FCT:SENT:NOTICE $vuser "Le mot de passe doit contenir minimum 6 caractères.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Le mot de passe doit contenir minimum 6 caractères.";
 				return 0;
 			}
 
 			setuser $admins($vuser) PASS $value1
-			eva:FCT:SENT:NOTICE "$user" "Changement du mot de passe reussi."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Newpass" "$user"
+			::EvaServ::SENT:MSG:TO:USER $user "Changement du mot de passe reussi."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Newpass" "$user"
 			}
 		}
 		"map" {
-			set eva(rep)		$vuser
-			eva:sent2socket ":$eva(server_id) LINKS"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Map" "$user"
+			set config(rep)		$vuser
+			::EvaServ::sent2socket ":$config(server_id) LINKS"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Map" "$user"
 			}
 		}
 		"seen" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE "$user" "<b>Commande Seen :</b> /msg $eva(pseudo) seen pseudo";
+				::EvaServ::SENT:MSG:TO:USER $user "<b>Commande Seen :</b> /msg $config(service_nick) seen pseudo";
 				return 0;
 			}
 
 			if { [validuser $value1] } {
 				set annee		[lindex [ctime [getuser $value1 LASTON]] 4]
-				if { $annee != "1970" } { set seen		[eva:duree [getuser $value1 LASTON]] } else {
+				if { $annee != "1970" } { set seen		[::EvaServ::duree [getuser $value1 LASTON]] } else {
 					set seen		"Jamais"
 				}
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Seen" "$user"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Seen" "$user"
 				}
 				if { [matchattr $value1 n] } {
-					eva:FCT:SENT:NOTICE $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Admin<c1>\] <c> Seen \[<c02>$seen<c1>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Admin<c1>\] <c> Seen \[<c02>$seen<c1>\]"
 				} elseif { [matchattr $value1 m] } {
-					eva:FCT:SENT:NOTICE $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Ircop<c1>\] <c> Seen \[<c02>$seen<c1>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Ircop<c1>\] <c> Seen \[<c02>$seen<c1>\]"
 				} elseif { [matchattr $value1 o] } {
-					eva:FCT:SENT:NOTICE $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Géofront<c1>\] <c> Seen \[<c02>$seen<c1>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Géofront<c1>\] <c> Seen \[<c02>$seen<c1>\]"
 				} elseif { [matchattr $value1 p] } {
-					eva:FCT:SENT:NOTICE $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Helpeur<c1>\] <c> Seen \[<c02>$seen<c1>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c1>Pseudo \[<c4>$value1<c1>\] <c> Level \[<c03>Helpeur<c1>\] <c> Seen \[<c02>$seen<c1>\]"
 				}
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo inconnu.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo inconnu.";
 				return 0;
 			}
 		}
 		"access" {
 			if { $value1 == "*" || $value1 == "" } {
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Access" "$user"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Access" "$user"
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b><c1,1>------------------------------- <c0>Liste des Accès <c1>-------------------------------"
-				eva:FCT:SENT:NOTICE $vuser "<b>"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>------------------------------- <c0>Liste des Accès <c1>-------------------------------"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 				foreach acces [userlist] {
 					set annee		[lindex [ctime [getuser $acces LASTON]] 4]
-					if { $annee != "1970" } { set seen		[eva:duree [getuser $acces LASTON]] } else {
+					if { $annee != "1970" } { set seen		[::EvaServ::duree [getuser $acces LASTON]] } else {
 						set seen		"Jamais"
 					}
 					foreach { act reg } [array get admins] {
 						if { $reg == [string tolower $acces] } { set status		"<c03>Online" }
 					}
 					if { ![info exists status] } { set status		"<c04>Offline" }
-					switch -exact $eva(protection) {
+					switch -exact $config(protection) {
 						1 {
 							if { [matchattr $acces n] } { set aprotect		"<c03>On" }
 						}
@@ -1559,25 +1749,25 @@ proc eva:cmds { arg } {
 					}
 					if { ![info exists aprotect] } { set aprotect		"<c04>Off" }
 					if { [matchattr $acces n] } {
-						eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c>"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
 					} elseif { [matchattr $acces m] } {
-						eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Ircop<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c>"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Ircop<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
 					} elseif { [matchattr $acces o] } {
-						eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Géofront<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c>"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Géofront<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
 					} elseif { [matchattr $acces p] } {
-						eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Helpeur<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
-						eva:FCT:SENT:NOTICE $vuser "<c>"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$acces<c01>\] <c01> Level \[<c03>Helpeur<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $acces HOSTS]<c01>\]"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
 					}
 					unset status;
 					unset seen;
@@ -1585,14 +1775,14 @@ proc eva:cmds { arg } {
 				}
 			} elseif { [validuser $value1] } {
 				set annee		[lindex [ctime [getuser $value1 LASTON]] 4]
-				if { $annee != "1970" } { set seen		[eva:duree [getuser $value1 LASTON]] } else {
+				if { $annee != "1970" } { set seen		[::EvaServ::duree [getuser $value1 LASTON]] } else {
 					set seen		"Jamais"
 				}
 				foreach { act reg } [array get admins] {
 					if { $reg == [string tolower $value1] } { set status		"<c03>Online" }
 				}
 				if { ![info exists status] } { set status		"<c04>Offline" }
-				switch -exact $eva(protection) {
+				switch -exact $config(protection) {
 					1 {
 						if { [matchattr $value1 n] } { set aprotect		"<c03>On" }
 					}
@@ -1607,1024 +1797,1024 @@ proc eva:cmds { arg } {
 					}
 				}
 				if { ![info exists aprotect] } { set aprotect		"<c04>Off" }
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "Access" "$user"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Access" "$user"
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b><c1,1>--------------------------- <c0>Accès de $value1 <c1>---------------------------"
-				eva:FCT:SENT:NOTICE $vuser "<b>"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>--------------------------- <c0>Accès de $value1 <c1>---------------------------"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 				if { [matchattr $value1 n] } {
-					eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
 				} elseif { [matchattr $value1 m] } {
-					eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Ircop<c01>\] <c> Seen \[<c12>$seen<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Ircop<c01>\] <c> Seen \[<c12>$seen<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
 				} elseif { [matchattr $value1 o] } {
-					eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Géofront<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[<c03>$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Géofront<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[<c03>$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
 				} elseif { [matchattr $value1 p] } {
-					eva:FCT:SENT:NOTICE $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Helpeur<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
-					eva:FCT:SENT:NOTICE $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Pseudo \[<c04>$value1<c01>\] <c01> Level \[<c03>Helpeur<c01>\] <c01> Seen \[<c12>$seen<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Statut \[$status<c01>\] <c01> Protection \[$aprotect<c01>\]"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> Mask \[<c02>[getuser $value1 HOSTS]<c01>\]"
 				}
-				eva:FCT:SENT:NOTICE $vuser "<c>"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c>"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Accès."
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Accès."
 			}
 		}
 		"owner" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Owner :</b> /msg $eva(pseudo) owner #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Owner :</b> /msg $config(service_nick) owner #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0
 				}
-				eva:FCT:SENT:MODE $value1 "+q" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Owner" "$value3 sur $value1 par $user"
+				::EvaServ::FCT:SENT:MODE $value1 "+q" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Owner" "$value3 sur $value1 par $user"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "+q" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Owner" "$user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+q" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Owner" "$user sur $value1"
 				}
 			}
 		}
 		"deowner" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deowner :</b> /msg $eva(pseudo) deowner #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deowner :</b> /msg $config(service_nick) deowner #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "-q" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deowner" "$value3 sur $value1 par $user"
+				::EvaServ::FCT:SENT:MODE $value1 "-q" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deowner" "$value3 sur $value1 par $user"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "-q" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deowner" "$user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-q" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deowner" "$user sur $value1"
 				}
 			}
 		}
 		"protect" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Protect :</b> /msg $eva(pseudo) protect #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Protect :</b> /msg $config(service_nick) protect #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "+a" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Protect" "$value3 sur $value1 par $user"
+				::EvaServ::FCT:SENT:MODE $value1 "+a" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protect" "$value3 sur $value1 par $user"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "+a" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Protect" "$user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+a" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Protect" "$user sur $value1"
 				}
 			}
 		}
 		"deprotect" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deprotect :</b> /msg $eva(pseudo) deprotect #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deprotect :</b> /msg $config(service_nick) deprotect #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "-a" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deprotect" "$value3 sur $value1 par $user"
+				::EvaServ::FCT:SENT:MODE $value1 "-a" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deprotect" "$value3 sur $value1 par $user"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "-a" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deprotect" "$user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-a" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deprotect" "$user sur $value1"
 				}
 			}
 		}
 		"ownerall" {
-			set eva(cmd)		"ownerall"
+			set config(cmd)		"ownerall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Ownerall :</b> /msg $eva(pseudo) ownerall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Ownerall :</b> /msg $config(service_nick) ownerall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Ownerall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Ownerall" "$value1 par $user"
 			}
 		}
 		"deownerall" {
-			set eva(cmd)		"deownerall"
+			set config(cmd)		"deownerall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deownerall :</b> /msg $eva(pseudo) deownerall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deownerall :</b> /msg $config(service_nick) deownerall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Deownerall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Deownerall" "$value1 par $user"
 			}
 		}
 		"protectall" {
-			set eva(cmd)		"protectall"
+			set config(cmd)		"protectall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Protectall :</b> /msg $eva(pseudo) protectall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Protectall :</b> /msg $config(service_nick) protectall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Protectall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Protectall" "$value1 par $user"
 			}
 		}
 		"deprotectall" {
-			set eva(cmd)		"deprotectall"
+			set config(cmd)		"deprotectall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deprotectall :</b> /msg $eva(pseudo) deprotectall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deprotectall :</b> /msg $config(service_nick) deprotectall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Deprotectall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Deprotectall" "$value1 par $user"
 			}
 		}
 		"op" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Op :</b> /msg $eva(pseudo) op #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Op :</b> /msg $config(service_nick) op #salon pseudo";
 				return 0
 			}
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0
 			}
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
-				eva:FCT:SENT:MODE $value1 "+o" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Op" "$value3 a été opé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+o" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Op" "$value3 a été opé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "+o" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Op" "$user a été opé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+o" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Op" "$user a été opé sur $value1"
 				}
 			}
 		}
 		"deop" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deop :</b> /msg $eva(pseudo) deop #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deop :</b> /msg $config(service_nick) deop #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "-o" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deop" "$value3 a été déopé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-o" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deop" "$value3 a été déopé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "-o" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Deop" "$user a été déopé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-o" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Deop" "$user a été déopé sur $value1"
 				}
 			}
 		}
 		"halfop" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Halfop :</b> /msg $eva(pseudo) halfop #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Halfop :</b> /msg $config(service_nick) halfop #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "+h" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Halfop" "$value3 a été halfopé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+h" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Halfop" "$value3 a été halfopé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "+h" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Halfop" "$user a été halfopé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+h" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Halfop" "$user a été halfopé sur $value1"
 				}
 			}
 		}
 		"dehalfop" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Dehalfop :</b> /msg $eva(pseudo) dehalfop #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Dehalfop :</b> /msg $config(service_nick) dehalfop #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "-h" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Dehalfop" "$value3 a été déhalfopé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-h" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Dehalfop" "$value3 a été déhalfopé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "-h" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Dehalfop" "$user a été déhalfopé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-h" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Dehalfop" "$user a été déhalfopé sur $value1"
 				}
 			}
 		}
 		"voice" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Voice :</b> /msg $eva(pseudo) voice #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Voice :</b> /msg $config(service_nick) voice #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "+v" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Voice" "$value3 a été voicé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+v" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Voice" "$value3 a été voicé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "+v" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Voice" "$user a été voicé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "+v" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Voice" "$user a été voicé sur $value1"
 				}
 			}
 		}
 		"devoice" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Devoice :</b> /msg $eva(pseudo) devoice #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Devoice :</b> /msg $config(service_nick) devoice #salon pseudo";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value4 != "" } {
 				if { ![info exists vhost($value4)] } {
-					eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 					return 0;
 				}
 
-				eva:FCT:SENT:MODE $value1 "-v" $value3
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Devoice" "$value3 a été dévoicé par $user sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-v" $value3
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Devoice" "$value3 a été dévoicé par $user sur $value1"
 				}
 			} else {
-				eva:FCT:SENT:MODE $value1 "-v" $user
-				if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-					eva:SHOW:INFO:TO:CHANLOG "Devoice" "$user a été dévoicé sur $value1"
+				::EvaServ::FCT:SENT:MODE $value1 "-v" $user
+				if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Devoice" "$user a été dévoicé sur $value1"
 				}
 			}
 		}
 		"opall" {
-			set eva(cmd)		"opall"
+			set config(cmd)		"opall"
 
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Opall :</b> /msg $eva(pseudo) opall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Opall :</b> /msg $config(service_nick) opall #salon";
 				return 0;
 			}
-			eva:sent2socket ":$eva(link) NAMES $value1"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
 
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Opall" "$value1 par $user"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Opall" "$value1 par $user"
 			}
 		}
 		"deopall" {
-			set eva(cmd)		"deopall"
+			set config(cmd)		"deopall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Deopall :</b> /msg $eva(pseudo) deopall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Deopall :</b> /msg $config(service_nick) deopall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Deopall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Deopall" "$value1 par $user"
 			}
 		}
 		"halfopall" {
-			set eva(cmd)		"halfopall"
+			set config(cmd)		"halfopall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Halfopall :</b> /msg $eva(pseudo) halfopall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Halfopall :</b> /msg $config(service_nick) halfopall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Halfopall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Halfopall" "$value1 par $user"
 			}
 		}
 		"dehalfopall" {
-			set eva(cmd)		"dehalfopall"
+			set config(cmd)		"dehalfopall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Dehalfopall :</b> /msg $eva(pseudo) dehalfopall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Dehalfopall :</b> /msg $config(service_nick) dehalfopall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Dehalfopall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Dehalfopall" "$value1 par $user"
 			}
 		}
 		"voiceall" {
-			set eva(cmd)		"voiceall"
+			set config(cmd)		"voiceall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Voiceall :</b> /msg $eva(pseudo) voiceall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Voiceall :</b> /msg $config(service_nick) voiceall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Voiceall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Voiceall" "$value1 par $user"
 			}
 		}
 		"devoiceall" {
-			set eva(cmd)		"devoiceall"
+			set config(cmd)		"devoiceall"
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Devoiceall :</b> /msg $eva(pseudo) devoiceall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Devoiceall :</b> /msg $config(service_nick) devoiceall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Devoiceall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Devoiceall" "$value1 par $user"
 			}
 		}
 		"kick" {
 			if { [string index $value1 0] != "#" || $value4 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Kick :</b> /msg $eva(pseudo) kick #salon pseudo raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Kick :</b> /msg $config(service_nick) kick #salon pseudo raison";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value5 == "" } { set value5		"Kicked" }
-			eva:sent2socket ":$eva(server_id) KICK $value2 $value4 $value5 [eva:rnick $user]"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Kick" "$value3 a été kické par $user sur $value1 - Raison : $value5"
+			::EvaServ::sent2socket ":$config(server_id) KICK $value2 $value4 $value5 [::EvaServ::rnick $user]"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Kick" "$value3 a été kické par $user sur $value1 - Raison : $value5"
 			}
 		}
 		"kickall" {
-			set eva(cmd)		"kickall";
-			set eva(rep)		$user
+			set config(cmd)		"kickall";
+			set config(rep)		$user
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Kickall :</b> /msg $eva(pseudo) kickall #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Kickall :</b> /msg $config(service_nick) kickall #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Kickall" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Kickall" "$value1 par $user"
 			}
 		}
 		"ban" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Ban :</b> /msg $eva(pseudo) ban #salon mask";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Ban :</b> /msg $config(service_nick) ban #salon mask";
 				return 0;
 			}
 
-			eva:FCT:SENT:MODE $value1 "+b" $value3
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Ban" "$value3 a été banni par $user sur $value1"
+			::EvaServ::FCT:SENT:MODE $value1 "+b" $value3
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Ban" "$value3 a été banni par $user sur $value1"
 			}
 		}
 		"nickban" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Nickban :</b> /msg $eva(pseudo) nickban #salon pseudo raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Nickban :</b> /msg $config(service_nick) nickban #salon pseudo raison";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { ![info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
 			if { $value5 == "" } { set value5		"Nick Banned" }
-			eva:FCT:SENT:MODE $value1 "+b" "$value4*!*@*"
-			eva:sent2socket ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Nickban" "$value3 a été banni par $user sur $value1 - Raison : $value5"
+			::EvaServ::FCT:SENT:MODE $value1 "+b" "$value4*!*@*"
+			::EvaServ::sent2socket ":$config(server_id) KICK $value1 $value3 $value5 [::EvaServ::rnick $user]"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Nickban" "$value3 a été banni par $user sur $value1 - Raison : $value5"
 			}
 		}
 		"kickban" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Kickban :</b> /msg $eva(pseudo) kickban #salon pseudo raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Kickban :</b> /msg $config(service_nick) kickban #salon pseudo raison";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { ![info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
 			if { $value5 == "" } { set value5		"Kick Banned" }
-			eva:FCT:SENT:MODE $value1 "+b" "*!*@$vhost($value4)"
-			eva:sent2socket ":$eva(server_id) KICK $value1 $value3 $value5 [eva:rnick $user]"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Kickban" "$value3 a été banni par $user sur $value1 - Raison : $value5"
+			::EvaServ::FCT:SENT:MODE $value1 "+b" "*!*@$vhost($value4)"
+			::EvaServ::sent2socket ":$config(server_id) KICK $value1 $value3 $value5 [::EvaServ::rnick $user]"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Kickban" "$value3 a été banni par $user sur $value1 - Raison : $value5"
 			}
 		}
 		"unban" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Unban :</b> /msg $eva(pseudo) unban #salon mask";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Unban :</b> /msg $config(service_nick) unban #salon mask";
 				return 0;
 			}
 
-			eva:FCT:SENT:MODE $value1 "-b" $value3
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Unban" "$value3 a été débanni par $user sur $value1"
+			::EvaServ::FCT:SENT:MODE $value1 "-b" $value3
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Unban" "$value3 a été débanni par $user sur $value1"
 			}
 		}
 		"clearbans" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Clearbans :</b> /msg $eva(pseudo) clearbans #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Clearbans :</b> /msg $config(service_nick) clearbans #salon";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) SVSMODE $value1 -b"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Clearbans" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(server_id) SVSMODE $value1 -b"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Clearbans" "$value1 par $user"
 			}
 		}
 		"topic" {
 			if { [string index $value1 0] != "#" || $value6 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Topic :</b> /msg $eva(pseudo) topic #salon topic";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Topic :</b> /msg $config(service_nick) topic #salon topic";
 				return 0;
 			}
 
-			eva:FCT:SET:TOPIC $value1 $value6
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Topic" "$user change le topic sur $value1 : $value6"
+			::EvaServ::FCT:SET:TOPIC $value1 $value6
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Topic" "$user change le topic sur $value1 : $value6"
 			}
 		}
 		"mode" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Mode :</b> /msg $eva(pseudo) mode #salon +/-mode";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Mode :</b> /msg $config(service_nick) mode #salon +/-mode";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
 				return 0;
 			}
 
 			if { ![regexp ^\[\+\-\]+\[a-zA-Z\]+$ $value3] } {
-				eva:FCT:SENT:NOTICE "$user" "Chanmode Incorrect";
+				::EvaServ::SENT:MSG:TO:USER $user "Chanmode Incorrect";
 				return 0;
 			}
 
 			if { [string match *q* $value3] || [string match *a* $value3] ||[string match *o* $value3] ||[string match *h* $value3] ||[string match *v* $value3] } {
-				eva:FCT:SENT:NOTICE "$user" "Chanmode Refusé";
+				::EvaServ::SENT:MSG:TO:USER $user "Chanmode Refusé";
 				return 0;
 			}
 
-			eva:FCT:SENT:MODE $value1 $value6
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $value6 sur $value1"
+			::EvaServ::FCT:SENT:MODE $value1 $value6
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $value6 sur $value1"
 			}
 		}
 		"clearmodes" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Clearmodes :</b> /msg $eva(pseudo) clearmodes #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Clearmodes :</b> /msg $config(service_nick) clearmodes #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
 				return 0;
 			}
 
-			eva:FCT:SENT:MODE $value1
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Clearmodes" "$user sur $value1"
+			::EvaServ::FCT:SENT:MODE $value1
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Clearmodes" "$user sur $value1"
 			}
 		}
 		"clearallmodes" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Clearallmodes :</b> /msg $eva(pseudo) clearallmodes #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Clearallmodes :</b> /msg $config(service_nick) clearallmodes #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) SVSMODE $value1 -beIqaohv"
-			eva:FCT:SENT:MODE $value1
-			eva:sent2socket ":$eva(server_id) SVSMODE $value1 -b"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Clearallmodes" "$user sur $value1"
+			::EvaServ::sent2socket ":$config(server_id) SVSMODE $value1 -beIqaohv"
+			::EvaServ::FCT:SENT:MODE $value1
+			::EvaServ::sent2socket ":$config(server_id) SVSMODE $value1 -b"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Clearallmodes" "$user sur $value1"
 			}
 		}
 		"kill" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Kill :</b> /msg $eva(pseudo) kill pseudo raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Kill :</b> /msg $config(service_nick) kill pseudo raison";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value2 == [string tolower $config(service_nick)] || [info exists users($value2)] || [::EvaServ::protection $value2 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { ![info exists vhost($value2)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
 			if { $value6 == "" } { set value6		"Killed" }
-			eva:sent2socket ":$eva(server_id) KILL $value1 $value6 [eva:rnick $user]";
-			eva:refresh $value2
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Kill" "$value1 a été killé par $user : $value6"
+			::EvaServ::sent2socket ":$config(server_id) KILL $value1 $value6 [::EvaServ::rnick $user]";
+			::EvaServ::refresh $value2
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$value1 a été killé par $user : $value6"
 			}
 		}
 		"chankill" {
-			set eva(cmd)		"chankill";
-			set eva(rep)		$user
+			set config(cmd)		"chankill";
+			set config(rep)		$user
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Chankill :</b> /msg $eva(pseudo) chankill #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Chankill :</b> /msg $config(service_nick) chankill #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Chankill" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Chankill" "$value1 par $user"
 			}
 		}
 		"svsjoin" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Svsjoin :</b> /msg $eva(pseudo) svsjoin #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Svsjoin :</b> /msg $config(service_nick) svsjoin #salon pseudo";
 				return 0;
 			}
 
 			if { ![info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) SVSJOIN [eva:UID:CONVERT $value3] $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Svsjoin" "$value3 entre sur $value1 par $user"
+			::EvaServ::sent2socket ":$config(server_id) SVSJOIN [::EvaServ::UID:CONVERT $value3] $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Svsjoin" "$value3 entre sur $value1 par $user"
 			}
 		}
 		"svspart" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Svspart :</b> /msg $eva(pseudo) svspart #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Svspart :</b> /msg $config(service_nick) svspart #salon pseudo";
 				return 0;
 			}
 
 			if { ![info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
-			if { $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value4)] || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value4 == [string tolower $config(service_nick)] || [info exists users($value4)] || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) SVSPART $value3 $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Svspart" "$value3 part de $value1 par $user"
+			::EvaServ::sent2socket ":$config(server_id) SVSPART $value3 $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Svspart" "$value3 part de $value1 par $user"
 			}
 		}
 		"svsnick" {
 			if { $value1 == "" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Svsnick :</b> /msg $eva(pseudo) svsnick ancien-pseudo nouveau-pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Svsnick :</b> /msg $config(service_nick) svsnick ancien-pseudo nouveau-pseudo";
 				return 0;
 			}
 
 			if { $value2==$value4 } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo Identique.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo Identique.";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(pseudo)] || $value4 == [string tolower $eva(pseudo)] || [info exists ueva($value2)] || [info exists ueva($value4)] || [eva:protection $value2 $eva(protection)] == "ok" || [eva:protection $value4 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value2 == [string tolower $config(service_nick)] || $value4 == [string tolower $config(service_nick)] || [info exists users($value2)] || [info exists users($value4)] || [::EvaServ::protection $value2 $config(protection)] == "ok" || [::EvaServ::protection $value4 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { ![info exists vhost($value2)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable ($value1).";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable ($value1).";
 				return 0;
 			}
 
 			if { [info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo existant ($value3).";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo existant ($value3).";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(SID) SVSNICK [eva:UID:CONVERT $value1] $value3 [unixtime]"
+			::EvaServ::sent2socket ":$config(SID) SVSNICK [::EvaServ::UID:CONVERT $value1] $value3 [unixtime]"
 			if { [info exists vhost($value1)] && $value1!=$value3 } {
 				set vhost($value3)		$vhost($value1);
 				unset vhost($value1)
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Svsnick" "$user change le pseudo de $value1 en $value3"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Svsnick" "$user change le pseudo de $value1 en $value3"
 			}
 		}
 		"say" {
 			if { [string index $value1 0] != "#" || $value6 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Say :</b> /msg $eva(pseudo) say #salon message";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Say :</b> /msg $config(service_nick) say #salon message";
 				return 0;
 			}
 
-			eva:FCT:SENT:PRIVMSG $value1 "$value6"
-			if { [eva:console 1] == "ok" && $value2!=[string tolower $eva(salon)] } {
-				eva:SHOW:INFO:TO:CHANLOG "Say" "$user sur $value1 : $value6"
+			::EvaServ::SENT:MSG:TO:USER $value1 "$value6"
+			if { [::EvaServ::console 1] == "ok" && $value2!=[string tolower $config(salon)] } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Say" "$user sur $value1 : $value6"
 			}
 		}
 		"invite" {
 			if { [string index $value1 0] != "#" || $value3 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Invite :</b> /msg $eva(pseudo) invite #salon pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Invite :</b> /msg $config(service_nick) invite #salon pseudo";
 				return 0;
 			}
 
 			if { ![info exists vhost($value4)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) INVITE $value3 $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Invite" "$user invite $value3 sur $value1"
+			::EvaServ::sent2socket ":$config(server_id) INVITE $value3 $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Invite" "$user invite $value3 sur $value1"
 			}
 		}
 		"inviteme" {
-			eva:sent2socket ":$eva(server_id) INVITE $user $eva(salon)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Inviteme" "$user"
+			::EvaServ::sent2socket ":$config(server_id) INVITE $user $config(salon)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Inviteme" "$user"
 			}
 		}
 		"wallops" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Wallops :</b> /msg $eva(pseudo) wallops message";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Wallops :</b> /msg $config(service_nick) wallops message";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) WALLOPS $value7 ($user)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Wallops" "$user : $value7"
+			::EvaServ::sent2socket ":$config(server_id) WALLOPS $value7 ($user)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Wallops" "$user : $value7"
 			}
 		}
 		"globops" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Globops :</b> /msg $eva(pseudo) globops message";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Globops :</b> /msg $config(service_nick) globops message";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) GLOBOPS $value7 ($user)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Globops" "$user : $value7"
+			::EvaServ::sent2socket ":$config(server_id) GLOBOPS $value7 ($user)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Globops" "$user : $value7"
 			}
 		}
 		"notice" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Notice :</b> /msg $eva(pseudo) notice message";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Notice :</b> /msg $config(service_nick) notice message";
 				return 0;
 			}
 
-			eva:FCT:SENT:NOTICE "$*.*" "\[<b>Notice Globale</b>\] $value7"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Notice" "$user"
+			::EvaServ::SENT:MSG:TO:USER "$*.*" "\[<b>Notice Globale</b>\] $value7"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Notice" "$user"
 			}
 		}
 		"whois" {
-			set eva(rep)		$vuser
+			set config(rep)		$vuser
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Whois :</b> /msg $eva(pseudo) whois pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Whois :</b> /msg $config(service_nick) whois pseudo";
 				return 0;
 			}
 
 			if { ![info exists vhost($value2)] } {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(server_id) WHOIS $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Whois" "$user"
+			::EvaServ::sent2socket ":$config(server_id) WHOIS $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Whois" "$user"
 			}
 		}
 		"changline" {
-			set eva(cmd)		"changline";
-			set eva(rep)		$user
+			set config(cmd)		"changline";
+			set config(rep)		$user
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Changline :</b> /msg $eva(pseudo) changline #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Changline :</b> /msg $config(service_nick) changline #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Changline" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Changline" "$value1 par $user"
 			}
 		}
 		"gline" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Gline :</b> /msg $eva(pseudo) gline <pseudo ou ip> raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Gline :</b> /msg $config(service_nick) gline <pseudo ou ip> raison";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value2 == [string tolower $config(service_nick)] || [info exists users($value2)] || [::EvaServ::protection $value2 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value6 == "" } { set value6		"Glined" }
 			if { [info exists vhost($value2)] } {
-				eva:sent2socket ":$eva(link) TKL + G * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + G * $vhost($value2) $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} elseif { [string match *.* $value1] } {
-				eva:sent2socket ":$eva(link) TKL + G * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + G * $value1 $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Gline" "$value1 par $user - Raison : $value6"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Gline" "$value1 par $user - Raison : $value6"
 			}
 		}
 		"ungline" {
 			if { $value1 == "" ||![string match *@* $value1] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Ungline :</b> /msg $eva(pseudo) ungline ident@host";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Ungline :</b> /msg $config(service_nick) ungline ident@host";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) TKL - G [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Ungline" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) TKL - G [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $config(service_nick)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Ungline" "$value1 par $user"
 			}
 		}
 		"shun" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Shun :</b> /msg $eva(pseudo) shun <pseudo ou ip> raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Shun :</b> /msg $config(service_nick) shun <pseudo ou ip> raison";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value2 == [string tolower $config(service_nick)] || [info exists users($value2)] || [::EvaServ::protection $value2 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value6 == "" } { set value6		"Shun" }
 			if { [info exists vhost($value2)] } {
-				eva:sent2socket ":$eva(link) TKL + s * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + s * $vhost($value2) $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} elseif { [string match *.* $value1] } {
-				eva:sent2socket ":$eva(link) TKL + s * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + s * $value1 $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Shun" "$value1 par $user - Raison : $value6"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Shun" "$value1 par $user - Raison : $value6"
 			}
 		}
 		"unshun" {
 			if { $value1 == "" ||![string match *@* $value1] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Unshun :</b> /msg $eva(pseudo) unshun ident@host";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Unshun :</b> /msg $config(service_nick) unshun ident@host";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) TKL - s [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Unshun" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) TKL - s [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $config(service_nick)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Unshun" "$value1 par $user"
 			}
 		}
 		"kline" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Kline :</b> /msg $eva(pseudo) kline <pseudo ou ip> raison";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Kline :</b> /msg $config(service_nick) kline <pseudo ou ip> raison";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(pseudo)] || [info exists ueva($value2)] || [eva:protection $value2 $eva(protection)] == "ok" } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { $value2 == [string tolower $config(service_nick)] || [info exists users($value2)] || [::EvaServ::protection $value2 $config(protection)] == "ok" } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
 			if { $value6 == "" } { set value6		"Klined" }
 			if { [info exists vhost($value2)] } {
-				eva:sent2socket ":$eva(link) TKL + k * $vhost($value2) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + k * $vhost($value2) $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} elseif { [string match *.* $value1] } {
-				eva:sent2socket ":$eva(link) TKL + k * $value1 $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] : $value6 [eva:rnick $user] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + k * $value1 $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] : $value6 [::EvaServ::rnick $user] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} else {
-				eva:FCT:SENT:NOTICE $vuser "Pseudo introuvable.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Pseudo introuvable.";
 				return 0;
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Kline" "$value1 par $user - Raison : $value6"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Kline" "$value1 par $user - Raison : $value6"
 			}
 		}
 		"unkline" {
 			if { $value1 == "" || ![string match *@* $value1] } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Unkline :</b> /msg $eva(pseudo) unkline ident@host";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Unkline :</b> /msg $config(service_nick) unkline ident@host";
 				return 0;
 			}
 
-			eva:sent2socket ":$eva(link) TKL - k [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $eva(pseudo)"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Unkline" "$value1 par $user"
+			::EvaServ::sent2socket ":$config(link) TKL - k [lindex [split $value1 @] 0] [lindex [split $value1 @] 1] $config(service_nick)"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Unkline" "$value1 par $user"
 			}
 		}
 		"glinelist" {
-			set eva(cmd)		"gline";
-			set eva(rep)		$vuser
-			eva:sent2socket ":$eva(server_id) STATS G"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Glinelist" "$user"
+			set config(cmd)		"gline";
+			set config(rep)		$vuser
+			::EvaServ::sent2socket ":$config(server_id) STATS G"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Glinelist" "$user"
 			}
 		}
 		"shunlist" {
-			set eva(cmd)		"shun";
-			set eva(rep)		$vuser
-			eva:sent2socket ":$eva(server_id) STATS s"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Shunlist" "$user"
+			set config(cmd)		"shun";
+			set config(rep)		$vuser
+			::EvaServ::sent2socket ":$config(server_id) STATS s"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Shunlist" "$user"
 			}
 		}
 		"klinelist" {
-			set eva(cmd)		"kline";
-			set eva(rep)		$vuser
-			eva:sent2socket ":$eva(server_id) STATS K"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Klinelist" "$user"
+			set config(cmd)		"kline";
+			set config(rep)		$vuser
+			::EvaServ::sent2socket ":$config(server_id) STATS K"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Klinelist" "$user"
 			}
 		}
 		"cleargline" {
-			set eva(cmd)		"cleargline"
-			eva:sent2socket ":$eva(server_id) STATS G"
-			eva:FCT:SENT:NOTICE $vuser "Liste des glines vidée."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Cleargline" "$user"
+			set config(cmd)		"cleargline"
+			::EvaServ::sent2socket ":$config(server_id) STATS G"
+			::EvaServ::SENT:MSG:TO:USER $vuser "Liste des glines vidée."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Cleargline" "$user"
 			}
 		}
 		"clearkline" {
-			set eva(cmd)		"clearkline"
-			eva:sent2socket ":$eva(server_id) STATS K"
-			eva:FCT:SENT:NOTICE $vuser "Liste des klines vidée."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Clearkline" "$user"
+			set config(cmd)		"clearkline"
+			::EvaServ::sent2socket ":$config(server_id) STATS K"
+			::EvaServ::SENT:MSG:TO:USER $vuser "Liste des klines vidée."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Clearkline" "$user"
 			}
 		}
 		"clientlist" {
-			catch { open "[eva:scriptdir]db/client.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>------ <c0>Liste des clients IRC interdits <c1>------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/client.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>------ <c0>Liste des clients IRC interdits <c1>------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste version;
 				if { $version != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $version"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $version"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun client IRC"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun client IRC"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Clientlist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Clientlist" "$user"
 			}
 		}
 		"clientadd" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande clientadd :</b> /msg $eva(pseudo) clientadd version";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande clientadd :</b> /msg $config(service_nick) clientadd version";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/client.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/client.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value7 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> est déjà dans la liste des clients IRC interdits.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value7</b> est déjà dans la liste des clients IRC interdits.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set bclient		[open "[eva:scriptdir]db/client.db" a];
+			set bclient		[open "[::EvaServ::Script:Get:Directory]db/client.db" a];
 			puts $bclient [string tolower $value7];
 			close $bclient
-			eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> a bien été ajouté à la liste des clients IRC interdits."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "clientadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value7</b> a bien été ajouté à la liste des clients IRC interdits."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "clientadd" "$user"
 			}
 		}
 		"clientdel" {
 			if { $value7 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande clientdel :</b> /msg $eva(pseudo) clientdel version";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande clientdel :</b> /msg $config(service_nick) clientdel version";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/client.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/client.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value7 $verif] } { set stop		1 }
@@ -2632,116 +2822,116 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> n'est pas dans la liste des clients IRC interdits.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value7</b> n'est pas dans la liste des clients IRC interdits.";
 				return 0;
 			} else {
 				if [info exists vers] {
-					set del		[open "[eva:scriptdir]db/client.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/client.db" w+];
 					foreach clientdel $vers { puts $del "$clientdel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/client.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/client.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value7</b> a bien été supprimé de la liste des clients IRC interdits."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "clientdel" "$user"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value7</b> a bien été supprimé de la liste des clients IRC interdits."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "clientdel" "$user"
 				}
 			}
 		}
 		"client" {
 			if { $value2 != "on" && $value2 != "off" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Client :</b> /msg $eva(pseudo) client on/off";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Client :</b> /msg $config(service_nick) client on/off";
 				return 0;
 			}
 
 			if { $value2 == "on" } {
-				if { $eva(aclient) == 0 } {
-					set eva(aclient)		1;
-					eva:FCT:SENT:NOTICE $vuser "Protection clients IRC activée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Client" "$user"
+				if { $config(aclient) == 0 } {
+					set config(aclient)		1;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Protection clients IRC activée"
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Client" "$user"
 					}
 				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection clients IRC est déjà activée."
+					::EvaServ::SENT:MSG:TO:USER $vuser "La protection clients IRC est déjà activée."
 				}
 			} elseif { $value2 == "off" } {
-				if { $eva(aclient) == 1 } {
-					set eva(aclient)		0;
-					eva:FCT:SENT:NOTICE $vuser "Protection clients IRC désactivée"
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "Client" "$user"
+				if { $config(aclient) == 1 } {
+					set config(aclient)		0;
+					::EvaServ::SENT:MSG:TO:USER $vuser "Protection clients IRC désactivée"
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Client" "$user"
 					}
 				} else {
-					eva:FCT:SENT:NOTICE $vuser "La protection clients IRC est déjà désactivée."
+					::EvaServ::SENT:MSG:TO:USER $vuser "La protection clients IRC est déjà désactivée."
 				}
 			}
 		}
 		"closeadd" {
-			set eva(cmd)		"closeadd";
-			set eva(rep)		$user
+			set config(cmd)		"closeadd";
+			set config(rep)		$user
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande Close add :</b> /msg $eva(pseudo) closeadd #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande Close add :</b> /msg $config(service_nick) closeadd #salon";
 				return 0;
 			}
 
-			if { $value2 == [string tolower $eva(salon)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Salon de logs";
+			if { $value2 == [string tolower $config(salon)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Salon de logs";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/salon.db" r } liste1
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste1
 			while { ![eof $liste1] } {
 				gets $liste1 verif1;
 				if { ![string compare -nocase $value2 $verif1] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Interdit";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Interdit";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste1 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/chan.db" r } liste3
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste3
 			while { ![eof $liste3] } {
 				gets $liste3 verif3;
 				if { ![string compare -nocase $value2 $verif3] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Autojoin";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Autojoin";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste3 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/close.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des salons fermés.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des salons fermés.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set bclose		[open "[eva:scriptdir]db/close.db" a];
+			set bclose		[open "[::EvaServ::Script:Get:Directory]db/close.db" a];
 			puts $bclose $value2;
 			close $bclose
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> vient d'être ajouté dans la liste des salons fermés."
-			eva:sent2socket ":$eva(server_id) JOIN $value1";
-			eva:FCT:SENT:MODE $value1 +sntio "$eva(pseudo)";
-			eva:FCT:SET:TOPIC $value1 "<c1>Salon Fermé le [eva:duree [unixtime]]"
-			eva:sent2socket ":$eva(link) NAMES $value1"
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "closeadd" "$value1 par $user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> vient d'être ajouté dans la liste des salons fermés."
+			::EvaServ::sent2socket ":$config(server_id) JOIN $value1";
+			::EvaServ::FCT:SENT:MODE $value1 +sntio "$config(service_nick)";
+			::EvaServ::FCT:SET:TOPIC $value1 "<c1>Salon Fermé le [::EvaServ::duree [unixtime]]"
+			::EvaServ::sent2socket ":$config(link) NAMES $value1"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "closeadd" "$value1 par $user"
 			}
 		}
 		"closedel" {
 			if { [string index $value1 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande closedel :</b> /msg $eva(pseudo) closedel #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande closedel :</b> /msg $config(service_nick) closedel #salon";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/close.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -2749,114 +2939,114 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des salons fermés.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des salons fermés.";
 				return 0;
 			} else {
 				if [info exists salon] {
-					set del		[open "[eva:scriptdir]db/close.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/close.db" w+];
 					foreach chandel $salon { puts $del "$chandel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/close.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/close.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE "$user" "<b>$value1</b> a bien été supprimé de la liste des salons fermés."
-				eva:FCT:SENT:MODE $value1
-				eva:FCT:SET:TOPIC $value1 "Bienvenue sur $value1"
-				eva:sent2socket ":$eva(server_id) PART $value1"
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "closedel" "$value1 par $user"
+				::EvaServ::SENT:MSG:TO:USER $user "<b>$value1</b> a bien été supprimé de la liste des salons fermés."
+				::EvaServ::FCT:SENT:MODE $value1
+				::EvaServ::FCT:SET:TOPIC $value1 "Bienvenue sur $value1"
+				::EvaServ::sent2socket ":$config(server_id) PART $value1"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "closedel" "$value1 par $user"
 				}
 			}
 		}
 		"closelist" {
-			catch { open "[eva:scriptdir]db/close.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>------ <c0>Liste des salons fermés <c1>------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>------ <c0>Liste des salons fermés <c1>------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste salon;
 				if { $salon != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c1> \[<c03> $stop <c01>\] <c01> $salon"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c1> \[<c03> $stop <c01>\] <c01> $salon"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Salon."
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Salon."
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Closelist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Closelist" "$user"
 			}
 		}
 		"closeclear" {
-			catch { open "[eva:scriptdir]db/close.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste salon
 				if { $salon != "" } {
-					eva:FCT:SENT:MODE $salon
-					eva:FCT:SET:TOPIC $salon "Bienvenue sur $salon"
-					eva:sent2socket ":$eva(server_id) PART $salon"
+					::EvaServ::FCT:SENT:MODE $salon
+					::EvaServ::FCT:SET:TOPIC $salon "Bienvenue sur $salon"
+					::EvaServ::sent2socket ":$config(server_id) PART $salon"
 				}
 			}
 			catch { close $liste }
-			set del		[open "[eva:scriptdir]db/close.db" w+];
+			set del		[open "[::EvaServ::Script:Get:Directory]db/close.db" w+];
 			close $del
-			eva:FCT:SENT:NOTICE "$user" "La liste des salons fermés à bien été vidée."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "closeclear" "$user"
+			::EvaServ::SENT:MSG:TO:USER $user "La liste des salons fermés à bien été vidée."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "closeclear" "$user"
 			}
 		}
 		"nickadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande nickadd :</b> /msg $eva(pseudo) nickadd pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande nickadd :</b> /msg $config(service_nick) nickadd pseudo";
 				return 0;
 			}
 
-			if { [string match *$value2* [string tolower $eva(pseudo)]] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+			if { [string match *$value2* [string tolower $config(service_nick)]] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 				return 0;
 			}
 
-			foreach { p n } [array get ueva] {
+			foreach { p n } [array get users] {
 				if { [string match *$value2* $p] } {
-					eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+					::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 					return 0;
 				}
 
 			}
 			foreach { a r } [array get admins] {
 				if { [string match *$value2* $r] } {
-					eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Pseudo Protégé";
+					::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Pseudo Protégé";
 					return 0;
 				}
 
 			}
-			catch { open "[eva:scriptdir]db/nick.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/nick.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des pseudos interdits.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des pseudos interdits.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set nick		[open "[eva:scriptdir]db/nick.db" a];
+			set nick		[open "[::EvaServ::Script:Get:Directory]db/nick.db" a];
 			puts $nick $value2;
 			close $nick
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des pseudos interdits."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "nickadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des pseudos interdits."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "nickadd" "$user"
 			}
 		}
 		"nickdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande nickdel :</b> /msg $eva(pseudo) nickdel pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande nickdel :</b> /msg $config(service_nick) nickdel pseudo";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/nick.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/nick.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -2864,79 +3054,79 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des pseudos interdits.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des pseudos interdits.";
 				return 0;
 			} else {
 				if { [info exists pseudo] } {
-					set del		[open "[eva:scriptdir]db/nick.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/nick.db" w+];
 					foreach nickdel $pseudo { puts $del "$nickdel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/nick.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/nick.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des pseudos interdits."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "nickdel" "$user"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des pseudos interdits."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "nickdel" "$user"
 				}
 			}
 		}
 		"nicklist" {
-			catch { open "[eva:scriptdir]db/nick.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>--------- <c0>Pseudos Interdits <c1>---------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/nick.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>--------- <c0>Pseudos Interdits <c1>---------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste pseudo;
 				if { $pseudo != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $pseudo"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $pseudo"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Pseudo"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Pseudo"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Nicklist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Nicklist" "$user"
 			}
 		}
 		"identadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande identadd :</b> /msg $eva(pseudo) identadd ident";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande identadd :</b> /msg $config(service_nick) identadd ident";
 				return 0;
 			}
 
-			if { [string match *$value2* [string tolower $eva(ident)]] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Ident Protégé";
+			if { [string match *$value2* [string tolower $config(ident)]] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Ident Protégé";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/ident.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/ident.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des idents interdits.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des idents interdits.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set ident		[open "[eva:scriptdir]db/ident.db" a];
+			set ident		[open "[::EvaServ::Script:Get:Directory]db/ident.db" a];
 			puts $ident $value2;
 			close $ident
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des idents interdits."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "identadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des idents interdits."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "identadd" "$user"
 			}
 		}
 		"identdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande identdel :</b> /msg $eva(pseudo) identdel ident";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande identdel :</b> /msg $config(service_nick) identdel ident";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/ident.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/ident.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -2944,79 +3134,79 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des idents interdits.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des idents interdits.";
 				return 0;
 			} else {
 				if { [info exists ident] } {
-					set del		[open "[eva:scriptdir]db/ident.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/ident.db" w+];
 					foreach identdel $ident { puts $del "$identdel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/ident.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/ident.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des idents interdits."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "identdel" "$user"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des idents interdits."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "identdel" "$user"
 				}
 			}
 		}
 		"identlist" {
-			catch { open "[eva:scriptdir]db/ident.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>---------- <c0>Idents Interdits <c1>----------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/ident.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>---------- <c0>Idents Interdits <c1>----------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste ident;
 				if { $ident != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $ident"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $ident"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Ident"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Ident"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Identlist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Identlist" "$user"
 			}
 		}
 		"realadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande realadd :</b> /msg $eva(pseudo) realadd realname";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande realadd :</b> /msg $config(service_nick) realadd realname";
 				return 0;
 			}
 
-			if { [string match *$value2* [string tolower $eva(real)]] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Realname Protégé";
+			if { [string match *$value2* [string tolower $config(real)]] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Realname Protégé";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/real.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/real.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des realnames interdits.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des realnames interdits.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set real		[open "[eva:scriptdir]db/real.db" a];
+			set real		[open "[::EvaServ::Script:Get:Directory]db/real.db" a];
 			puts $real $value2;
 			close $real
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des realnames interdits."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "realadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des realnames interdits."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "realadd" "$user"
 			}
 		}
 		"realdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande realdel :</b> /msg $eva(pseudo) realdel realname";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande realdel :</b> /msg $config(service_nick) realdel realname";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/real.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/real.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -3024,86 +3214,86 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des realnames interdits.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des realnames interdits.";
 				return 0;
 			} else {
 				if { [info exists real] } {
-					set del		[open "[eva:scriptdir]db/real.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/real.db" w+];
 					foreach realdel $real { puts $del "$realdel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/real.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/real.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des realnames interdits."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "realdel" "$user"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des realnames interdits."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "realdel" "$user"
 				}
 			}
 		}
 		"reallist" {
-			catch { open "[eva:scriptdir]db/real.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>--------- <c0>Realnames Interdits <c1>---------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/real.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>--------- <c0>Realnames Interdits <c1>---------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste real;
 				if { $real != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $real"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $real"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Realname"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Realname"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Reallist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Reallist" "$user"
 			}
 		}
 		"hostadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande hostadd :</b> /msg $eva(pseudo) hostadd hostname";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande hostadd :</b> /msg $config(service_nick) hostadd hostname";
 				return 0;
 			}
 
-			if { [string match *$value2* [string tolower $eva(host)]] || [info exists protect($value2)] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Hostname Protégée";
+			if { [string match *$value2* [string tolower $config(host)]] || [info exists protect($value2)] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Hostname Protégée";
 				return 0;
 			}
 
 			foreach { mask num } [array get trust] {
 				if { [string match *$value2* $mask] } {
-					eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Hostname Trustée";
+					::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Hostname Trustée";
 					return 0;
 				}
 
 			}
-			catch { open "[eva:scriptdir]db/host.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/host.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des hostnames interdites.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des hostnames interdites.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set host		[open "[eva:scriptdir]db/host.db" a];
+			set host		[open "[::EvaServ::Script:Get:Directory]db/host.db" a];
 			puts $host $value2;
 			close $host
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des hostnames interdites."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "hostadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des hostnames interdites."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "hostadd" "$user"
 			}
 		}
 		"hostdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande hostdel :</b> /msg $eva(pseudo) hostdel hostname";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande hostdel :</b> /msg $config(service_nick) hostdel hostname";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/host.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/host.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop		1 }
@@ -3111,101 +3301,101 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des hostnames interdites.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des hostnames interdites.";
 				return 0;
 			} else {
 				if { [info exists host] } {
-					set del		[open "[eva:scriptdir]db/host.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/host.db" w+];
 					foreach hostdel $host { puts $del "$hostdel" }
 					close $del
 				} else {
-					set del		[open "[eva:scriptdir]db/host.db" w+];
+					set del		[open "[::EvaServ::Script:Get:Directory]db/host.db" w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des hostnames interdites."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "hostdel" "$user"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des hostnames interdites."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "hostdel" "$user"
 				}
 			}
 		}
 		"hostlist" {
-			catch { open "[eva:scriptdir]db/host.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>----------- <c0>Hostnames Interdites <c1>-----------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/host.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>----------- <c0>Hostnames Interdites <c1>-----------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste host;
 				if { $host != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $host"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $host"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucune Hostname"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucune Hostname"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Hostlist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Hostlist" "$user"
 			}
 		}
 		"chanadd" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande chanadd :</b> /msg $eva(pseudo) chanadd #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande chanadd :</b> /msg $config(service_nick) chanadd #salon";
 				return 0;
 			}
 
-			if { [string match *[string trimleft $value2 #]* [string trimleft [string tolower $eva(salon)] #]] } {
-				eva:FCT:SENT:NOTICE "$user" "Accès Refusé : Salon de logs";
+			if { [string match *[string trimleft $value2 #]* [string trimleft [string tolower $config(salon)] #]] } {
+				::EvaServ::SENT:MSG:TO:USER $user "Accès Refusé : Salon de logs";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/chan.db" r } liste1
+			catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } liste1
 			while { ![eof $liste1] } {
 				gets $liste1 verif1;
 				if { [string match *[string trimleft $value2 #]* [string trimleft $verif1 #]] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Autojoin";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Autojoin";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste1 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/close.db" r } liste2
+			catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } liste2
 			while { ![eof $liste2] } {
 				gets $liste2 verif2;
 				if { [string match *[string trimleft $value2 #]* [string trimleft $verif2 #]] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Salon Fermé";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Salon Fermé";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste2 }
 			if { $stop == 1 } { return 0 }
-			catch { open "[eva:scriptdir]db/salon.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la liste des salons interdits.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la liste des salons interdits.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set chan		[open "[eva:scriptdir]db/salon.db" a];
+			set chan		[open "[::EvaServ::Script:Get:Directory]db/salon.db" a];
 			puts $chan $value2;
 			close $chan
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des salons interdits."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "chanadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des salons interdits."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "chanadd" "$user"
 			}
 		}
 		"chandel" {
 			if { [string index $value2 0] != "#" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande chandel :</b> /msg $eva(pseudo) chandel #salon";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande chandel :</b> /msg $config(service_nick) chandel #salon";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/salon.db" r } liste
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { ![string compare -nocase $value2 $verif] } { set stop 1; }
@@ -3213,87 +3403,87 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des salons interdits.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des salons interdits.";
 				return 0;
 			} else {
 				if { [info exists chan] } {
-					set FILE_PIPE		[open "[eva:scriptdir]db/salon.db" w+];
+					set FILE_PIPE		[open "[::EvaServ::Script:Get:Directory]db/salon.db" w+];
 					foreach chandel $chan { puts $FILE_PIPE "$chandel" }
 					close $FILE_PIPE
 				} else {
-					set FILE_PIPE		[open "[eva:scriptdir]db/salon.db" w+];
+					set FILE_PIPE		[open "[::EvaServ::Script:Get:Directory]db/salon.db" w+];
 					close $FILE_PIPE
 				}
-				eva:sent2socket ":$eva(server_id) PART $value1"
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des salons interdits."
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "chandel" "$user"
+				::EvaServ::sent2socket ":$config(server_id) PART $value1"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des salons interdits."
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "chandel" "$user"
 				}
 			}
 		}
 		"chanlist" {
-			catch { open "[eva:scriptdir]db/salon.db" r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>--------- <c0>Salons Interdits <c1>---------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>--------- <c0>Salons Interdits <c1>---------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste chan;
 				if { $chan != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $chan"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $chan"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Salon"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Salon"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Chanlist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Chanlist" "$user"
 			}
 		}
 		"trustadd" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande trustadd :</b> /msg $eva(pseudo) trustadd mask";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande trustadd :</b> /msg $config(service_nick) trustadd mask";
 				return 0;
 			}
 
-			catch { open "[eva:scriptdir]db/host.db" r } liste1
+			catch { open "[::EvaServ::Script:Get:Directory]db/host.db" r } liste1
 			while { ![eof $liste1] } {
 				gets $liste1 verif1;
 				if { [string match *$value2* $verif1] } {
-					eva:FCT:SENT:NOTICE $vuser "Accès Refusé : Hostname Interdite";
+					::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé : Hostname Interdite";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste1 }
 			if { $stop == 1 } { return 0 }
-			catch { open [eva:scriptdir]db/trust.db r } liste
+			catch { open [::EvaServ::Script:Get:Directory]db/trust.db r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { $verif==$value2 } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déjà dans la trustlist.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déjà dans la trustlist.";
 					set stop		1;
 					break
 				}
 			}
 			catch { close $liste }
 			if { $stop == 1 } { return 0 }
-			set bprotect		[open [eva:scriptdir]db/trust.db a];
+			set bprotect		[open [::EvaServ::Script:Get:Directory]db/trust.db a];
 			puts $bprotect "$value2";
 			close $bprotect
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajoutée dans la trustlist."
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajoutée dans la trustlist."
 			if { ![info exists trust($value2)] } { set trust($value2)		1 }
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "trustadd" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "trustadd" "$user"
 			}
 		}
 		"trustdel" {
 			if { $value2 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande trustdel :</b> /msg $eva(pseudo) trustdel mask";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande trustdel :</b> /msg $config(service_nick) trustdel mask";
 				return 0;
 			}
 
-			catch { open [eva:scriptdir]db/trust.db r } liste
+			catch { open [::EvaServ::Script:Get:Directory]db/trust.db r } liste
 			while { ![eof $liste] } {
 				gets $liste verif;
 				if { $verif==$value2 } { set stop		1 }
@@ -3301,41 +3491,41 @@ proc eva:cmds { arg } {
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la trustlist.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la trustlist.";
 				return 0;
 			} else {
 				if { [info exists hs] } {
-					set del		[open [eva:scriptdir]db/trust.db w+];
+					set del		[open [::EvaServ::Script:Get:Directory]db/trust.db w+];
 					foreach delprotect $hs { puts $del "$delprotect" }
 					close $del
 				} else {
-					set del		[open [eva:scriptdir]db/trust.db w+];
+					set del		[open [::EvaServ::Script:Get:Directory]db/trust.db w+];
 					close $del
 				}
-				eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimée de la trustlist."
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimée de la trustlist."
 				if { [info exists trust($value2)] } { unset trust($value2)		}
-				if { [eva:console 1] == "ok" } {
-					eva:SHOW:INFO:TO:CHANLOG "trustdel" "$user"
+				if { [::EvaServ::console 1] == "ok" } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "trustdel" "$user"
 				}
 			}
 		}
 		"trustlist" {
-			catch { open [eva:scriptdir]db/trust.db r } liste
-			eva:FCT:SENT:NOTICE $vuser "<b><c1,1>----------------- <c0>Liste des Trusts <c1>-----------------"
-			eva:FCT:SENT:NOTICE $vuser "<b>"
+			catch { open [::EvaServ::Script:Get:Directory]db/trust.db r } liste
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b><c1,1>----------------- <c0>Liste des Trusts <c1>-----------------"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>"
 			while { ![eof $liste] } {
 				gets $liste mask;
 				if { $mask != "" } {
 					incr stop 1;
-					eva:FCT:SENT:NOTICE $vuser "<c01> \[<c03> $stop <c01>\] <c01> $mask"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<c01> \[<c03> $stop <c01>\] <c01> $mask"
 				}
 			}
 			catch { close $liste }
 			if { $stop == 0 } {
-				eva:FCT:SENT:NOTICE $vuser "Aucun Trust"
+				::EvaServ::SENT:MSG:TO:USER $vuser "Aucun Trust"
 			}
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "Trustlist" "$user"
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Trustlist" "$user"
 			}
 		}
 		"accessadd" {
@@ -3345,27 +3535,27 @@ proc eva:cmds { arg } {
 					$value8 == "" || \
 					[regexp \[^1-4\] $value8]
 			} {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessadd :</b> /msg $eva(pseudo) accessadd pseudo password level"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Géofront"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> IRCop"
-				eva:FCT:SENT:NOTICE $vuser "<c02>Level 4 <c04>:<c01> Admin"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessadd :</b> /msg $config(service_nick) accessadd pseudo password level"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 2 <c04>:<c01> Géofront"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 3 <c04>:<c01> IRCop"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 4 <c04>:<c01> Admin"
 				return 0
 			}
 			if { [string length $value2]>="10" } {
-				eva:FCT:SENT:NOTICE $vuser "Le pseudo doit contenir maximum 9 caractères.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Le pseudo doit contenir maximum 9 caractères.";
 				return 0;
 			}
 
 			foreach verif [userlist] {
 				if { [string tolower $value2] == [string tolower $verif] } {
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> est déja dans la liste des accès.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> est déja dans la liste des accès.";
 					return 0;
 				}
 
 			}
 			if { [string length $value4] <= 5 } {
-				eva:FCT:SENT:NOTICE $vuser "Le mot de passe doit contenir minimum 6 caractères.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Le mot de passe doit contenir minimum 6 caractères.";
 				return 0;
 			}
 
@@ -3391,19 +3581,19 @@ proc eva:cmds { arg } {
 					set lvl		"Admins"
 				}
 			}
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été ajouté dans la liste des $lvl."
-			if { [eva:console 1] == "ok" } {
-				eva:SHOW:INFO:TO:CHANLOG "accessadd" "$user"
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été ajouté dans la liste des $lvl."
+			if { [::EvaServ::console 1] == "ok" } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "accessadd" "$user"
 			}
 		}
 		"accessdel" {
 			if { $value1 == "" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessdel :</b> /msg $eva(pseudo) accessdel pseudo";
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessdel :</b> /msg $config(service_nick) accessdel pseudo";
 				return 0;
 			}
 
 			if { [string tolower $admin] == $value2 } {
-				eva:FCT:SENT:NOTICE $vuser "Accès Refusé.";
+				::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé.";
 				return 0;
 			}
 
@@ -3413,19 +3603,19 @@ proc eva:cmds { arg } {
 						if { [string tolower $auth] == $value2 } { unset admins([string tolower $pseudo]) }
 					}
 					deluser $value2
-					eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> a bien été supprimé de la liste des accès."
-					if { [eva:console 1] == "ok" } {
-						eva:SHOW:INFO:TO:CHANLOG "accessdel" "$user"
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> a bien été supprimé de la liste des accès."
+					if { [::EvaServ::console 1] == "ok" } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "accessdel" "$user"
 					}
 					return 0
 				}
 			}
-			eva:FCT:SENT:NOTICE $vuser "<b>$value1</b> n'est pas dans la liste des accès."
+			::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value1</b> n'est pas dans la liste des accès."
 		}
 		"accessmod" {
 			if { $value2 != "level" && $value2 != "pass" } {
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Pass :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe"
-				eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Level :</b> /msg $eva(pseudo) accessmod level pseudo level"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessmod Pass :</b> /msg $config(service_nick) accessmod pass pseudo mot-de-passe"
+				::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessmod Level :</b> /msg $config(service_nick) accessmod level pseudo level"
 				return 0
 			}
 			switch -exact $value2 {
@@ -3435,15 +3625,15 @@ proc eva:cmds { arg } {
 							$value8 == "" || \
 							[regexp \[^1-4\] $value8]
 					} {
-						eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Level :</b> /msg $eva(pseudo) accessmod level pseudo level"
-						eva:FCT:SENT:NOTICE $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
-						eva:FCT:SENT:NOTICE $vuser "<c02>Level 2 <c04>:<c01> Géofront"
-						eva:FCT:SENT:NOTICE $vuser "<c02>Level 3 <c04>:<c01> IRCop"
-						eva:FCT:SENT:NOTICE $vuser "<c02>Level 4 <c04>:<c01> Admin"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessmod Level :</b> /msg $config(service_nick) accessmod level pseudo level"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 1 <c04>:<c01> Helpeur"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 2 <c04>:<c01> Géofront"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 3 <c04>:<c01> IRCop"
+						::EvaServ::SENT:MSG:TO:USER $vuser "<c02>Level 4 <c04>:<c01> Admin"
 						return 0
 					}
 					if { [string tolower $admin] == $value4 } {
-						eva:FCT:SENT:NOTICE $vuser "Accès Refusé.";
+						::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé.";
 						return 0;
 					}
 
@@ -3467,42 +3657,42 @@ proc eva:cmds { arg } {
 									chattr $value4 +nmop
 								}
 							}
-							eva:FCT:SENT:NOTICE $vuser "Changement du level de <b>$value4</b> reussi."
-							if { [eva:console 1] == "ok" } {
-								eva:SHOW:INFO:TO:CHANLOG "accessmod" "$user"
+							::EvaServ::SENT:MSG:TO:USER $vuser "Changement du level de <b>$value4</b> reussi."
+							if { [::EvaServ::console 1] == "ok" } {
+								::EvaServ::SHOW:INFO:TO:CHANLOG "accessmod" "$user"
 							}
 							return 0
 						}
 					}
-					eva:FCT:SENT:NOTICE $vuser "<b>$value4</b> n'est pas dans la liste des accès.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value4</b> n'est pas dans la liste des accès.";
 					return 0;
 				}
 				"pass" {
 					if { $value4 == "" || $value8 == "" } {
-						eva:FCT:SENT:NOTICE $vuser "<b>Commande accessmod Pass :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe";
+						::EvaServ::SENT:MSG:TO:USER $vuser "<b>Commande accessmod Pass :</b> /msg $config(service_nick) accessmod pass pseudo mot-de-passe";
 						return 0;
 					}
 
 					if { [string tolower $admin] == $value4 } {
-						eva:FCT:SENT:NOTICE $vuser "Accès Refusé.";
+						::EvaServ::SENT:MSG:TO:USER $vuser "Accès Refusé.";
 						return 0;
 					}
 
 					foreach verif [userlist] {
 						if { $value4 == [string tolower $verif] } {
 							if { [string length $value8] <= 5 } {
-								eva:FCT:SENT:NOTICE $vuser "Le mot de passe doit contenir minimum 6 caractères.";
+								::EvaServ::SENT:MSG:TO:USER $vuser "Le mot de passe doit contenir minimum 6 caractères.";
 								return 0;
 							}
 							setuser $value3 PASS $value8
-							eva:FCT:SENT:NOTICE $vuser "Changement du mot de passe de <b>$value4</b> reussi."
-							if { [eva:console 1] == "ok" } {
-								eva:SHOW:INFO:TO:CHANLOG "accessmod" "$user"
+							::EvaServ::SENT:MSG:TO:USER $vuser "Changement du mot de passe de <b>$value4</b> reussi."
+							if { [::EvaServ::console 1] == "ok" } {
+								::EvaServ::SHOW:INFO:TO:CHANLOG "accessmod" "$user"
 							}
 							return 0
 						}
 					}
-					eva:FCT:SENT:NOTICE $vuser "<b>$value4</b> n'est pas dans la liste des accès.";
+					::EvaServ::SENT:MSG:TO:USER $vuser "<b>$value4</b> n'est pas dans la liste des accès.";
 					return 0;
 				}
 			}
@@ -3512,570 +3702,566 @@ proc eva:cmds { arg } {
 		}
 	}
 }
-proc eva:help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
-proc eva:help:description:auth {}			{
-	global eva
-	return "Permet de vous authentifier sur $eva(pseudo)."
+proc ::EvaServ::help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
+proc ::EvaServ::help:description:auth {}			{
+	variable config
+	return "Permet de vous authentifier sur $config(service_nick)."
 }
-proc eva:help:description:copyright {}		{
-	global eva
-	return "Permet de voir l'auteur de $eva(pseudo)."
+proc ::EvaServ::help:description:copyright {}		{
+	variable config
+	return "Permet de voir l'auteur de $config(service_nick)."
 }
-proc eva:help:description:deauth {}			{
-	global eva
-	return "Permet de vous déauthentifier sur $eva(pseudo)."
+proc ::EvaServ::help:description:deauth {}			{
+	variable config
+	return "Permet de vous déauthentifier sur $config(service_nick)."
 }
-proc eva:help:description:seen {}			{ return "Permet de voir la dernière authentification du pseudo." }
-proc eva:help:description:showcommands {}	{ return "Permet de voir la liste des commandes de Eva Service." }
-proc eva:help:description:map {}			{ return "Permet de voir la liste des serveurs." }
-proc eva:help:description:whois {}			{ return "Permet de voir le whois d'un utilisateur." }
-proc eva:help:description:access {}			{ return "Permet de voir l'accès du pseudo." }
-proc eva:help:description:ban {}			{ return "Permet de bannir un mask d'un salon." }
-proc eva:help:description:clearallmodes {}	{ return "Permet de retirer tous les modes, tous les accès et tous les bans d'un salon." }
-proc eva:help:description:clearbans {}		{ return "Permet de débannir tous les masks d'un salon." }
-proc eva:help:description:clearmodes {}		{ return "Permet de retirer tous les modes d'un salon." }
-proc eva:help:description:dehalfop {}		{ return "Permet de déhalfoper un utilisateur d'un salon." }
-proc eva:help:description:dehalfopall {}	{ return "Permet de déhalfoper tous les utilisateurs d'un salon." }
-proc eva:help:description:deop {}			{ return "Permet de déoper un utilisateur d'un salon." }
-proc eva:help:description:deopall {}		{ return "Permet de déoper tous les utilisateurs d'un salon." }
-proc eva:help:description:deowner {}		{ return "Permet de retirer un utilisateur owner d'un salon." }
-proc eva:help:description:deownerall {}		{ return "Permet de retirer tous les utilisateurs owner d'un salon." }
-proc eva:help:description:deprotect {}		{ return "Permet de retirer un utilisateur protect d'un salon." }
-proc eva:help:description:deprotectall {}	{ return "Permet de retirer tous les utilisateurs protect d'un salon." }
-proc eva:help:description:devoice {}		{ return "Permet de dévoicer un utilisateur d'un salon." }
-proc eva:help:description:devoiceall {}		{ return "Permet de dévoicer tous les utilisateurs d'un salon." }
-proc eva:help:description:gline {}			{ return "Permet de gline un utilisateur du serveur." }
-proc eva:help:description:glinelist {}		{ return "Permet de voir la liste des glines." }
-proc eva:help:description:shunlist {}		{ return "Permet de voir la liste des shuns." }
-proc eva:help:description:globops {}		{ return "Permet d'envoyer un message en globops à tous les ircops et admins." }
-proc eva:help:description:halfop {}			{ return "Permet d'halfoper un utilisateur d'un salon." }
-proc eva:help:description:halfopall {}		{ return "Permet d'halfoper tous les utilisateurs d'un salon." }
-proc eva:help:description:invite {}			{ return "Permet d'inviter un utilisateur sur un salon." }
-proc eva:help:description:inviteme {}		{
-	global eva
-	return "Permet de s'inviter sur $eva(salon)."
+proc ::EvaServ::help:description:seen {}			{ return "Permet de voir la dernière authentification du pseudo." }
+proc ::EvaServ::help:description:showcommands {}	{
+	variable config
+	 return "Permet de voir la liste des commandes de $config(scriptname)."
 }
-proc eva:help:description:kick {}			{ return "Permet de kicker un utilisateur d'un salon." }
-proc eva:help:description:kickall {}		{ return "Permet de kicker tous les utilisateurs d'un salon." }
-proc eva:help:description:kickban {}		{ return "Permet de bannir et kicker un utilisateur d'un salon." }
-proc eva:help:description:kill {}			{ return "Permet de killer un utilisateur du serveur." }
-proc eva:help:description:kline {}			{ return "Permet de kline un utilisateur du serveur." }
-proc eva:help:description:klinelist {}		{ return "Permet de voir la liste des klines."}
-proc eva:help:description:mode {}			{ return "Permet de changer les modes d'un salon." }
-proc eva:help:description:newpass {}		{ return "Permet de changer le mot de passe de votre accès." }
-proc eva:help:description:nickban {}		{ return "Permet de bannir et kicker un utilisateur d'un salon en fonction de son pseudo." }
-proc eva:help:description:op {}				{ return "Permet d'oper un utilisateur d'un salon." }
-proc eva:help:description:opall {}			{ return "Permet d'oper tous les utilisateurs d'un salon." }
-proc eva:help:description:owner {}			{ return "Permet de mêttre un utilisateur owner d'un salon." }
-proc eva:help:description:ownerall {}		{ return "Permet de mêttre tous les utilisateurs owner d'un salon." }
-proc eva:help:description:protect {}		{ return "Permet de mêttre un utilisateur protect d'un salon." }
-proc eva:help:description:protectall {}		{ return "Permet de mêttre tous les utilisateurs protect d'un salon." }
-proc eva:help:description:topic {}			{ return "Permet de changer le topic d'un salon." }
-proc eva:help:description:unban {}			{ return "Permet de débannir un mask d'un salon."}
-proc eva:help:description:ungline {}		{ return "Permet de supprimer un mask de la liste des glines." }
-proc eva:help:description:unshun {}			{ return "Permet de unshun un utilisateur du serveur." }
-proc eva:help:description:unkline {}		{ return "Permet de supprimer un mask de la liste des klines." }
-proc eva:help:description:voice {}			{ return "Permet de voicer un utilisateur d'un salon." }
-proc eva:help:description:voiceall {}		{ return "Permet de voicer tous les utilisateurs d'un salon." }
-proc eva:help:description:wallops {}		{ return "Permet d'envoyer un message en wallops à tous les utilisateurs." }
-proc eva:help:description:changline {}		{ return "Permet de gline tous les utilisateurs d'un salon." }
-proc eva:help:description:chankill {}		{ return "Permet de killer tous les utilisateurs d'un salon." }
-proc eva:help:description:chanlist {}		{ return "Permet de voir la liste des salons interdits." }
-proc eva:help:description:closeclear {}		{ return "Permet de vider la liste des salons fermés." }
-proc eva:help:description:cleargline {}		{ return "Permet de retirer tous les glines du serveur." }
-proc eva:help:description:clearkline {}		{ return "Permet de retirer tous les klines du serveur." }
-proc eva:help:description:clientlist {}		{ return "Permet de voir la liste des clients IRC interdits."}
-proc eva:help:description:closeadd {}		{ return "Permet de fermer un salon." }
-proc eva:help:description:closelist {}		{ return "Permet de voir la liste des salons fermés." }
-proc eva:help:description:hostlist {}		{ return "Permet de voir la liste des hostnames interdites." }
-proc eva:help:description:identlist {}		{ return "Permet de voir la liste des idents interdits." }
-proc eva:help:description:join {}			{
-	global eva
-	return "Permet de faire joindre $eva(pseudo) sur un salon."
+proc ::EvaServ::help:description:map {}				{ return "Permet de voir la liste des serveurs." }
+proc ::EvaServ::help:description:whois {}			{ return "Permet de voir le whois d'un utilisateur." }
+proc ::EvaServ::help:description:access {}			{ return "Permet de voir l'accès du pseudo." }
+proc ::EvaServ::help:description:ban {}				{ return "Permet de bannir un mask d'un salon." }
+proc ::EvaServ::help:description:clearallmodes {}	{ return "Permet de retirer tous les modes, tous les accès et tous les bans d'un salon." }
+proc ::EvaServ::help:description:clearbans {}		{ return "Permet de débannir tous les masks d'un salon." }
+proc ::EvaServ::help:description:clearmodes {}		{ return "Permet de retirer tous les modes d'un salon." }
+proc ::EvaServ::help:description:dehalfop {}		{ return "Permet de déhalfoper un utilisateur d'un salon." }
+proc ::EvaServ::help:description:dehalfopall {}		{ return "Permet de déhalfoper tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:deop {}			{ return "Permet de déoper un utilisateur d'un salon." }
+proc ::EvaServ::help:description:deopall {}			{ return "Permet de déoper tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:deowner {}			{ return "Permet de retirer un utilisateur owner d'un salon." }
+proc ::EvaServ::help:description:deownerall {}		{ return "Permet de retirer tous les utilisateurs owner d'un salon." }
+proc ::EvaServ::help:description:deprotect {}		{ return "Permet de retirer un utilisateur protect d'un salon." }
+proc ::EvaServ::help:description:deprotectall {}	{ return "Permet de retirer tous les utilisateurs protect d'un salon." }
+proc ::EvaServ::help:description:devoice {}			{ return "Permet de dévoicer un utilisateur d'un salon." }
+proc ::EvaServ::help:description:devoiceall {}		{ return "Permet de dévoicer tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:gline {}			{ return "Permet de gline un utilisateur du serveur." }
+proc ::EvaServ::help:description:glinelist {}		{ return "Permet de voir la liste des glines." }
+proc ::EvaServ::help:description:shunlist {}		{ return "Permet de voir la liste des shuns." }
+proc ::EvaServ::help:description:globops {}			{ return "Permet d'envoyer un message en globops à tous les ircops et admins." }
+proc ::EvaServ::help:description:halfop {}			{ return "Permet d'halfoper un utilisateur d'un salon." }
+proc ::EvaServ::help:description:halfopall {}		{ return "Permet d'halfoper tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:invite {}			{ return "Permet d'inviter un utilisateur sur un salon." }
+proc ::EvaServ::help:description:inviteme {}		{
+	variable config
+	return "Permet de s'inviter sur $config(salon)."
 }
-proc eva:help:description:list {}			{ return "Permet de voir les autojoin salons."}
-proc eva:help:description:nicklist {}		{ return "Permet de voir la liste des pseudos interdits." }
-proc eva:help:description:notice {}			{ return "Permet d'envoyer une notice à tous les utilisateurs."}
-proc eva:help:description:part {}			{
-	global eva
-	return "Permet de faire partir $eva(pseudo) d'un salon."
+proc ::EvaServ::help:description:kick {}			{ return "Permet de kicker un utilisateur d'un salon." }
+proc ::EvaServ::help:description:kickall {}			{ return "Permet de kicker tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:kickban {}			{ return "Permet de bannir et kicker un utilisateur d'un salon." }
+proc ::EvaServ::help:description:kill {}			{ return "Permet de killer un utilisateur du serveur." }
+proc ::EvaServ::help:description:kline {}			{ return "Permet de kline un utilisateur du serveur." }
+proc ::EvaServ::help:description:klinelist {}		{ return "Permet de voir la liste des klines."}
+proc ::EvaServ::help:description:mode {}			{ return "Permet de changer les modes d'un salon." }
+proc ::EvaServ::help:description:newpass {}			{ return "Permet de changer le mot de passe de votre accès." }
+proc ::EvaServ::help:description:nickban {}			{ return "Permet de bannir et kicker un utilisateur d'un salon en fonction de son pseudo." }
+proc ::EvaServ::help:description:op {}				{ return "Permet d'oper un utilisateur d'un salon." }
+proc ::EvaServ::help:description:opall {}			{ return "Permet d'oper tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:owner {}			{ return "Permet de mêttre un utilisateur owner d'un salon." }
+proc ::EvaServ::help:description:ownerall {}		{ return "Permet de mêttre tous les utilisateurs owner d'un salon." }
+proc ::EvaServ::help:description:protect {}			{ return "Permet de mêttre un utilisateur protect d'un salon." }
+proc ::EvaServ::help:description:protectall {}		{ return "Permet de mêttre tous les utilisateurs protect d'un salon." }
+proc ::EvaServ::help:description:topic {}			{ return "Permet de changer le topic d'un salon." }
+proc ::EvaServ::help:description:unban {}			{ return "Permet de débannir un mask d'un salon."}
+proc ::EvaServ::help:description:ungline {}			{ return "Permet de supprimer un mask de la liste des glines." }
+proc ::EvaServ::help:description:unshun {}			{ return "Permet de unshun un utilisateur du serveur." }
+proc ::EvaServ::help:description:unkline {}			{ return "Permet de supprimer un mask de la liste des klines." }
+proc ::EvaServ::help:description:voice {}			{ return "Permet de voicer un utilisateur d'un salon." }
+proc ::EvaServ::help:description:voiceall {}		{ return "Permet de voicer tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:wallops {}			{ return "Permet d'envoyer un message en wallops à tous les utilisateurs." }
+proc ::EvaServ::help:description:changline {}		{ return "Permet de gline tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:chankill {}		{ return "Permet de killer tous les utilisateurs d'un salon." }
+proc ::EvaServ::help:description:chanlist {}		{ return "Permet de voir la liste des salons interdits." }
+proc ::EvaServ::help:description:closeclear {}		{ return "Permet de vider la liste des salons fermés." }
+proc ::EvaServ::help:description:cleargline {}		{ return "Permet de retirer tous les glines du serveur." }
+proc ::EvaServ::help:description:clearkline {}		{ return "Permet de retirer tous les klines du serveur." }
+proc ::EvaServ::help:description:clientlist {}		{ return "Permet de voir la liste des clients IRC interdits."}
+proc ::EvaServ::help:description:closeadd {}		{ return "Permet de fermer un salon." }
+proc ::EvaServ::help:description:closelist {}		{ return "Permet de voir la liste des salons fermés." }
+proc ::EvaServ::help:description:hostlist {}		{ return "Permet de voir la liste des hostnames interdites." }
+proc ::EvaServ::help:description:identlist {}		{ return "Permet de voir la liste des idents interdits." }
+proc ::EvaServ::help:description:join {}			{
+	variable config
+	return "Permet de faire joindre $config(service_nick) sur un salon."
 }
-proc eva:help:description:reallist {}		{ return "Permet de voir la liste des realnames interdits." }
-proc eva:help:description:say {}			{ return "Permet d'envoyer un message sur un salon." }
-proc eva:help:description:status {}			{ return "Permet de voir les informations de Eva Service." }
-proc eva:help:description:svsjoin {}		{ return "Permet de forcer un utilisateur à joindre un salon." }
-proc eva:help:description:svsnick {}		{ return "Permet de changer le pseudo d'un utilisateur."}
-proc eva:help:description:svspart {}		{ return "Permet de forcer un utilisateur à partir d'un salon." }
-proc eva:help:description:trustlist {}		{ return "Permet de voir la liste des trusts." }
-proc eva:help:description:closedel {}		{ return "Permet d'ouvrir un salon fermé." }
-proc eva:help:description:accessadd {}		{ return "Permet d'ajouter un accès sur Eva Service." }
-proc eva:help:description:chanadd {}		{ return "Permet d'ajouter un salon interdit." }
-proc eva:help:description:clientadd {}		{ return "Permet d'ajouter un client IRC interdit." }
-proc eva:help:description:hostadd {}		{ return "Permet d'ajouter une hostname interdite." }
-proc eva:help:description:identadd {}		{ return "Permet d'ajouter un ident interdit." }
-proc eva:help:description:nickadd {}		{ return "Permet d'ajouter un pseudo interdit." }
-proc eva:help:description:realadd {}		{ return "Permet d'ajouter un realname interdit." }
-proc eva:help:description:trustadd {}		{ return "Permet d'ajouter un trust sur un mask." }
-proc eva:help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
-proc eva:help:description:chanlog {}		{
-	global eva
-	return "Permet de changer le salon de log de $eva(pseudo)."
+proc ::EvaServ::help:description:list {}			{ return "Permet de voir les autojoin salons."}
+proc ::EvaServ::help:description:nicklist {}		{ return "Permet de voir la liste des pseudos interdits." }
+proc ::EvaServ::help:description:notice {}			{ return "Permet d'envoyer une notice à tous les utilisateurs."}
+proc ::EvaServ::help:description:part {}			{
+	variable config
+	return "Permet de faire partir $config(service_nick) d'un salon."
 }
-proc eva:help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
-proc eva:help:description:console {}		{ return "Permet d'activer la console des logs en fonction du level." }
-proc eva:help:description:accessdel {}		{ return "Permet de supprimer un accès de Eva Service." }
-proc eva:help:description:chandel {}		{ return "Permet de supprimer un salon interdit." }
-proc eva:help:description:clientdel {}		{ return "Permet de supprimer un client IRC interdit." }
-proc eva:help:description:hostdel {}		{ return "Permet de supprimer une hostname interdite." }
-proc eva:help:description:identdel {}		{ return "Permet de supprimer un ident interdit." }
-proc eva:help:description:nickdel {}		{ return "Permet de supprimer un pseudo interdit." }
-proc eva:help:description:realdel {}		{ return "Permet de supprimer un realname interdit." }
-proc eva:help:description:trustdel {}		{ return "Permet de supprimer le trust d'un mask." }
-proc eva:help:description:die {}			{ return "Permet d'arrêter Eva Service." }
-proc eva:help:description:maxlogin {}		{ return "Permet d'activer où désactiver la protection max login." }
-proc eva:help:description:accessmod {}		{ return "Permet de modifier un accès de Eva Service." }
-proc eva:help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
-proc eva:help:description:restart {}		{ return "Permet de redémarrer Eva Service." }
-proc eva:help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
+proc ::EvaServ::help:description:reallist {}		{ return "Permet de voir la liste des realnames interdits." }
+proc ::EvaServ::help:description:say {}				{ return "Permet d'envoyer un message sur un salon." }
+proc ::EvaServ::help:description:status {}			{ return "Permet de voir les informations de $config(scriptname)." }
+proc ::EvaServ::help:description:svsjoin {}			{ return "Permet de forcer un utilisateur à joindre un salon." }
+proc ::EvaServ::help:description:svsnick {}			{ return "Permet de changer le pseudo d'un utilisateur."}
+proc ::EvaServ::help:description:svspart {}			{ return "Permet de forcer un utilisateur à partir d'un salon." }
+proc ::EvaServ::help:description:trustlist {}		{ return "Permet de voir la liste des trusts." }
+proc ::EvaServ::help:description:closedel {}		{ return "Permet d'ouvrir un salon fermé." }
+proc ::EvaServ::help:description:accessadd {}		{ return "Permet d'ajouter un accès sur $config(scriptname)." }
+proc ::EvaServ::help:description:chanadd {}			{ return "Permet d'ajouter un salon interdit." }
+proc ::EvaServ::help:description:clientadd {}		{ return "Permet d'ajouter un client IRC interdit." }
+proc ::EvaServ::help:description:hostadd {}			{ return "Permet d'ajouter une hostname interdite." }
+proc ::EvaServ::help:description:identadd {}		{ return "Permet d'ajouter un ident interdit." }
+proc ::EvaServ::help:description:nickadd {}			{ return "Permet d'ajouter un pseudo interdit." }
+proc ::EvaServ::help:description:realadd {}			{ return "Permet d'ajouter un realname interdit." }
+proc ::EvaServ::help:description:trustadd {}		{ return "Permet d'ajouter un trust sur un mask." }
+proc ::EvaServ::help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
+proc ::EvaServ::help:description:chanlog {}			{
+	variable config
+	return "Permet de changer le salon de log de $config(service_nick)."
+}
+proc ::EvaServ::help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
+proc ::EvaServ::help:description:console {}			{ return "Permet d'activer la console des logs en fonction du level." }
+proc ::EvaServ::help:description:accessdel {}		{ return "Permet de supprimer un accès de $config(scriptname)." }
+proc ::EvaServ::help:description:chandel {}			{ return "Permet de supprimer un salon interdit." }
+proc ::EvaServ::help:description:clientdel {}		{ return "Permet de supprimer un client IRC interdit." }
+proc ::EvaServ::help:description:hostdel {}			{ return "Permet de supprimer une hostname interdite." }
+proc ::EvaServ::help:description:identdel {}		{ return "Permet de supprimer un ident interdit." }
+proc ::EvaServ::help:description:nickdel {}			{ return "Permet de supprimer un pseudo interdit." }
+proc ::EvaServ::help:description:realdel {}			{ return "Permet de supprimer un realname interdit." }
+proc ::EvaServ::help:description:trustdel {}		{ return "Permet de supprimer le trust d'un mask." }
+proc ::EvaServ::help:description:die {}				{ return "Permet d'arrêter $config(scriptname)." }
+proc ::EvaServ::help:description:maxlogin {}		{ return "Permet d'activer où désactiver la protection max login." }
+proc ::EvaServ::help:description:accessmod {}		{ return "Permet de modifier un accès de $config(scriptname)." }
+proc ::EvaServ::help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
+proc ::EvaServ::help:description:restart {}			{ return "Permet de redémarrer $config(scriptname)." }
+proc ::EvaServ::help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
 
 
-#############
-# Eva Hcmds #
-#############
-proc eva:hcmds { arg } {
-	global eva
-	set arg			[split $arg]
-	set hcmd		[lindex $arg 0]
-	set vuser		[string tolower [lindex $arg 1]]
-	set vuserUID	[eva:UID:CONVERT $vuser]
-	if { [eva:authed $vuser $hcmd] != "ok" } { return 0 }
+proc ::EvaServ::Commands:Help { sender hcmd } {
+	variable config
+	if { [::EvaServ::authed $sender $hcmd] != "ok" } { return 0 }
 	switch -exact $hcmd {
 		"help" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) help nom-de-la-commande"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:help]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) help nom-de-la-commande"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:help]
 		}
 		"auth" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) auth pseudo mot-de-passe"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:auth]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) auth pseudo mot-de-passe"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:auth]
 		}
 		"copyright" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) copyright"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:copyright]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) copyright"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:copyright]
 		}
 		"deauth" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deauth"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deauth]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deauth"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deauth]
 		}
 		"seen" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) seen pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:seen]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) seen pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:seen]
 		}
 		"showcommands" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) showcommands"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:showcommands]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) showcommands"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:showcommands]
 		}
 		"map" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) map"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:map]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) map"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:map]
 		}
 		"whois" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) whois pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:whois]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) whois pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:whois]
 		}
 		"shun" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) shun <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:shun]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) shun <pseudo ou ip> raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:shun]
 		}
 		"access" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) access pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:access]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) access pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:access]
 		}
 		"ban" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ban #salon mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ban]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) ban #salon mask"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:ban]
 		}
 		"clearallmodes" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearallmodes #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearallmodes]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clearallmodes #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clearallmodes]
 		}
 		"clearbans" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearbans #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearbans]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clearbans #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clearbans]
 		}
 		"clearmodes" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearmodes #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearmodes]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clearmodes #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clearmodes]
 		}
 		"dehalfop" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) dehalfop #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:dehalfop]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) dehalfop #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:dehalfop]
 		}
 		"dehalfopall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) dehalfopall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:dehalfopall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) dehalfopall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:dehalfopall]
 		}
 		"deop" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deop #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deop]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deop #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deop]
 		}
 		"deopall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deopall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deopall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deopall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deopall]
 		}
 		"deowner" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deowner #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deowner]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deowner #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deowner]
 		}
 		"deownerall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deownerall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deownerall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deownerall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deownerall]
 		}
 		"deprotect" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deprotect #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deprotect]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deprotect #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deprotect]
 		}
 		"deprotectall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) deprotectall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:deprotectall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) deprotectall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:deprotectall]
 		}
 		"devoice" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) devoice #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:devoice]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) devoice #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:devoice]
 		}
 		"devoiceall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) devoiceall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:devoiceall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) devoiceall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:devoiceall]
 		}
 		"gline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) gline <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:gline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) gline <pseudo ou ip> raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:gline]
 		}
 		"glinelist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) glinelist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:glinelist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) glinelist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:glinelist]
 		}
 		"shunlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) shunlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:shunlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) shunlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:shunlist]
 		}
 		"globops" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) globops message"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:globops]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) globops message"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:globops]
 		}
 		"halfop" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) halfop #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:halfop]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) halfop #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:halfop]
 		}
 		"halfopall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) halfopall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:halfopall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) halfopall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:halfopall]
 		}
 		"invite" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) invite #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:invite]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) invite #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:invite]
 		}
 		"inviteme" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) inviteme"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:inviteme]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) inviteme"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:inviteme]
 		}
 		"kick" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kick #salon pseudo raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kick]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) kick #salon pseudo raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:kick]
 		}
 		"kickall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kickall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kickall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) kickall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:kickall]
 		}
 		"kickban" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kickban #salon pseudo raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kickban]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) kickban #salon pseudo raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:kickban]
 		}
 		"kill" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kill pseudo raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kill]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) kill pseudo raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:kill]
 		}
 		"kline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) kline <pseudo ou ip> raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:kline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) kline <pseudo ou ip> raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:kline]
 		}
 		"klinelist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) klinelist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:klinelist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) klinelist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:klinelist]
 		}
 		"mode" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) mode #salon +/-mode"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:mode]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) mode #salon +/-mode"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:mode]
 		}
 		"newpass" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) newpass mot-de-passe"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:newpass]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) newpass mot-de-passe"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:newpass]
 		}
 		"nickban" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickban #salon pseudo raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickban]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) nickban #salon pseudo raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:nickban]
 		}
 		"op" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) op #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:op]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) op #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:op]
 		}
 		"opall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) opall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:opall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) opall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:opall]
 		}
 		"owner" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) owner #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:owner]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) owner #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:owner]
 		}
 		"ownerall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ownerall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ownerall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) ownerall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:ownerall]
 		}
 		"protect" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protect #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protect]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) protect #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:protect]
 		}
 		"protectall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protectall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protectall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) protectall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:protectall]
 		}
 		"topic" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) topic #salon topic"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:topic]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) topic #salon topic"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:topic]
 		}
 		"unban" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unban #salon mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unban]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) unban #salon mask"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:unban]
 		}
 		"ungline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) ungline ident@host"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:ungline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) ungline ident@host"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:ungline]
 		}
 		"unshun" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unshun pseudo raison"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unshun]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) unshun pseudo raison"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:unshun]
 		}
 		"unkline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) unkline ident@host"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:unkline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) unkline ident@host"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:unkline]
 		}
 
 		"voice" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) voice #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:voice]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) voice #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:voice]
 		}
 		"voiceall" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) voiceall #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:voiceall]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) voiceall #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:voiceall]
 		}
 		"wallops" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) wallops message"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:wallops]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) wallops message"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:wallops]
 		}
 		"changline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) changline #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:changline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) changline #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:changline]
 		}
 		"chankill" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chankill #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chankill]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) chankill #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:chankill]
 		}
 		"chanlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) chanlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:chanlist]
 		}
 		"closeclear" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closeclear"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closeclear]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) closeclear"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:closeclear]
 		}
 		"cleargline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) cleargline"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:cleargline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) cleargline"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:cleargline]
 		}
 		"clearkline" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clearkline"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clearkline]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clearkline"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clearkline]
 		}
 		"clientlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clientlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clientlist]
 		}
 		"closeadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closeadd #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closeadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) closeadd #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:closeadd]
 		}
 		"closelist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closelist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closelist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) closelist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:closelist]
 		}
 		"hostlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) hostlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:hostlist]
 		}
 		"identlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) identlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:identlist]
 		}
 		"join" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) join #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:join]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) join #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:join]
 		}
 		"list" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) list"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:list]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) list"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:list]
 		}
 		"nicklist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nicklist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nicklist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) nicklist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:nicklist]
 		}
 		"notice" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) notice message"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:notice]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) notice message"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:notice]
 		}
 		"part" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) part #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:part]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) part #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:part]
 		}
 		"reallist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) reallist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:reallist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) reallist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:reallist]
 		}
 		"say" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) say #salon message"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:say]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) say #salon message"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:say]
 		}
 		"status" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) status"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:status]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) status"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:status]
 		}
 		"svsjoin" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svsjoin #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svsjoin]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) svsjoin #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:svsjoin]
 		}
 		"svsnick" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svsnick ancien-pseudo nouveau-pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svsnick]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) svsnick ancien-pseudo nouveau-pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:svsnick]
 		}
 		"svspart" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) svspart #salon pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:svspart]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) svspart #salon pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:svspart]
 		}
 		"trustlist" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustlist"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustlist]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) trustlist"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:trustlist]
 		}
 		"closedel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) closedel #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:closedel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) closedel #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:closedel]
 		}
 		"accessadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessadd pseudo password level"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) accessadd pseudo password level"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:accessadd]
 		}
 		"chanadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanadd #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) chanadd #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:chanadd]
 		}
 		"clientadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientadd version"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clientadd version"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clientadd]
 		}
 		"hostadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostadd hostname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) hostadd hostname"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:hostadd]
 		}
 		"identadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identadd ident"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) identadd ident"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:identadd]
 		}
 		"nickadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickadd pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) nickadd pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:nickadd]
 		}
 		"realadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realadd realname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) realadd realname"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:realadd]
 		}
 		"trustadd" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustadd mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustadd]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) trustadd mask"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:trustadd]
 		}
 		"backup" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) backup"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:backup]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) backup"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:backup]
 		}
 		"chanlog" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chanlog #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chanlog]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) chanlog #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:chanlog]
 		}
 		"client" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) client on/off"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:client]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) client on/off"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:client]
 		}
 		"console" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) console 0/1/2/3"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 0 <c04>:<c01> Aucune console"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 1 <c04>:<c01> Console commande"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 3 <c04>:<c01> Toutes les consoles"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:console]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) console 0/1/2/3"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 0 <c04>:<c01> Aucune console"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 1 <c04>:<c01> Console commande"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 3 <c04>:<c01> Toutes les consoles"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:console]
 		}
 		"accessdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessdel pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) accessdel pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:accessdel]
 		}
 		"chandel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) chandel #salon"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:chandel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) chandel #salon"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:chandel]
 		}
 		"clientdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) clientdel version"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:clientdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) clientdel version"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:clientdel]
 		}
 		"hostdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) hostdel hostname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:hostdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) hostdel hostname"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:hostdel]
 		}
 		"identdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) identdel ident"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:identdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) identdel ident"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:identdel]
 		}
 		"nickdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) nickdel pseudo"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:nickdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) nickdel pseudo"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:nickdel]
 		}
 		"realdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) realdel realname"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:realdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) realdel realname"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:realdel]
 		}
 		"trustdel" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) trustdel mask"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:trustdel]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) trustdel mask"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:trustdel]
 		}
 		"die" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) die"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:die]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) die"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:die]
 		}
 		"maxlogin" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) maxlogin on/off"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:maxlogin]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) maxlogin on/off"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:maxlogin]
 		}
 		"accessmod" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessmod pass pseudo mot-de-passe"
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) accessmod level pseudo level"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:accessmod]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) accessmod pass pseudo mot-de-passe"
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) accessmod level pseudo level"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:accessmod]
 		}
 		"protection" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) protection 0/1/2/3/4"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 0 <c04>:<c01> Aucune Protection"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 1 <c04>:<c01> Protection Admins"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
-			eva:FCT:SENT:NOTICE $vuserUID "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:protection]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) protection 0/1/2/3/4"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 0 <c04>:<c01> Aucune Protection"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 1 <c04>:<c01> Protection Admins"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
+			::EvaServ::SENT:MSG:TO:USER $sender "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:protection]
 		}
 		"restart" {
-			eva:FCT:SENT:NOTICE $vuserUID "<b>Commande Help :</b> /msg $eva(pseudo) restart"
-			eva:FCT:SENT:NOTICE $vuserUID [eva:help:description:restart]
+			::EvaServ::SENT:MSG:TO:USER $sender "<b>Commande Help :</b> /msg $config(service_nick) restart"
+			::EvaServ::SENT:MSG:TO:USER $sender [::EvaServ::help:description:restart]
 		}
 	}
 }
@@ -4084,146 +4270,111 @@ proc eva:hcmds { arg } {
 # Eva Connexion #
 #################
 
-proc eva:connexion:server { } {
-	global eva
-	eva:sent2socket "EOS"
-	eva:sent2socket ":$eva(SID) SQLINE $eva(pseudo) :Reserved for services"
-	eva:sent2socket ":$eva(SID) UID $eva(pseudo) 1 [unixtime] $eva(ident) $eva(host) $eva(server_id) * +qioS * * * :$eva(real)"
-	eva:sent2socket ":$eva(SID) SJOIN [unixtime] $eva(salon) + :$eva(server_id)"
-	eva:sent2socket ":$eva(SID) MODE $eva(salon) +$eva(smode)"
-	for { set i		0 } { $i < [string length $eva(cmode)] } { incr i } {
-		set tmode		[string index $eva(cmode) $i]
+proc ::EvaServ::connexion:server { } {
+	variable config
+	::EvaServ::sent2socket "EOS"
+	::EvaServ::sent2socket ":$config(SID) SQLINE $config(service_nick) :Reserved for services"
+	::EvaServ::sent2socket ":$config(SID) UID $config(service_nick) 1 [unixtime] $config(ident) $config(host) $config(server_id) * +qioS * * * :$config(real)"
+	::EvaServ::sent2socket ":$config(SID) SJOIN [unixtime] $config(salon) + :$config(server_id)"
+	::EvaServ::sent2socket ":$config(SID) MODE $config(salon) +$config(smode)"
+	for { set i		0 } { $i < [string length $config(cmode)] } { incr i } {
+		set tmode		[string index $config(cmode) $i]
 		if { $tmode == "q" || $tmode == "a" || $tmode == "o" || $tmode == "h" || $tmode == "v" } {
-			eva:FCT:SENT:MODE $eva(salon) "+$tmode" $eva(server_id)
+			::EvaServ::FCT:SENT:MODE $config(salon) "+$tmode" $config(server_id)
 		}
 	}
-	catch { open "[eva:scriptdir]db/chan.db" r } autojoin
+	catch { open "[::EvaServ::Script:Get:Directory]db/chan.db" r } autojoin
 	while { ![eof $autojoin] } {
 		gets $autojoin salon;
 		if { $salon != "" } {
-			eva:sent2socket ":$eva(server_id) JOIN $salon";
-			if { $eva(cmode) == "q" || $eva(cmode) == "a" || $eva(cmode) == "o" || $eva(cmode) == "h" || $eva(cmode) == "v" } {
-				eva:FCT:SENT:MODE $salon "+$eva(cmode)" $eva(server_id)
+			::EvaServ::sent2socket ":$config(server_id) JOIN $salon";
+			if { $config(cmode) == "q" || $config(cmode) == "a" || $config(cmode) == "o" || $config(cmode) == "h" || $config(cmode) == "v" } {
+				::EvaServ::FCT:SENT:MODE $salon "+$config(cmode)" $config(server_id)
 			}
 		}
 	}
 	catch { close $autojoin }
-	catch { open "[eva:scriptdir]db/close.db" r } ferme
+	catch { open "[::EvaServ::Script:Get:Directory]db/close.db" r } ferme
 	while { ![eof $ferme] } {
 		gets $ferme salle;
 		if { $salle != "" } {
-			eva:sent2socket ":$eva(server_id) JOIN $salle";
-			eva:FCT:SENT:MODE $salle "+sntio" $eva(pseudo);
-			eva:FCT:SET:TOPIC $salle "<c1>Salon Fermé le [eva:duree [unixtime]]";
-			eva:sent2socket ":$eva(link) NAMES $salle"
+			::EvaServ::sent2socket ":$config(server_id) JOIN $salle";
+			::EvaServ::FCT:SENT:MODE $salle "+sntio" $config(service_nick);
+			::EvaServ::FCT:SET:TOPIC $salle "<c1>Salon Fermé le [::EvaServ::duree [unixtime]]";
+			::EvaServ::sent2socket ":$config(link) NAMES $salle"
 		}
 	}
 	catch { close $ferme }
-	incr eva(counter) 1
-	utimer $eva(timerco) eva:verif
+	incr config(counter) 1
+	utimer $config(timerco) ::EvaServ::verif
 }
 
-proc eva:connexion { } {
-	global eva vhost protect ueva netadmin UID_DB
-	if { ![catch "connect $eva(ip) $eva(port)" eva(idx)] } {
-		if { $eva(sdebug) } { putlog "Successfully connected to uplink $eva(ip) $eva(port)" }
-		control $eva(idx) eva:link
-		if { [info exists vhost] }		{ unset vhost		}
-		if { [info exists ueva] }		{ unset ueva		}
-		if { [info exists netadmin] }	{ unset netadmin	}
-		set eva(init)			1;
-		set eva(cmd)			"closeadd";
-		utimer $eva(timerinit) [list set eva(init) 0]
-		utimer $eva(timerinit) [list unset eva(cmd)];
-		eva:chargement;
-		set eva(uptime)			[clock seconds]
-		set eva(server_id)		[string toupper	"${eva(SID)}AAAAAB"]
-		eva:sent2socket "PASS :$eva(pass)"
-		eva:sent2socket "PROTOCTL NICKv2 VHP UMODE2 NICKIP SJOIN SJOIN2 SJ3 NOQUIT TKLEXT MLOCK SID"
-		eva:sent2socket "PROTOCTL EAUTH=$eva(link),,,Eva-$eva(version)"
-		eva:sent2socket "PROTOCTL SID=$eva(SID)"
-		eva:sent2socket ":$eva(SID) SERVER $eva(link) 1 :Services for IRC Networks"
-
-		set UID_DB([string toupper $eva(pseudo)])	$eva(server_id)
-		set UID_DB($eva(server_id))					$eva(pseudo)
-		set vhost([string tolower $eva(pseudo)])	$eva(host)
+proc ::EvaServ::verif { } {
+	variable config
+	if { [valididx $config(idx)] } {
+		utimer $config(timerco) ::EvaServ::verif
 	} else {
-		if { [info exists eva(idx)] } { unset eva(idx)		}
-	}
-}
-
-######################
-# Eva Initialisation #
-######################
-
-proc eva:initialisation { arg } {
-	eva:config
-	eva:connexion
-}
-
-####################
-# Eva Verification #
-####################
-
-proc eva:verif { } {
-	global eva
-	if { [valididx $eva(idx)] } {
-		utimer $eva(timerco) eva:verif
-	} else {
-		if { $eva(counter)<="10" } {
-			eva:config
-			eva:connexion
+		if { $config(counter)<="10" } {
+			::EvaServ::config
+			::EvaServ::connexion
 		} else {
 			foreach kill [utimers] {
-				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+				if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 			}
-			if { [info exists eva(idx)] } { unset eva(idx)		}
+			if { [info exists config(idx)] } { unset config(idx)		}
 		}
 	}
 }
 
-############
-# Eva Link #
-############
 proc remove_modenicklist { data } {
 	return [::tcl::string::map -nocase {
 		"@" "" "&" "" "+" "" "~" "" "%" ""
 	} $data]
 }
 
-proc eva:link { idx arg } {
-	global eva ceva admins netadmin vhost protect ueva trust UID_DB scoredb DBU_INFO
-	if { $eva(sdebug) } { putlog "Received: $arg" }
+proc ::EvaServ::link { idx arg } {
+	variable config
+	variable commands
+	variable admins
+	variable netadmin
+	variable vhost
+	variable protect
+	variable users
+	variable trust
+	variable UID_DB
+	variable scoredb
+	variable DBU_INFO
+	if { $config(sdebug) } { putlog "Received: $arg" }
 	set arg	[split $arg]
-	if { $eva(debug) == 1 } {
-		eva:putdebug "[join [lrange $arg 0 end]]"
+	if { $config(debug) == 1 } {
+		::EvaServ::putdebug "[join [lrange $arg 0 end]]"
 	}
-	set user		[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
+	set user		[::EvaServ::FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
 	set vuser		[string tolower $user]
 	switch -exact [lindex $arg 0] {
 		"PING" {
-			set eva(counter)		0
-			eva:sent2socket "PONG [lindex $arg 1]"
+			set config(counter)		0
+			::EvaServ::sent2socket "PONG [lindex $arg 1]"
 		}
 		"NETINFO" {
-			set eva(netinfo)		[lindex $arg 4]
-			set eva(network)		[lindex $arg 8]
-			eva:sent2socket "NETINFO 0 [unixtime] 0 $eva(netinfo) 0 0 0 $eva(network)"
+			set config(netinfo)		[lindex $arg 4]
+			set config(network)		[lindex $arg 8]
+			::EvaServ::sent2socket "NETINFO 0 [unixtime] 0 $config(netinfo) 0 0 0 $config(network)"
 		}
 		"SQUIT" {
 			set serv		[lindex $arg 1]
-			if { [eva:console 2] == "ok" && $eva(init) == 0 } {
-				eva:SHOW:INFO:TO:CHANLOG "Unlink" "$serv"
+			if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Unlink" "$serv"
 			}
 		}
 		"SERVER" {
 			# Received: SERVER irc.xxx.net 1 :U5002-Fhn6OoEmM-001 Serveur networkname
-			set eva(ircdservname)	[lindex $arg 1]
+			set config(ircdservname)	[lindex $arg 1]
 			set desc		[join [string trim [lrange $arg 3 end] :]]
 			# set serv		[lindex $arg 2]
 			# set desc		[join [string trim [lrange $arg 4 end] :]]
-			if { $eva(init) == 1 } {
-				eva:connexion:server
+			if { $config(init) == 1 } {
+				::EvaServ::connexion:server
 			}
 		}
 
@@ -4231,21 +4382,21 @@ proc eva:link { idx arg } {
 	switch -exact [lindex $arg 1] {
 		"MD"	{
 			#:001 MD client 001E6A4GK certfp :023f2eae234f23fed481be360d744e99df957f.....
-			if { [eva:console 2] == "ok" && $eva(init) == 0 } {
-				set user	[eva:FCT:DATA:TO:NICK [lindex $arg 3]]
+			if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
+				set user	[::EvaServ::FCT:DATA:TO:NICK [lindex $arg 3]]
 				set certfp	[string trim [string tolower [join [lrange $arg 5 end]]] :]
-				eva:SHOW:INFO:TO:CHANLOG "Client CertFP" "$user ($certfp)"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Client CertFP" "$user ($certfp)"
 			}
 
 		}
 		"REPUTATION"	{
 			#:001 REPUTATION xxx.xxx.xxx.xxx 373
-			if { [eva:console 2] == "ok" && $eva(init) == 0 } {
+			if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
 				set host	[lindex $arg 2]
 				set score	[lindex $arg 3]
 				set scoredb($host) $score
 				set scoredb(last) "$host|$score"
-				#eva:SHOW:INFO:TO:CHANLOG "Réputation" "score $score ($host)"
+				#::EvaServ::SHOW:INFO:TO:CHANLOG "Réputation" "score $score ($host)"
 			}
 		}
 
@@ -4277,129 +4428,129 @@ proc eva:link { idx arg } {
 			if { ![info exists DBU_INFO($uid,REALNAME)] }	{ set DBU_INFO($uid,REALNAME)	$gecos }
 			
 
-			if { ![info exists ueva($nickname)] && [string match *+*S* $umodes] } {
-				set ueva($nickname)		on
+			if { ![info exists users($nickname)] && [string match *+*S* $umodes] } {
+				set users($nickname)		on
 			}
-			if { ![info exists ueva($nickname)] } { 
-				eva:connexion:user:security:check $nickname $hostname $username $gecos
+			if { ![info exists users($nickname)] } { 
+				::EvaServ::connexion:user:security:check $nickname $hostname $username $gecos
 			}
 			if { [string match *+*z* $umodes] } {
 				set stype		"Connexion SSL"
 			} else {
 				set stype		"Connexion"
 			}
-			if { [eva:console 2] == "ok" && $eva(init) == 0 } {
-				set MSG_CONNECT		"[eva:DBU:GET $uid NICK]"
-				append MSG_CONNECT	" ([eva:DBU:GET $uid IDENT]@[eva:DBU:GET $uid VHOST]) "
-				append MSG_CONNECT	"- Serveur : $eva(ircdservname) "
+			if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
+				set MSG_CONNECT		"[::EvaServ::DBU:GET $uid NICK]"
+				append MSG_CONNECT	" ([::EvaServ::DBU:GET $uid IDENT]@[::EvaServ::DBU:GET $uid VHOST]) "
+				append MSG_CONNECT	"- Serveur : $config(ircdservname) "
 				if { $scoredb(last) != "" } {
 					if { ![info exists DBU_INFO($uid,REPUTATION)] } {
 						set TMP	[split $scoredb(last) "|"]
 						set DBU_INFO($uid,IP)			[lindex $TMP 0]
 						set DBU_INFO($uid,REPUTATION)	[lindex $TMP 1]
 					}
-					append MSG_CONNECT	"- Score: [eva:DBU:GET $uid REPUTATION] "
+					append MSG_CONNECT	"- Score: [::EvaServ::DBU:GET $uid REPUTATION] "
 				}
-				append MSG_CONNECT	"- realname: [eva:DBU:GET $uid REALNAME] "
-				eva:SHOW:INFO:TO:CHANLOG $stype $MSG_CONNECT
+				append MSG_CONNECT	"- realname: [::EvaServ::DBU:GET $uid REALNAME] "
+				::EvaServ::SHOW:INFO:TO:CHANLOG $stype $MSG_CONNECT
 			}
 		}
 		"219" {
-			if { ![info exists eva(aff)] && $eva(cmd) == "gline" } {
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Aucun Gline"
+			if { ![info exists config(aff)] && $config(cmd) == "gline" } {
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Aucun Gline"
 			}
-			if { ![info exists eva(aff)] && $eva(cmd) == "shun" } {
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Aucun shun"
+			if { ![info exists config(aff)] && $config(cmd) == "shun" } {
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Aucun shun"
 			}
-			if { ![info exists eva(aff)] && $eva(cmd) == "kline" } {
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Aucun Kline"
+			if { ![info exists config(aff)] && $config(cmd) == "kline" } {
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Aucun Kline"
 			}
-			if { [info exists eva(cmd)] } { unset eva(cmd)		}
-			if { [info exists eva(rep)] } { unset eva(rep)		}
-			if { [info exists eva(aff)] } { unset eva(aff)		}
+			if { [info exists config(cmd)] } { unset config(cmd)		}
+			if { [info exists config(rep)] } { unset config(rep)		}
+			if { [info exists config(aff)] } { unset config(aff)		}
 		}
 		"223" {
 			set host		[lindex $arg 4]
 			set auteur		[lindex $arg 7]
 			set raison		[join [string trim [lrange $arg 8 end] :]]
-			if { $eva(cmd) == "gline" } {
-				if { ![info exists eva(aff)] } {
-					set eva(aff)		1
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b><c1,1>---------------------- <c0>Liste des Glines <c1>----------------------"
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b>"
+			if { $config(cmd) == "gline" } {
+				if { ![info exists config(aff)] } {
+					set config(aff)		1
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b><c1,1>---------------------- <c0>Liste des Glines <c1>----------------------"
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b>"
 				}
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
-			} elseif { $eva(cmd) == "shun" } {
-				if { ![info exists eva(aff)] } {
-					set eva(aff)		1
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b><c1,1>---------------------- <c0>Liste des Shuns <c1>----------------------"
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b>"
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
+			} elseif { $config(cmd) == "shun" } {
+				if { ![info exists config(aff)] } {
+					set config(aff)		1
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b><c1,1>---------------------- <c0>Liste des Shuns <c1>----------------------"
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b>"
 				}
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
-			} elseif { $eva(cmd) == "kline" } {
-				if { ![info exists eva(aff)] } {
-					set eva(aff)		1
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b><c1,1>---------------------- <c0>Liste des Klines <c1>----------------------"
-					eva:FCT:SENT:NOTICE "$eva(rep)" "<b>"
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
+			} elseif { $config(cmd) == "kline" } {
+				if { ![info exists config(aff)] } {
+					set config(aff)		1
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b><c1,1>---------------------- <c0>Liste des Klines <c1>----------------------"
+					::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b>"
 				}
-				eva:FCT:SENT:NOTICE "$eva(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
-			} elseif { $eva(cmd) == "cleargline" } {
-				eva:sent2socket ":$eva(link) TKL - G [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(pseudo)"
-			} elseif { $eva(cmd) == "clearkline" } {
-				eva:sent2socket ":$eva(link) TKL - k [lindex [split $host @] 0] [lindex [split $host @] 1] $eva(pseudo)"
+				::EvaServ::SENT:MSG:TO:USER "$config(rep)" "Host \[<c03> $host <c01>\] | Auteur \[<c03> $auteur <c01>\] | Raison \[<c03> $raison <c01>\]"
+			} elseif { $config(cmd) == "cleargline" } {
+				::EvaServ::sent2socket ":$config(link) TKL - G [lindex [split $host @] 0] [lindex [split $host @] 1] $config(service_nick)"
+			} elseif { $config(cmd) == "clearkline" } {
+				::EvaServ::sent2socket ":$config(link) TKL - k [lindex [split $host @] 0] [lindex [split $host @] 1] $config(service_nick)"
 			}
 		}
 		"307" {
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> NickServ <c01>\] <c02> Oui"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> NickServ <c01>\] <c02> Oui"
 		}
 		"487" {
-			eva:FCT:SENT:NOTICE "$eva(salon)" "<c01> \[<c03> ERREUR <c01>\] <c02> $arg"
+			::EvaServ::SENT:MSG:TO:USER "$config(salon)" "<c01> \[<c03> ERREUR <c01>\] <c02> $arg"
 		}
 		"310" {
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Helpeur <c01>\] <c02> Oui"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Helpeur <c01>\] <c02> Oui"
 		}
 		"311" {
 			set nick		[lindex $arg 3]
 			set ident		[lindex $arg 4]
 			set host		[lindex $arg 5]
 			set real		[join [string trim [lrange $arg 7 end] :]]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<b><c1,1>------------------------------ <c0>Whois <c1>------------------------------"
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<b>"
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Pseudo <c01>\] <c02> $nick"
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Nom Réel <c01>\] <c02> $real"
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Host <c01>\] <c02> $ident@$host"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b><c1,1>------------------------------ <c0>Whois <c1>------------------------------"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b>"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Pseudo <c01>\] <c02> $nick"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Nom Réel <c01>\] <c02> $real"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Host <c01>\] <c02> $ident@$host"
 		}
 		"312" {
 			set serveur		[lindex $arg 4]
 			set desc		[join [string trim [lrange $arg 5 end] :]]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Serveur <c01>\] <c02> $serveur ($desc)"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Serveur <c01>\] <c02> $serveur ($desc)"
 		}
 		"313" {
 			set grade		[join [lrange $arg 6 end]]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Grade <c01>\] <c02> $grade"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Grade <c01>\] <c02> $grade"
 		}
 		"317" {
 			set idle		[lindex $arg 4]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Idle <c01>\] <c02> [duration $idle]"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Idle <c01>\] <c02> [duration $idle]"
 		}
 		"318" {
-			if { [info exists eva(rep)] } { unset eva(rep)		}
+			if { [info exists config(rep)] } { unset config(rep)		}
 		}
 		"319" {
 			set salon		[join [string trim [lrange $arg 4 end] :]]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Salon <c01>\] <c02> $salon"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Salon <c01>\] <c02> $salon"
 		}
 		"320" {
 			set swhois		[join [string trim [lrange $arg 4 end] :]]
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Swhois <c01>\] <c02> $swhois"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Swhois <c01>\] <c02> $swhois"
 		}
 		"324" {
 			set chan		[lindex $arg 3]
 			set mode		[join [string trimleft [lrange $arg 4 end] +]]
-			eva:FCT:SENT:MODE $chan "-$mode"
+			::EvaServ::FCT:SENT:MODE $chan "-$mode"
 		}
 		"335" {
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Robot <c01>\] <c02> Oui"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Robot <c01>\] <c02> Oui"
 		}
 		"353" {
 
@@ -4414,130 +4565,130 @@ proc eva:link { idx arg } {
 			#set host		[lindex $arg 5]
 
 			foreach n [split $user] {
-				if { $eva(cmd) == "ownerall" && \
-					![info exists ueva($n)] && \
-						$n!=[string tolower $eva(pseudo)] && \
+				if { $config(cmd) == "ownerall" && \
+					![info exists users($n)] && \
+						$n!=[string tolower $config(service_nick)] && \
 						![info exists admins($n)] && \
-						[eva:protection $n $eva(protection)] != "ok"
+						[::EvaServ::protection $n $config(protection)] != "ok"
 				} {
-				eva:FCT:SENT:MODE $chan "+q" $n
+				::EvaServ::FCT:SENT:MODE $chan "+q" $n
 			} elseif {
-				$eva(cmd) == "deownerall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "deownerall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "-q" $n
+				::EvaServ::FCT:SENT:MODE $chan "-q" $n
 			} elseif {
-				$eva(cmd) == "protectall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "protectall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "+a" $n
+				::EvaServ::FCT:SENT:MODE $chan "+a" $n
 			} elseif {
-				$eva(cmd) == "deprotectall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "deprotectall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "-a" $n
+				::EvaServ::FCT:SENT:MODE $chan "-a" $n
 			} elseif {
-				$eva(cmd) == "opall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "opall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "+o" $n
+				::EvaServ::FCT:SENT:MODE $chan "+o" $n
 			} elseif {
-				$eva(cmd) == "deopall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "deopall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "-o" $n
+				::EvaServ::FCT:SENT:MODE $chan "-o" $n
 			} elseif {
-				$eva(cmd) == "halfopall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "halfopall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "+h" $n
+				::EvaServ::FCT:SENT:MODE $chan "+h" $n
 			} elseif {
-				$eva(cmd) == "dehalfopall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "dehalfopall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "-h" $n
+				::EvaServ::FCT:SENT:MODE $chan "-h" $n
 			} elseif {
-				$eva(cmd) == "voiceall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "voiceall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "+v" $n
+				::EvaServ::FCT:SENT:MODE $chan "+v" $n
 			} elseif {
-				$eva(cmd) == "devoiceall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "devoiceall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:FCT:SENT:MODE $chan "-v" $n
+				::EvaServ::FCT:SENT:MODE $chan "-v" $n
 			} elseif {
-				$eva(cmd) == "kickall" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "kickall" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
 
-				eva:sent2socket ":$eva(server_id) KICK $chan $n Kicked [eva:rnick $eva(rep)]"
+				::EvaServ::sent2socket ":$config(server_id) KICK $chan $n Kicked [::EvaServ::rnick $config(rep)]"
 			} elseif {
-				$eva(cmd) == "chankill" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "chankill" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok" && [eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok" && [::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:sent2socket ":$eva(server_id) KILL $n Chan Killed [eva:rnick $eva(rep)]";
-				eva:refresh $n
+				::EvaServ::sent2socket ":$config(server_id) KILL $n Chan Killed [::EvaServ::rnick $config(rep)]";
+				::EvaServ::refresh $n
 			} elseif {
-				$eva(cmd) == "changline" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "changline" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok" && [eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok" && [::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:sent2socket ":$eva(link) TKL + G * $vhost($n) $eva(pseudo) [expr [unixtime] + $eva(duree)] [unixtime] :Chan Glined [eva:rnick $eva(rep)] (Expire le [eva:duree [expr [unixtime] + $eva(duree)]])"
+				::EvaServ::sent2socket ":$config(link) TKL + G * $vhost($n) $config(service_nick) [expr [unixtime] + $config(duree)] [unixtime] :Chan Glined [::EvaServ::rnick $config(rep)] (Expire le [::EvaServ::duree [expr [unixtime] + $config(duree)]])"
 			} elseif {
-				$eva(cmd) == "badchan" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "badchan" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				eva:sent2socket ":$eva(server_id) KICK $chan $n Salon Interdit"
+				::EvaServ::sent2socket ":$config(server_id) KICK $chan $n Salon Interdit"
 			} elseif {
-				$eva(cmd) == "closeadd" && \
-					![info exists ueva($n)] && \
-					$n!=[string tolower $eva(pseudo)] && \
+				$config(cmd) == "closeadd" && \
+					![info exists users($n)] && \
+					$n!=[string tolower $config(service_nick)] && \
 					![info exists admins($n)] && \
-					[eva:protection $n $eva(protection)] != "ok"
+					[::EvaServ::protection $n $config(protection)] != "ok"
 			} {
-				if { [info exists eva(rep)] } {
-					eva:sent2socket ":$eva(server_id) KICK $chan $n Closed [eva:rnick $eva(rep)]"
+				if { [info exists config(rep)] } {
+					::EvaServ::sent2socket ":$config(server_id) KICK $chan $n Closed [::EvaServ::rnick $config(rep)]"
 				} else {
-					eva:sent2socket ":$eva(server_id) KICK $chan $n Closed"
+					::EvaServ::sent2socket ":$config(server_id) KICK $chan $n Closed"
 				}
 
 			}
@@ -4546,105 +4697,56 @@ proc eva:link { idx arg } {
 	"364" {
 		set serv		[lindex $arg 3]
 		set desc		[join [lrange $arg 6 end]]
-		if { ![info exists eva(aff)] } {
-			set eva(aff)		1
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<b><c1,1>--------------------------------- <c0>Map du Réseau <c1>---------------------------------"
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<b>"
+		if { ![info exists config(aff)] } {
+			set config(aff)		1
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b><c1,1>--------------------------------- <c0>Map du Réseau <c1>---------------------------------"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<b>"
 		}
-		eva:FCT:SENT:NOTICE "$eva(rep)" "<c01>Serveur \[<c04> $serv <c01>\] <c> Description \[<c03> $desc <c01>\]"
+		::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01>Serveur \[<c04> $serv <c01>\] <c> Description \[<c03> $desc <c01>\]"
 	}
 	"365" {
-		if { [info exists eva(aff)] } { unset eva(aff)		}
-		if { [info exists eva(rep)] } { unset eva(rep)		}
+		if { [info exists config(aff)] } { unset config(aff)		}
+		if { [info exists config(rep)] } { unset config(rep)		}
 	}
 	"378" {
 		set host		[lindex $arg 7]
 		set ip		[lindex $arg 8]
-		eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Host Décodé <c01>\] <c02> $host"
+		::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Host Décodé <c01>\] <c02> $host"
 		if { [info exists $ip] } {
-			eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> Ip <c01>\] <c02> $ip"
+			::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> Ip <c01>\] <c02> $ip"
 		}
 	}
 	"671" {
-		eva:FCT:SENT:NOTICE "$eva(rep)" "<c01> \[<c03> SSL <c01>\] <c02> Oui"
+		::EvaServ::SENT:MSG:TO:USER "$config(rep)" "<c01> \[<c03> SSL <c01>\] <c02> Oui"
 	}
 	"SERVER" {
 		set serv		[lindex $arg 2]
 		set desc		[join [string trim [lrange $arg 4 end] :]]
-		if { [eva:console 2] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Link" "$serv : $desc"
+		if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Link" "$serv : $desc"
 		}
 	}
 	"NOTICE" {
 		#Received: :001FKJTPQ NOTICE 00CAAAAAB :VERSION HexChat 2.14.2 / Linux 5.4.0-66-generic [x86_64/1,30GHz/SMP]
 		set version		[string trim [lindex $arg 3] :]
 		set vdata		[string trim [join [lrange $arg 4 end]] \001]
-		if { [eva:flood $vuser] != "ok" } { return 0 }
-		if { $eva(aclient) == 1 && $version == "\001VERSION" } {
-			eva:SHOW:INFO:TO:CHANLOG "Client Version" "$vuser : $vdata"
-			catch { open [eva:scriptdir]db/client.db r } vcli
+		if { [::EvaServ::FloodControl:Check $vuser] != "ok" } { return 0 }
+		if { $config(aclient) == 1 && $version == "\001VERSION" } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Client Version" "$vuser : $vdata"
+			catch { open [::EvaServ::Script:Get:Directory]db/client.db r } vcli
 			while { ![eof $vcli] } {
 				gets $vcli verscli
 				if {$verscli != "" } { continue }
 				if { [string match *$verscli* $vdata] } {
-					if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-						eva:SHOW:INFO:TO:CHANLOG "Kill" "$user a été killé : $eva(rclient)"
+					if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$user a été killé : $config(rclient)"
 					}
-					eva:sent2socket ":$eva(server_id) KILL $vuser $eva(rclient)";
-					eva:refresh $vuser
+					::EvaServ::sent2socket ":$config(server_id) KILL $vuser $config(rclient)";
+					::EvaServ::refresh $vuser
 					break
 				}
 			}
 			catch { close $vcli }
-		}
-	}
-	"PRIVMSG" {
-		set vuser		[string tolower $user]
-		set robotUID	[string tolower [lindex $arg 2]]
-		set cmds		[string tolower [string trim [lindex $arg 3] :]]
-		set hcmds		[string tolower [lindex $arg 4]]
-		set pcmds		[string trim $cmds $eva(prefix)]
-		set data		[join [lrange $arg 4 end]]
-		if { [string toupper $robotUID] == [eva:UID:CONVERT $eva(pseudo)] } {
-			if { [eva:flood $vuser] != "ok" } { return 0 }
-
-			if { $cmds == "ping" } {
-				eva:FCT:SENT:NOTICE "$user" "\001PING [clock seconds]\001";
-				return 0;
-			} elseif { $cmds == "version" } {
-				eva:FCT:SENT:NOTICE "$user" "<c01>Eva Service $eva(version) by TiSmA/MalaGaM<c03>©";
-				return 0;
-				# verifie si c une command eva :
-
-			} elseif { [eva:CMD:EXIST $cmds] } {
-
-				# si c help
-				if { $cmds == "help" && $hcmds != "" } {
-
-					# verifie si c une command eva
-					if { [eva:CMD:EXIST $hcmds] } {
-						eva:hcmds "$hcmds $user $data"
-					} else {
-						eva:FCT:SENT:NOTICE "$user" "Aide <b>$hcmds</b> Inconnue."
-					}
-				} else {
-					eva:cmds "$cmds $user $data"
-				}
-			} else {
-				eva:FCT:SENT:NOTICE "$user" "Commande <b>$cmds</b> Inconnue."
-			}
-		}
-		if { [string index $cmds 0] == $eva(prefix) } {
-			if { [eva:flood $vuser] != "ok" } { return 0 }
-			if { [eva:CMD:EXIST $pcmds] } {
-				if { $pcmds == "help" && $hcmds != "" } {
-					if { [eva:CMD:EXIST $hcmds] } {
-						eva:hcmds "$hcmds $user $data"
-					}
-				} else {
-					eva:cmds "$pcmds $user $data"
-				}
-			}
 		}
 	}
 	"MODE" {
@@ -4654,57 +4756,57 @@ proc eva:link { idx arg } {
 		set pmode		[join [lrange $arg 4 end]]
 		set unix		[lindex $arg end]
 		if {
-			[eva:console 3] == "ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init) == 0 && \
-				[string tolower $user]!=[string tolower $eva(pseudo)]
+			[::EvaServ::console 3] == "ok" && \
+				$vchan!=[string tolower $config(salon)] && \
+				$config(init) == 0 && \
+				[string tolower $user]!=[string tolower $config(service_nick)]
 		} {
 			if {[regexp "^\[0-9\]\{10\}" $unix]} {
 				set smode		[string trim $pmode $unix]
-				eva:SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $umode $smode sur $chan"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $umode $smode sur $chan"
 			} else {
-				eva:SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $umode $pmode sur $chan"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Mode" "$user applique le mode $umode $pmode sur $chan"
 			}
 		}
 	}
 	"UMODE2" {
 		set umode		[lindex $arg 2]
-		if { ![info exists ueva($user)] && [string match *+*S* $umode] } { set ueva($user)		on }
+		if { ![info exists users($user)] && [string match *+*S* $umode] } { set users($user)		on }
 		if { ![info exists netadmin($user)] && [string match *+*N* $umode] } { set netadmin($user)		on }
 		if { [info exists netadmin($user)] && [string match *-*N* $umode] } { unset netadmin($user)		}
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
 			if { [string match *+*S* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Service Réseau"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Service Réseau"
 			} elseif { [string match *-*S* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Service Réseau"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Service Réseau"
 			} elseif { [string match *+*N* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Réseau"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Réseau"
 			} elseif { [string match *-*N* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Réseau"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Réseau"
 			} elseif { [string match *+*A* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Serveur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Serveur"
 			} elseif { [string match *-*A* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Serveur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Serveur"
 			} elseif { [string match *+*a* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Services"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Administrateur Services"
 			} elseif { [string match *-*a* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Services"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Administrateur Services"
 			} elseif { [string match *+*C* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Co-Administrateur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Co-Administrateur"
 			} elseif { [string match *-*C* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Co-Administrateur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Co-Administrateur"
 			} elseif { [string match *+*o* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un IRC Opérateur Global"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un IRC Opérateur Global"
 			} elseif { [string match *-*o* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un IRC Opérateur Global"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un IRC Opérateur Global"
 			} elseif { [string match *+*O* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un IRC Opérateur Local"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un IRC Opérateur Local"
 			} elseif { [string match *-*O* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un IRC Opérateur Local"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un IRC Opérateur Local"
 			} elseif { [string match *+*h* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Helpeur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user est un Helpeur"
 			} elseif { [string match *-*h* $umode] } {
-				eva:SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Helpeur"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Usermode" "$user n'est plus un Helpeur"
 			}
 		}
 	}
@@ -4713,16 +4815,16 @@ proc eva:link { idx arg } {
 		set vnew		[string tolower [lindex $arg 2]]
 		
 		set NICK_NEW	[lindex $arg 2]
-		set NICK_OLD	[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
-		set UID			[eva:UID:CONVERT $vuser]
+		set NICK_OLD	[::EvaServ::FCT:DATA:TO:NICK [string trim [lindex $arg 0] :]]
+		set UID			[::EvaServ::UID:CONVERT $vuser]
 		set UID_DB([string toupper $UID])		$NICK_NEW
 		set UID_DB([string toupper $NICK_NEW])	$UID
 		set	unset UID_DB([string toupper $NICK_OLD])
 
 		# [21:54:07] Received: :001PSYE4B NICK Amand[CoucouHibou] 1616792047
-		if { [info exists ueva($vuser)] && $vuser!=$vnew } {
-			set ueva($vnew)		on;
-			unset ueva($vuser)
+		if { [info exists users($vuser)] && $vuser!=$vnew } {
+			set users($vnew)		on;
+			unset users($vuser)
 		}
 		if { [info exists vhost($vuser)] && $vuser!=$vnew } {
 			set vhost($vnew)		$vhost($vuser);
@@ -4736,24 +4838,24 @@ proc eva:link { idx arg } {
 			set netadmin($vnew)		on;
 			unset netadmin($vuser)
 		}
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Nick" "$user change son pseudo en $new"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Nick" "$user change son pseudo en $new"
 		}
 		if {
-			![info exists ueva($vnew)] && \
+			![info exists users($vnew)] && \
 				![info exists admins($vnew)] && \
-				[eva:protection $vnew $eva(protection)] != "ok"
+				[::EvaServ::protection $vnew $config(protection)] != "ok"
 		} {
-			catch { open [eva:scriptdir]db/nick.db r } liste
+			catch { open [::EvaServ::Script:Get:Directory]db/nick.db r } liste
 			while { ![eof $liste] } {
 				gets $liste verif
 				if { [string match $verif $vnew] && $verif != "" } {
-					if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-						eva:SHOW:INFO:TO:CHANLOG "Kill" "$new a été killé : $eva(ruser)"
+					if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+						::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$new a été killé : $config(ruser)"
 					}
-					eva:sent2socket ":$eva(server_id) KILL $vnew $eva(ruser)";
+					::EvaServ::sent2socket ":$config(server_id) KILL $vnew $config(ruser)";
 					break;
-					eva:refresh $vnew
+					::EvaServ::refresh $vnew
 				}
 			}
 			catch { close $liste }
@@ -4764,126 +4866,126 @@ proc eva:link { idx arg } {
 		set vchan		[string tolower $chan]
 		set topic		[join [string trim [lrange $arg 5 end] :]]
 		if {
-			[eva:console 3] == "ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init) == 0
+			[::EvaServ::console 3] == "ok" && \
+				$vchan!=[string tolower $config(salon)] && \
+				$config(init) == 0
 		} {
-			eva:SHOW:INFO:TO:CHANLOG "Topic" "$user change le topic sur $chan : $topic<c>"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Topic" "$user change le topic sur $chan : $topic<c>"
 		}
 	}
 	"KICK" {
-		set pseudo		[eva:UID:CONVERT [lindex $arg 3]]
+		set pseudo		[::EvaServ::UID:CONVERT [lindex $arg 3]]
 		set chan		[lindex $arg 2]
 		set vchan		[string tolower [lindex $arg 2]]
 		set raison		[join [string trim [lrange $arg 4 end] :]]
 		if {
-			[eva:console 3] == "ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init) == 0
+			[::EvaServ::console 3] == "ok" && \
+				$vchan!=[string tolower $config(salon)] && \
+				$config(init) == 0
 		} {
-			eva:SHOW:INFO:TO:CHANLOG "Kick" "$pseudo a été kické par $user sur $chan : $raison<c>"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Kick" "$pseudo a été kické par $user sur $chan : $raison<c>"
 		}
 	}
 	"KILL" {
 		set pseudo		[lindex $arg 2]
 		set vpseudo		[string tolower [lindex $arg 2]]
 		set text		[join [string trim [lrange $arg 2 end] :]]
-		eva:refresh $vpseudo
-		if { [eva:console 1] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Kill" "$pseudo : $text<c>"
+		::EvaServ::refresh $vpseudo
+		if { [::EvaServ::console 1] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Kill" "$pseudo : $text<c>"
 		}
-		if { $vpseudo == [string tolower $eva(pseudo)] } {
-			eva:gestion;
-			eva:sent2socket ":$eva(link) SQUIT $eva(link) :$eva(raison)"
+		if { $vpseudo == [string tolower $config(service_nick)] } {
+			::EvaServ::gestion;
+			::EvaServ::sent2socket ":$config(link) SQUIT $config(link) :$config(raison)"
 			foreach kill [utimers] {
-				if { [lindex $kill 1] == "eva:verif" } { killutimer [lindex $kill 2] }
+				if { [lindex $kill 1] == "::EvaServ::verif" } { killutimer [lindex $kill 2] }
 			}
-			if { [info exists eva(idx)] } { unset eva(idx)		}
-			set eva(counter)		0;
-			eva:config
-			utimer 1 eva:connexion
+			if { [info exists config(idx)] } { unset config(idx)		}
+			set config(counter)		0;
+			::EvaServ::config
+			utimer 1 ::EvaServ::connexion
 		}
 	}
 	"GLOBOPS" {
 		set text		[join [string trim [lrange $arg 2 end] :]]
 		if {
-			[eva:console 3] == "ok" && \
-				$eva(init) == 0 && \
-				![info exists ueva($vuser)]
+			[::EvaServ::console 3] == "ok" && \
+				$config(init) == 0 && \
+				![info exists users($vuser)]
 		} {
-			eva:SHOW:INFO:TO:CHANLOG "Globops" "$user : $text<c>"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Globops" "$user : $text<c>"
 		}
 	}
 	"CHGIDENT" {
 		set pseudo		[lindex $arg 2]
 		set ident		[lindex $arg 3]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Chgident" "$user change l'ident de $pseudo en $ident"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Chgident" "$user change l'ident de $pseudo en $ident"
 		}
 	}
 	"CHGHOST" {
-		set pseudo		[eva:FCT:DATA:TO:NICK [lindex $arg 2]]
+		set pseudo		[::EvaServ::FCT:DATA:TO:NICK [lindex $arg 2]]
 		set host		[lindex $arg 3]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Chghost" "$user change l'host de $pseudo en $host"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Chghost" "$user change l'host de $pseudo en $host"
 		}
 	}
 	"CHGNAME" {
 		set pseudo		[lindex $arg 2]
 		set real		[join [string trim [lrange $arg 3 end] :]]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Chgname" "$user change le realname de $pseudo en $real"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Chgname" "$user change le realname de $pseudo en $real"
 		}
 	}
 	"SETHOST" {
 		set host		[lindex $arg 2]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Sethost" "Changement de l'host de $user en $host"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Sethost" "Changement de l'host de $user en $host"
 		}
 	}
 	"SETIDENT" {
 		set ident		[lindex $arg 2]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Setident" "Changement de l'ident de $user en $ident"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Setident" "Changement de l'ident de $user en $ident"
 		}
 	}
 	"SETNAME" {
 		set real		[join [string trim [lrange $arg 2 end] :]]
-		if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-			eva:SHOW:INFO:TO:CHANLOG "Setname" "Changement du realname de $user en $real"
+		if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Setname" "Changement du realname de $user en $real"
 		}
 	}
 	"SJOIN" {
 		#	[20:40:16] Received: :001 SJOIN 1616246465 #Amandine :001119S0G
-		set user		[eva:FCT:DATA:TO:NICK [string trim [lindex $arg 4] :]]
+		set user		[::EvaServ::FCT:DATA:TO:NICK [string trim [lindex $arg 4] :]]
 		set vuser		[string tolower $user]
 		set chan		[lindex $arg 3]
 		set vchan		[string tolower $chan]
 		if {
-			[eva:console 3] == "ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init) == 0
+			[::EvaServ::console 3] == "ok" && \
+				$vchan!=[string tolower $config(salon)] && \
+				$config(init) == 0
 		} {
-			eva:SHOW:INFO:TO:CHANLOG "Join" "$user entre sur $chan"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Join" "$user entre sur $chan"
 		}
-		catch { open "[eva:scriptdir]db/salon.db" r } liste
+		catch { open "[::EvaServ::Script:Get:Directory]db/salon.db" r } liste
 		while { ![eof $liste] } {
 			gets $liste verif
 			if {
 				$verif != "" && \
 					[string match *[string trimleft $verif #]* [string trimleft $vchan #]] && \
-					$vuser!=[string tolower $eva(pseudo)] && \
-					![info exists ueva($vuser)] && \
+					$vuser!=[string tolower $config(service_nick)] && \
+					![info exists users($vuser)] && \
 					![info exists admins($vuser)] && \
-					[eva:protection $vuser $eva(protection)] != "ok"
+					[::EvaServ::protection $vuser $config(protection)] != "ok"
 			} {
-				set eva(cmd)		"badchan";
-				eva:sent2socket ":$eva(server_id) JOIN $vchan";
-				eva:FCT:SENT:MODE $vchan "+ntsio" $eva(pseudo)
-				eva:FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [eva:duree [unixtime]]";
-				eva:sent2socket ":$eva(link) NAMES $vchan"
-				if { [eva:console 3] == "ok" && $eva(init) == 0 } {
-					eva:SHOW:INFO:TO:CHANLOG "Part" "$user part de $chan : Salon Interdit"
+				set config(cmd)		"badchan";
+				::EvaServ::sent2socket ":$config(server_id) JOIN $vchan";
+				::EvaServ::FCT:SENT:MODE $vchan "+ntsio" $config(service_nick)
+				::EvaServ::FCT:SET:TOPIC $vchan "<c1>Salon Interdit le [::EvaServ::duree [unixtime]]";
+				::EvaServ::sent2socket ":$config(link) NAMES $vchan"
+				if { [::EvaServ::console 3] == "ok" && $config(init) == 0 } {
+					::EvaServ::SHOW:INFO:TO:CHANLOG "Part" "$user part de $chan : Salon Interdit"
 				}
 				break
 			}
@@ -4894,25 +4996,26 @@ proc eva:link { idx arg } {
 		set chan		[string trim [lindex $arg 2] :]
 		set vchan		[string tolower $chan]
 		if {
-			[eva:console 3] == "ok" && \
-				$vchan!=[string tolower $eva(salon)] && \
-				$eva(init) == 0
+			[::EvaServ::console 3] == "ok" && \
+				$vchan!=[string tolower $config(salon)] && \
+				$config(init) == 0
 		} {
-			eva:SHOW:INFO:TO:CHANLOG "Part" "$user part de $chan"
+			::EvaServ::SHOW:INFO:TO:CHANLOG "Part" "$user part de $chan"
 		}
 	}
 	"QUIT" {
 		set text		[join [string trim [lrange $arg 2 end] :]]
-		eva:refresh $vuser
+		::EvaServ::refresh $vuser
 
-		if { [eva:console 2] == "ok" && $eva(init) == 0 } {
+		if { [::EvaServ::console 2] == "ok" && $config(init) == 0 } {
 			if { $text != "" } {
-				eva:SHOW:INFO:TO:CHANLOG "Déconnexion" "$user a quitté l'IRC : $text - ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST])"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Déconnexion" "$user a quitté l'IRC : $text - ([::EvaServ::DBU:GET $user IDENT]@[::EvaServ::DBU:GET $user VHOST])"
 			} else {
-				eva:SHOW:INFO:TO:CHANLOG "Déconnexion" "$user a quitté l'IRC - ([eva:DBU:GET $user IDENT]@[eva:DBU:GET $user VHOST])"
+				::EvaServ::SHOW:INFO:TO:CHANLOG "Déconnexion" "$user a quitté l'IRC - ([::EvaServ::DBU:GET $user IDENT]@[::EvaServ::DBU:GET $user VHOST])"
 			}
 		}
 	}
 }
 }
 
+::EvaServ::INIT
