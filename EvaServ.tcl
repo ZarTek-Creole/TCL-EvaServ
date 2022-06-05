@@ -11,17 +11,17 @@
 #		-> ZarTek (ZarTek.Creole@GMail.Com)
 #
 #	Website :
-#		-> https://github.com/ZarTek-Creole/TCL-EvaServ
+#		-> github.com/ZarTek-Creole/TCL-EvaServ
 #
 #	Support	:
-#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/issues
+#		-> github.com/ZarTek-Creole/TCL-EvaServ/issues
 #
 #	Docs	:
-#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/wiki
+#		-> github.com/ZarTek-Creole/TCL-EvaServ/wiki
 #
 #	LICENSE :
 #		-> GNU General Public License v3.0
-#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/blob/main/LICENSE.txt
+#		-> github.com/ZarTek-Creole/TCL-EvaServ/blob/main/LICENSE.txt
 #
 #	Code origine:
 #		-> TiSmA (TiSmA@eXolia.fr)
@@ -138,7 +138,7 @@ proc ::EvaServ::INIT { } {
 						"trust"		
 					];
 	
-	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'https://github.com/ZarTek-Creole/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
+	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'github.com/ZarTek-Creole/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
 
 	::EvaServ::Database:Load:Data
 	::EvaServ::Service:Connexion
