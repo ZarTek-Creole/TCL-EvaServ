@@ -8,20 +8,20 @@
 ##############################################################
 #
 #	Auteur	:
-#		-> MalaGaM (MalaGaM.ARTiSPRETiS@GMail.Com)
+#		-> ZarTek (ZarTek.Creole@GMail.Com)
 #
 #	Website :
-#		-> https://github.com/MalaGaM/TCL-EvaServ
+#		-> https://github.com/ZarTek-Creole/TCL-EvaServ
 #
 #	Support	:
-#		-> https://github.com/MalaGaM/TCL-EvaServ/issues
+#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/issues
 #
 #	Docs	:
-#		-> https://github.com/MalaGaM/TCL-EvaServ/wiki
+#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/wiki
 #
 #	LICENSE :
 #		-> GNU General Public License v3.0
-#		-> https://github.com/MalaGaM/TCL-EvaServ/blob/main/LICENSE.txt
+#		-> https://github.com/ZarTek-Creole/TCL-EvaServ/blob/main/LICENSE.txt
 #
 #	Code origine:
 #		-> TiSmA (TiSmA@eXolia.fr)
@@ -33,7 +33,7 @@ namespace eval ::EvaServ {
 	variable config
 	set config(scriptname)	"EvaServ Service"
 	set config(version)		"1.5.20210421"
-	set config(auteur)		"MalaGaM"
+	set config(auteur)		"ZarTek"
 
 	set config(path)		"[file dirname [info script]]/"
 	set config(timerco)		30
@@ -138,7 +138,7 @@ proc ::EvaServ::INIT { } {
 						"trust"		
 					];
 	
-	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'https://github.com/MalaGaM/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
+	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'https://github.com/ZarTek-Creole/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
 
 	::EvaServ::Database:Load:Data
 	::EvaServ::Service:Connexion
@@ -260,7 +260,7 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { sender destination cmd data } {
 	# 			::EvaServ::SENT:MSG:TO:USER $user "\001PING [clock seconds]\001";
 	# 			return 0;
 	# 		} elseif { $cmds == "version" } {
-	# 			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/MalaGaM<c03>©";
+	# 			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/ZarTek<c03>©";
 	# 			return 0;
 	# 			# verifie si c une command eva :
 
@@ -1028,7 +1028,7 @@ proc ::EvaServ::uptime { nick idx arg } {
 
 proc ::EvaServ::version { nick idx arg } {
 	variable config
-	::EvaServ::sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> $config(scriptname) $config(version) by MalaGaM"
+	::EvaServ::sent2ppl $idx "<c01>\[ <c03>Version<c01> \] <c01> $config(scriptname) $config(version) by ZarTek"
 }
 
 proc ::EvaServ::infos { nick idx arg } {
@@ -1189,7 +1189,7 @@ proc ::EvaServ::cmds { arg } {
 			}
 		}
 		"copyright" {
-			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/MalaGaM"
+			::EvaServ::SENT:MSG:TO:USER $user "<c01>$config(scriptname) $config(version) by TiSmA/ZarTek"
 			if { [::EvaServ::console 1] == "ok" } {
 				::EvaServ::SHOW:INFO:TO:CHANLOG "Copyright" "$user"
 			}
