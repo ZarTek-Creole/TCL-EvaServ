@@ -122,7 +122,7 @@ proc ::EvaServ::INIT { } {
 	bind dcc	n evadebug		::EvaServ::debug
 	
 	::EvaServ::Config:File:Check
-	if { [file isdirectory "[::EvaServ::Script:Get:Directory]db"] } { file mkdir "[::EvaServ::Script:Get:Directory]db" }
+	if { ![file isdirectory "[::EvaServ::Script:Get:Directory]db"] } { file mkdir "[::EvaServ::Script:Get:Directory]db" }
 
 	# generer les db
 	::EvaServ::Database:initialisation [list \
