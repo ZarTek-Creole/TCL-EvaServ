@@ -137,7 +137,12 @@ proc ::EvaServ::INIT { } {
 						"nick"		\
 						"trust"		
 					];
-	
+	if {
+		[file exists ${DIR(CUR)}/TCL-PKG-IRCServices/ircservices.tcl] && \
+			[catch { source ${DIR(CUR)}/TCL-PKG-IRCServices/ircservices.tcl } err]
+	} {
+		die "\[${SCRIPT(name)} - Erreur\] Chargement '${DIR(CUR)}/TCL-PKG-IRCServices/ircservices.tcl' à échoué: ${err}";
+	}
 	if { [catch { package require IRCServices 0.0.1 }] } { putloglev o * "\00304\[[set config(scriptname)] - erreur\]\003 [set config(scriptname)] nécessite le package IRCServices 0.0.1 (ou plus) pour fonctionner, Télécharger sur 'github.com/ZarTek-Creole/TCL-PKG-IRCServices'. Le chargement du script a été annulé." ; return }
 
 	::EvaServ::Database:Load:Data

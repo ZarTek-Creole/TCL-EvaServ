@@ -14,6 +14,8 @@
 
   <p align="center">
     Services IRC "Eva" en TCL/Eggdrop
+     <br />
+    !!! VERSION ALPHA !!!
     <br />
     <a href="github.com/ZarTek-Creole/TCL-Eva-Service"><strong>Explore the docs / Explorez les documents »</strong></a>
     <br />
@@ -73,14 +75,16 @@ Pour obtenir une copie locale opérationnelle, suivez ces étapes simples d'exem
 * [Unrealircd (v5.0+)](http://www.eggheads.org/)
   * EN: IRC server new protocol
   * FR: Serveur IRC nouveau protocol
+* [IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 
 
 ### Installation
 1.1.  Récuperer le code Eva
-Première étape, télécharger le code, le mettre dans votre répertoire scripts/
+Première étape, véfirier que les dependances ([IRCServices](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)) sont installer
+Enuiste télécharger le code d'EvaServ, le mettre dans votre répertoire scripts/
 Exemple pour ```/home/votre-dossier/eggdrop/scripts/Eva```
 ```
-git clone github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/Eva
+git clone --recurse-submodules  github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/Eva
 ```
 ou 
 ```
