@@ -76,6 +76,8 @@ Pour obtenir une copie locale opérationnelle, suivez ces étapes simples d'exem
   * EN: IRC server new protocol
   * FR: Serveur IRC nouveau protocol
 * [IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
+* [Client Git](https://git-scm.com/downloads)
+* [tcllib](https://github.com/tcltk/tcllib)
 
 
 ### Installation
