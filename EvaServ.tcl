@@ -101,6 +101,10 @@ proc ::EvaServ::INIT { } {
 	variable commands
 	
 	if { [ catch { source [::EvaServ::Script:Get:Directory]EvaServ.conf } err ] } { 
+		if { [file exists [::EvaServ::Script:Get:Directory]EvaServ.Example.conf] } {
+			::EvaServ::putlog "Vous devez configurer EvaServ. Renommer EvaServ.Example.conf en EvaServ.conf et editez-le" error	
+			exit
+		}
 		::EvaServ::putlog "Probleme de chargement de '[::EvaServ::Script:Get:Directory]EvaServ.conf':\n$err" error
 		exit
 	} 
