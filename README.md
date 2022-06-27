@@ -13,7 +13,7 @@
   <h3 align="center">Eva - IRC Services</h3>
 
   <p align="center">
-    Services IRC "Eva" en TCL/Eggdrop
+    Services IRC "EvaServ" en TCL/Eggdrop
      <br />
     !!! VERSION ALPHA !!!
     <br />
@@ -52,68 +52,64 @@
 </details>
 
 <!-- ABOUT THE PROJECT -->
-## About The Project
+## A propos EvaServ
 
-Soon?
+EvaServ est un ensemble de Services IRC écris en TCL et fonctionenant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
+Il à été tester sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveau protocol IRC, il est compatible avec la nouvelle generation de serveurs d'IRCD.
 
-----
+EvaServ est utile pour :
+* La gestion des salons sur votre réseau
+* ...
 
-Bientot?
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
-----
-Voici un exemple de la manière dont vous pouvez donner des instructions sur la configuration de votre projet localement.
-Pour obtenir une copie locale opérationnelle, suivez ces étapes simples d'exemple.
 
 ### Prerequisites
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
 * [Unrealircd (v5.0+)](http://www.eggheads.org/)
   * EN: IRC server new protocol
   * FR: Serveur IRC nouveau protocol
-* [IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
+* [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
+* [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
 * [Client Git](https://git-scm.com/downloads)
 * [tcllib](https://github.com/tcltk/tcllib)
+* [tcl-tls](https://core.tcl-lang.org/tcltls/home)
 
 
 ### Installation
-1.1.  Récuperer le code Eva
-Première étape, véfirier que les dependances ([IRCServices](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)) sont installer
-Enuiste télécharger le code d'EvaServ, le mettre dans votre répertoire scripts/
-Exemple pour ```/home/votre-dossier/eggdrop/scripts/Eva```
+1.1.  Récuperer le code EvaServ
+1.1.1 Première étape, véfirier que les dependances sont installer et présente :
+* [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
+* [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
+* [Client Git](https://git-scm.com/downloads)
+* [tcllib](https://github.com/tcltk/tcllib)
+* [tcl-tls](https://core.tcl-lang.org/tcltls/home)
+
+1.1.2 Télécharger EvaServ
+Télécharger le code d'EvaServ dans votre répertoire scripts/ de votre eggdrop
+
+Exemple ```/home/votre-dossier/eggdrop/scripts/EvaServ```
 ```
-git clone --recurse-submodules  github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/Eva
+git clone --recurse-submodules  github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/EvaServ
 ```
 ou 
 ```
-wget github.com/ZarTek-Creole/TCL-Eva-Service/archive/refs/heads/main.zip -O Eva.zip
-unzip Eva.zip -d /home/votre-dossier/eggdrop/scripts/Eva
+wget github.com/ZarTek-Creole/TCL-Eva-Service/archive/refs/heads/main.zip -O EvaServ.zip
+unzip EvaServ.zip -d /home/votre-dossier/eggdrop/scripts/EvaServ
 ```
 
 1.2. Configuration de l'eggdrop
 Deuxieme étape, ouvrez le fichier de configuration de votre eggdrop ```eggdrop.conf``` et ajoutez la ligne ci-dessous :
 ```
-source /home/votre-dossier/eggdrop/scripts/Eva/Eva.tcl
+source /home/votre-dossier/eggdrop/scripts/Eva/EvaServ.tcl
 ```
+Si vous devez charger des dependances pensez a le mettre au dessus de EvaServ.tcl dans votre fichier eggdrop.conf
 
 1.3.  Configuration de Eva Service
-Troisième étape, renommez le fichier ```Eva.example.conf``` en ```Eva.conf``` et configurez celui-ci en fonction de votre serveur IRC
+Troisième étape, renommez le fichier ```Eva.example.conf``` en ```EvaServ.conf``` et configurez celui-ci en fonction de votre serveur IRCD
 
 1.4.  Configuration de votre IRCD (UnrealIRCd 5 et +)
-Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisée dans "Eva.conf". 
+Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisée dans "EvaServ.conf". 
 
 [Comment créer un link Service sur UnrealIRCd](http://www.exolia.fr/guide-lire-11.html)
-
-1.5.  Rehashez votre eggdrop
-Cinquième étape, connectez vous en party-line avec votre eggdrop puis tapez les deux commandes suivantes :
-```
-.rehash
-.evaconnect
-```
 
 2. Un peu plus loin
 2.1. Debug general
@@ -122,16 +118,21 @@ Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line  p
 .evadebug on 
 ```
 2.2. Debug Socket/Link
-Pour activer le mode *socket debug* changer la valeur ```eva(sdebug)``` dans ```eva.conf``` en mettant 1 a la place de 0.
+Pour activer le mode *socket debug* changer la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+Avant de l'utiliser prenez conscient que EvaServ ce compose de deux elements distinct : 
+* Votre eggdrop
+* Le service EvaServ
+Votre eggdrop permet de charger les services Eva et annoncer sur votre salon services ```SERVICE_BOT(channel)``` des informations de l'utilisation.
+Tandis que le service Eva (bot separer sur irc) est le services en lui même ou les commandes seront envoyer
 
-Soon?
+Pour obtenir de l'aide
+```/msg <nom d'eva> help```
 
-----
-
-Bientot
+Pour vous identifier
+```/msg <nom d'eva> auth <mot de passe>```
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -191,7 +192,9 @@ Vous pouvez me contacter sur IRC :
 * MenzAgitat car dans mes developpements il y a toujours des astuces/maniere de faire fournis par MenzAgitat ou bout code de MenzAgitat
 
 
+## infos en vrac
 
+Dans le fichier configuration pous pouvez configurer chaques commandes a un niveau precis 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
