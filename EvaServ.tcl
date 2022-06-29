@@ -32,64 +32,112 @@ if { [info commands ::EvaServ::uninstall] eq "::EvaServ::uninstall" } { ::EvaSer
 namespace eval ::EvaServ {
 	variable config
 	variable SCRIPT
-	array set config {
-		"timerco"			"30"
-		"timerdem"			"5"
-		"timerinit"			"10"
-		"counter"			"0"
-		"dem"				"0"
-		"init"				"0"
-		"console"			"1"
-		"login"				"1"
-		"protection"		"1"
-		"debug"				"0"
-		"aclient"			"0"
-	}
-	array set SCRIPT {
-		"name"				"EvaServ Service"
-		"version"			"1.5.20220626"
-		"auteur"			"ZarTek"
-		
-	}
-	set SCRIPT(path_dir)	[file dirname [info script]]
-	array set DBU_INFO		""
-	array set UID_DB		""
-	set scoredb(last)		""
-	set VARS_LIST			[list 				\
-						"UPLINK"				\
-						"SERVICE_BOT"			\
-						"SERVICE"];
-	
-	set VARS_UPLINK			[list 				\
-						"hostname"			\
-						"uplink_ssl"			\
-						"uplink_port"			\
-						"uplink_password"		\
-						"serverinfo_name"		\
-						"serverinfo_id"			\
-						"uplink_useprivmsg"		\
-						"uplink_debug"			\
-						"service_nick"			\
-						"service_user"			\
-						"service_host"			\
-						"service_gecos"			\
-						"service_modes"			\
-						"service_channel"		\
-						"service_chanmodes"		\
-						"service_usermodes"		\
-						"prefix"				\
-						"rnick"					\
-						"duree"					\
-						"rclient"				\
-						"rhost"					\
-						"rident"				\
-						"rreal"					\
-						"ruser"					\
-						"raison"				\
-						"console_com"			\
-						"console_deco"			\
-						"console_txt"];
-	
+	array set DBU_INFO			[list]
+	array set UID_DB			[list]
+	set scoredb(last)			[list]
+	set VARS_LIST				[list 										\
+		"config"															\
+		"SCRIPT"															\
+		"UPLINK"															\
+		"SERVICE"															\
+		"SERVICE_BOT"														\
+	];
+	array set config 			[list  										\
+		"timerco"				"30" 										\
+		"timerdem"				"5" 										\
+		"timerinit"				"10" 										\
+		"counter"				"0" 										\
+		"dem"					"0" 										\
+		"init"					"0" 										\
+		"console"				"1" 										\
+		"login"					"1" 										\
+		"protection"			"1" 										\
+		"debug"					"0" 										\
+		"aclient"				"0" 										\
+		"putlog_info"			"0" 										\
+		"smode"					"ntsO" 										\
+		"chanmode"				"qo" 										\
+		"prefix"				"!" 										\
+		"rnick"					"0" 										\
+		"Throttling"			"5" 										\
+		"Flood_IgnoreTime"		"30" 										\
+		"gline_duration"		"86400" 									\
+		"rclient"				"L'accès à ce t'chat est un privilège et non un droit. (CI)"	\
+		"rhost"					"L'accès à ce t'chat est un privilège et non un droit. (Ip refusé)"	\
+		"rident"				"L'accès à ce t'chat est un privilège et non un droit. (IR)"	\
+		"rreal"					"L'accès à ce t'chat est un privilège et non un droit. (BR)"	\
+		"ruser"					"L'accès à ce t'chat est un privilège et non un droit. (BN)"	\
+		"raison"				"Maintenance Technique"						\
+		"console_com"			"02"										\
+		"console_deco"			"03"										\
+		"console_txt"			"01"										\
+	];
+	set VARS_config 			[list  										\
+		"timerco"															\
+		"timerdem"															\
+		"timerinit"															\
+		"counter"															\
+		"dem"																\
+		"init"																\
+		"console"															\
+		"login"																\
+		"protection"														\
+		"debug"																\
+		"aclient"															\
+		"putlog_info"														\
+		"smode"																\
+		"chanmode"															\
+		"prefix"															\
+		"rnick"																\
+		"Throttling"														\
+		"Flood_IgnoreTime"													\
+		"gline_duration"													\
+		"rclient"															\
+		"rhost"																\
+		"rident"															\
+		"rreal"																\
+		"ruser"																\
+		"raison"															\
+		"console_com"														\
+		"console_deco"														\
+		"console_txt"														\
+	];
+	array set SCRIPT			 [list 										\
+		"name"					"EvaServ Service"							\
+		"version"				"1.5.20220626"								\
+		"auteur"				"ZarTek"									\
+		"path_dir"				"[file dirname [info script]]"				\
+	];
+	set VARS_SCRIPT				 [list 										\
+		"name"																\
+		"version"															\
+		"auteur"															\
+		"path_dir"															\
+	];
+	set VARS_UPLINK				[list 										\
+		"hostname"															\
+		"mode_ssl"															\
+		"port"																\
+		"password"															\
+	];
+	set VARS_SERVICE			[list 										\
+		"hostname"															\
+		"sid"																\
+		"use_privmsg"														\
+		"mode_debug"														\
+		"hostname"															\
+	];
+	set  VARS_SERVICE_BOT				[list 										\
+		"name"																\
+		"hostname"															\
+		"gecos"																\
+		"mode_service"														\
+		"channel"															\
+		"mode_channel"														\
+		"mode_user"															\
+		"username"															\
+		"channel_logs"														\
+	];	
 
 	proc uninstall {args} {
 		variable config
@@ -144,17 +192,15 @@ proc ::EvaServ::INIT { } {
 	variable FloodControl
 	variable commands
 	variable config
-	
+	if { ![file exists [Script:Get:Directory]/EvaServ.conf] && [file exists [Script:Get:Directory]/EvaServ.Example.conf] } {
+		putlog "Vous devez configurer EvaServ. Renommer [Script:Get:Directory]/EvaServ.Example.conf en EvaServ.conf et editez-le" error	
+		exit
+	}
 	if { [ catch { source [Script:Get:Directory]/EvaServ.conf } err ] } { 
-		if { [file exists [Script:Get:Directory]/EvaServ.Example.conf] } {
-			putlog "Vous devez configurer EvaServ. Renommer EvaServ.Example.conf en EvaServ.conf et editez-le" error	
-			exit
-		}
 		putlog "Probleme de chargement de '[Script:Get:Directory]/EvaServ.conf':\n$err" error
 		exit
 	} 
 	bind time	- "00 00 * * *"	dbback
-	#bind evnt	n init-server	initialisation
 	bind evnt	n prerestart	evenement
 	bind evnt	n sighup		evenement
 	bind evnt	n sigterm		evenement
@@ -170,7 +216,8 @@ proc ::EvaServ::INIT { } {
 	bind dcc	n evainfos		infos
 	bind dcc	n evadebug		debug
 	
-	Config:File:Check
+	# Verification de la présences des paramettre dans le fichier configuration (fonction ZCT)
+	::ZCT::Is:ArrayList:Exists [namespace current]
 	if { ![file isdirectory "[Script:Get:Directory]/db"] } { file mkdir "[Script:Get:Directory]/db" }
 
 	# generer les db
@@ -236,14 +283,14 @@ proc ::EvaServ::Service:Connexion { } {
 		##########################
 		# si [target] ne commence pas par # c'est un pseudo
 		if { [string index [target] 0] != "#"} {
-			IRC:CMD:MSG:PRIV [who2] [target] $cmd $data 
+			::EvaServ::IRC:CMD:MSG:PRIV [who2] [target] $cmd $data 
 		}
 		##########################
 		#--> Commandes Salons <--#
 		##########################
 		# si [target] commence par # c'est un salon
 		if { [string index [target] 0] == "#"} {
-			IRC:CMD:MSG:PUB [who] [target] $cmd $data 
+			::EvaServ::IRC:CMD:MSG:PUB [who] [target] $cmd $data 
 		}
 	}; # Creer un event sur PRIVMSG
 	
@@ -307,23 +354,23 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { NICK_SOURCE destination cmd data } {
 	# 	set robotUID	[string tolower [lindex $arg 2]]
 	# 	set cmds		[string tolower [string trim [lindex $arg 3] :]]
 	# 	set CMD_HELP	[string tolower [lindex $arg 4]]
-	# 	set pcmds		[string trim $cmds $config(prefix)]
+	# 	set pcmds		[string trim ${cmd} $config(prefix)]
 	# 	set data		[join [lrange $arg 4 end]]
 	# 	if { [string toupper $robotUID] == [UID:CONVERT ${SERVICE_BOT(name)}] } {
 			
 
-			if { $cmds == "ping" } {
+			if { ${cmd} == "ping" } {
 				SENT:MSG:TO:USER $user "\001PING [clock seconds]\001";
 				return 0;
-			} elseif { $cmds == "version" } {
+			} elseif { ${cmd} == "version" } {
 				SENT:MSG:TO:USER $user "<c01>${SCRIPT(name)} ${SCRIPT(version)} by ${SCRIPT(auteur)}<c03>©";
 				return 0;
 				# verifie si c une command eva :
 
-			} elseif { [CMD:EXIST $cmds] } {
+			} elseif { [CMD:EXIST ${cmd}] } {
 
 				# si c help
-				if { $cmds == "help" && ${CMD_HELP} != "" } {
+				if { ${cmd} == "help" && ${CMD_HELP} != "" } {
 
 					# verifie si c une command eva
 					if { [CMD:EXIST ${CMD_HELP}] } {
@@ -332,13 +379,13 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { NICK_SOURCE destination cmd data } {
 						SENT:MSG:TO:USER $user "Aide <b>${CMD_HELP}</b> Inconnue."
 					}
 				} else {
-					cmds "$cmds $user $data"
+					cmds "${cmd} $user $data"
 				}
 			} else {
-				SENT:MSG:TO:USER $user "Commande <b>$cmds</b> Inconnue."
+				SENT:MSG:TO:USER $user "Commande <b>${cmd}</b> Inconnue."
 			}
 		}
-		if { [string index $cmds 0] == $config(prefix) } {
+		if { [string index ${cmd} 0] == $config(prefix) } {
 			if { ![FloodControl:Check ${vuser}] } { return 0 }
 			if { [CMD:EXIST $pcmds] } {
 				if { $pcmds == "help" && ${CMD_HELP} != "" } {
@@ -352,12 +399,13 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { NICK_SOURCE destination cmd data } {
 		}
 	}
 }
-proc ::EvaServ::Config:File:Check { } {
+proc ::EvaServ::Config:File:Check.old { } {
 	variable SCRIPT
 	variable config
 	variable FloodControl
 	variable VARS_LIST
 	foreach LIST_NAME ${VARS_LIST} {
+		putlog "Verification du fichier conf, les variables : $LIST_NAME"
 		variable [subst VARS_${LIST_NAME}]
 		if { ![info exists [subst VARS_${LIST_NAME}]] } {
 				putlog "Listes de variables 'VARS_${LIST_NAME}' inexistante" error
@@ -365,7 +413,7 @@ proc ::EvaServ::Config:File:Check { } {
 		}
 		foreach VARS_NAME ${VARS_UPLINK} {
 			set VAR_TMP ${LIST_NAME}(${VARS_NAME})
-			putlog "... ${VAR_TMP}"
+			putlog "... ${VARS_NAME}"
 			if { ![info exists [return ${VAR_TMP}]] } {
 				putlog "Configuration de ${SCRIPT(name)} Incorrecte... '${VAR_TMP}' Paramettre manquant" error
 				exit
@@ -454,7 +502,7 @@ proc ::EvaServ::FloodControl:Check { pseudo } {
 		utimer 3 [list ::EvaServ::FloodControl:NoticeUser ${pseudo}];
 		# No-FLOOD
 		return 1
-	} elseif { $FloodControl(flood:${pseudo}) < ${FloodControl(Throttling)} } {
+	} elseif { $FloodControl(flood:${pseudo}) < ${config(Throttling)} } {
 		incr FloodControl(flood:${pseudo})		1;
 		# No-FLOOD
 		return 1
@@ -469,8 +517,8 @@ proc ::EvaServ::FloodControl:Check { pseudo } {
 proc ::EvaServ::FloodControl:NoticeUser { pseudo }		{
 	variable FloodControl
 	if { [info exists FloodControl(stopflood:$pseudo)] } {
-		SENT:MSG:TO:USER $pseudo "Vous êtes ignoré pendant $FloodControl(IgnoreTime) secondes.";
-		utimer $FloodControl(IgnoreTime) [list ::EvaServ::FloodControl:Reset $pseudo];
+		SENT:MSG:TO:USER $pseudo "Vous êtes ignoré pendant $config(Flood_IgnoreTime) secondes.";
+		utimer $config(Flood_IgnoreTime) [list ::EvaServ::FloodControl:Reset $pseudo];
 	} else {
 		unset FloodControl(flood:$pseudo)
 	}
