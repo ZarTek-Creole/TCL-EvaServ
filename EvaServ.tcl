@@ -35,109 +35,109 @@ namespace eval ::EvaServ {
 	array set DBU_INFO			[list]
 	array set UID_DB			[list]
 	set scoredb(last)			[list]
-	set VARS_LIST				[list 										\
-		"config"															\
-		"SCRIPT"															\
-		"UPLINK"															\
-		"SERVICE"															\
-		"SERVICE_BOT"														\
+	set VARS_LIST				[list											\
+		"config"																\
+		"SCRIPT"																\
+		"UPLINK"																\
+		"SERVICE"																\
+		"SERVICE_BOT"															\
 	];
-	array set config 			[list  										\
-		"timerco"				"30" 										\
-		"timerdem"				"5" 										\
-		"timerinit"				"10" 										\
-		"counter"				"0" 										\
-		"dem"					"0" 										\
-		"init"					"0" 										\
-		"console"				"1" 										\
-		"login"					"1" 										\
-		"protection"			"1" 										\
-		"debug"					"0" 										\
-		"aclient"				"0" 										\
-		"putlog_info"			"0" 										\
-		"smode"					"ntsO" 										\
-		"chanmode"				"qo" 										\
-		"prefix"				"!" 										\
-		"rnick"					"0" 										\
-		"Throttling"			"5" 										\
-		"Flood_IgnoreTime"		"30" 										\
-		"gline_duration"		"86400" 									\
+	array set config			[list											\
+		"timerco"				"30"											\
+		"timerdem"				"5"												\
+		"timerinit"				"10"											\
+		"counter"				"0"												\
+		"dem"					"0"												\
+		"init"					"0"												\
+		"console"				"1"												\
+		"login"					"1"												\
+		"protection"			"1"												\
+		"debug"					"0"												\
+		"aclient"				"0"												\
+		"putlog_info"			"0"												\
+		"smode"					"ntsO"											\
+		"chanmode"				"qo"											\
+		"prefix"				"!"												\
+		"rnick"					"0"												\
+		"Throttling"			"5"												\
+		"Flood_IgnoreTime"		"30"											\
+		"gline_duration"		"86400"											\
 		"rclient"				"L'accès à ce t'chat est un privilège et non un droit. (CI)"	\
 		"rhost"					"L'accès à ce t'chat est un privilège et non un droit. (Ip refusé)"	\
 		"rident"				"L'accès à ce t'chat est un privilège et non un droit. (IR)"	\
 		"rreal"					"L'accès à ce t'chat est un privilège et non un droit. (BR)"	\
 		"ruser"					"L'accès à ce t'chat est un privilège et non un droit. (BN)"	\
-		"raison"				"Maintenance Technique"						\
-		"console_com"			"02"										\
-		"console_deco"			"03"										\
-		"console_txt"			"01"										\
+		"raison"				"Maintenance Technique"							\
+		"console_com"			"02"											\
+		"console_deco"			"03"											\
+		"console_txt"			"01"											\
 	];
-	set VARS_config 			[list  										\
-		"timerco"															\
-		"timerdem"															\
-		"timerinit"															\
-		"counter"															\
-		"dem"																\
-		"init"																\
-		"console"															\
-		"login"																\
-		"protection"														\
-		"debug"																\
-		"aclient"															\
-		"putlog_info"														\
-		"smode"																\
-		"chanmode"															\
-		"prefix"															\
-		"rnick"																\
-		"Throttling"														\
-		"Flood_IgnoreTime"													\
-		"gline_duration"													\
-		"rclient"															\
-		"rhost"																\
-		"rident"															\
-		"rreal"																\
-		"ruser"																\
-		"raison"															\
-		"console_com"														\
-		"console_deco"														\
-		"console_txt"														\
+	set VARS_config			[list												\
+		"timerco"																\
+		"timerdem"																\
+		"timerinit"																\
+		"counter"																\
+		"dem"																	\
+		"init"																	\
+		"console"																\
+		"login"																	\
+		"protection"															\
+		"debug"																	\
+		"aclient"																\
+		"putlog_info"															\
+		"smode"																	\
+		"chanmode"																\
+		"prefix"																\
+		"rnick"																	\
+		"Throttling"															\
+		"Flood_IgnoreTime"														\
+		"gline_duration"														\
+		"rclient"																\
+		"rhost"																	\
+		"rident"																\
+		"rreal"																	\
+		"ruser"																	\
+		"raison"																\
+		"console_com"															\
+		"console_deco"															\
+		"console_txt"															\
 	];
-	array set SCRIPT			 [list 										\
-		"name"					"EvaServ Service"							\
-		"version"				"1.5.20220704"								\
-		"auteur"				"ZarTek"									\
-		"path_dir"				"[file dirname [info script]]"				\
-		"need_ircs"				"0.0.6"										\
+	array set SCRIPT			 [list											\
+		"name"					"EvaServ Service"								\
+		"version"				"1.5.20220704"									\
+		"auteur"				"ZarTek"										\
+		"path_dir"				"[file dirname [info script]]"					\
+		"need_ircs"				"0.0.7"											\
 	];
-	set VARS_SCRIPT				 [list 										\
-		"name"																\
-		"version"															\
-		"auteur"															\
-		"path_dir"															\
+	set VARS_SCRIPT				 [list											\
+		"name"																	\
+		"version"																\
+		"auteur"																\
+		"path_dir"																\
 	];
-	set VARS_UPLINK				[list 										\
-		"hostname"															\
-		"mode_ssl"															\
-		"port"																\
-		"password"															\
+	set VARS_UPLINK				[list											\
+		"hostname"																\
+		"mode_ssl"																\
+		"port"																	\
+		"password"																\
 	];
-	set VARS_SERVICE			[list 										\
-		"hostname"															\
-		"sid"																\
-		"use_privmsg"														\
-		"mode_debug"														\
-		"hostname"															\
+	set VARS_SERVICE			[list											\
+		"hostname"																\
+		"sid"																	\
+		"use_privmsg"															\
+		"mode_debug"															\
+		"hostname"																\
 	];
-	set  VARS_SERVICE_BOT		[list 										\
-		"name"																\
-		"hostname"															\
-		"gecos"																\
-		"mode_service"														\
-		"channel"															\
-		"mode_channel"														\
-		"mode_user"															\
-		"username"															\
-		"channel_logs"														\
+	set  VARS_SERVICE_BOT		[list											\
+		"name"																	\
+		"hostname"																\
+		"gecos"																	\
+		"mode_service"															\
+		"channel"																\
+		"mode_channel"															\
+		"mode_user"																\
+		"username"																\
+		"channel_logs"															\
 	];	
 	
 	proc uninstall { } {
@@ -178,7 +178,7 @@ proc ::EvaServ::INIT { } {
 	variable commands
 	variable config
 	if {
-		![file exists [Script:Get:Directory]/EvaServ.conf]							&& \
+		![file exists [Script:Get:Directory]/EvaServ.conf]					&& \
 		[file exists [Script:Get:Directory]/EvaServ.Example.conf]
 	} {
 		putlog "Vous devez configurer EvaServ. Renommer [Script:Get:Directory]/EvaServ.Example.conf en EvaServ.conf et editez-le" error	
@@ -209,20 +209,20 @@ proc ::EvaServ::INIT { } {
 	if { ![file isdirectory "[Script:Get:Directory]/db"] } { file mkdir "[Script:Get:Directory]/db" }
 
 	# generer les db
-	Database:initialisation [list \
-						"gestion"	\
-						"chan"		\
-						"client"	\
-						"close"		\
-						"salon"		\
-						"ident"		\
-						"real"		\
-						"host"		\
-						"nick"		\
+	Database:initialisation [list												\
+						"gestion"												\
+						"chan"													\
+						"client"												\
+						"close"													\
+						"salon"													\
+						"ident"													\
+						"real"													\
+						"host"													\
+						"nick"													\
 						"trust"		
 					];
 	if {
-		[file exists [Script:Get:Directory]/TCL-PKG-IRCServices/ircservices.tcl]						&& \
+		[file exists [Script:Get:Directory]/TCL-PKG-IRCServices/ircservices.tcl]		&& \
 		[catch { source [Script:Get:Directory]/TCL-PKG-IRCServices/ircservices.tcl } err]
 	} {
 		die "\[${SCRIPT(name)} - Erreur\] Chargement '[Script:Get:Directory]/TCL-PKG-IRCServices/ircservices.tcl' à échoué: ${err}";
@@ -297,7 +297,6 @@ proc ::EvaServ::IRC:CMD:MSG:PRIV { NICK_SOURCE destination CMD_NAME CMD_VALUE } 
 	variable config
 	variable SCRIPT
 	if { ![FloodControl:Check ${NICK_SOURCE}] } { return 0 }
-	putlog "IRC:CMD:MSG:PRIV ${NICK_SOURCE} ${destination} ${CMD_NAME} ${CMD_VALUE}"
 	switch -nocase ${CMD_NAME} {
 		"PING"			{
 			SENT:NOTICE ${NICK_SOURCE} "\001PING ${CMD_VALUE}\001";
@@ -324,22 +323,22 @@ proc ::EvaServ::IRC:CMD:MSG:PRIV { NICK_SOURCE destination CMD_NAME CMD_VALUE } 
 			if { [CMD:EXIST ${CMD_NAME}] } { 
 				set SUB_CMD		[lindex ${CMD_VALUE} 0];
 				if {
-					${CMD_NAME} == "help"								&& \
+					${CMD_NAME} == "help"									&& \
 					${SUB_CMD} != ""
 				} {
-	 				if { [CMD:EXIST ${SUB_CMD}] } {
-	 					Commands:Help ${NICK_SOURCE} ${CMD_VALUE}
-	 				} else {
-	 					SENT:MSG:TO:USER ${NICK_SOURCE} "Aide <b>${SUB_CMD}</b> Inconnue."
-	 				}
-	 			} else {
+					if { [CMD:EXIST ${SUB_CMD}] } {
+						Commands:Help ${NICK_SOURCE} ${CMD_VALUE}
+					} else {
+						SENT:MSG:TO:USER ${NICK_SOURCE} "Aide <b>${SUB_CMD}</b> Inconnue."
+					}
+				} else {
 					putlog "IRC:CMD:MSG:PRIV ${CMD_NAME} ${NICK_SOURCE} ${CMD_VALUE}"
-	 				cmds "${CMD_NAME} ${NICK_SOURCE} ${CMD_VALUE}"
+					cmds "${CMD_NAME} ${NICK_SOURCE} ${CMD_VALUE}"
 					return 0
-	 			}
+				}
 				Commands:Help ${NICK_SOURCE} ${CMD_VALUE}
 			} else {
- 				SENT:MSG:TO:USER ${NICK_SOURCE} "Commande <b>${CMD_NAME}</b> Inconnue."
+				SENT:MSG:TO:USER ${NICK_SOURCE} "Commande <b>${CMD_NAME}</b> Inconnue."
 			}
 		}
 	}
@@ -358,7 +357,7 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { NICK_SOURCE destination IRC_CMD IRC_DATA } {
 	} elseif { [CMD:EXIST ${IRC_CMD}] } {
 		# si c help
 		if {
-			${IRC_CMD} == "help"					&& \
+			${IRC_CMD} == "help"											&& \
 			${CMD_HELP} != ""
 		} {
 			# verifie si c une command eva
@@ -376,7 +375,7 @@ proc ::EvaServ::IRC:CMD:MSG:PUB { NICK_SOURCE destination IRC_CMD IRC_DATA } {
 	if { [string index ${IRC_CMD} 0] == ${config(prefix)} } {
 		if { [CMD:EXIST ${IRC_CMD}] } {
 			if {
-				${IRC_CMD} == "help" && \
+				${IRC_CMD} == "help"										&& \
 				${CMD_HELP} != ""
 			} {
 				if { [CMD:EXIST ${CMD_HELP}] } {
@@ -409,7 +408,7 @@ proc ::EvaServ::Database:Load:Data { } {
 	while { ![eof ${protection}] } {
 		gets ${protection} hosts;
 		if {
-			${hosts} != "" && \
+			${hosts} != ""													&& \
 			![info exists trust(${hosts})]
 		} { 
 			set trust(${hosts})	1
@@ -427,7 +426,7 @@ proc ::EvaServ::Database:Load:Data { } {
 proc ::EvaServ::putlog:info { MSG } {
 	variable config
 	if {
-		[info exists ${config(putlog_info)}]				&& \
+		[info exists ${config(putlog_info)}]								&& \
 		${config(putlog_info)} == 1
 	} { 
 		putlog ${MSG} info
@@ -493,7 +492,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 		0 { return ok }
 		1 {
 			if {
-				[info exists admins(${user})]				&& \
+				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) p]
 			} {
 				return ok
@@ -504,7 +503,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 		}
 		2 {
 			if {
-				[info exists admins(${user})]				&& \
+				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) o]
 			 } {
 				return ok
@@ -515,7 +514,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 		}
 		3 {
 			if {
-				[info exists admins(${user})]				&& \
+				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) m]
 			} {
 				return ok;
@@ -527,7 +526,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 		}
 		4 {
 			if {
-				[info exists admins(${user})] 				&& \
+				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) n]
 			} {
 				return ok;
@@ -769,7 +768,6 @@ proc ::EvaServ::duree { temps } {
 	return ${seen}
 }
 
-
 proc ::EvaServ::console { level } {
 	variable config
 	switch -exact ${level} {
@@ -827,14 +825,13 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 	if { [console 2] == "ok" } {
 		SHOW:INFO:TO:CHANLOG "Security Check" [join ${MSG_security_check} " | "]
 	}
-	
 
 	# Version client
 	if { ${config(aclient)} == 1	} {
 		SENT:MSG:TO:USER ${nickname} "\001VERSION\001"
 	}
 
-	if { ${config(ahost)} == 1 	} {
+	if { ${config(ahost)} == 1	} {
 		catch { open [Script:Get:Directory]/db/host.db r } liste2
 		while { ![eof ${liste2}] } {
 			gets ${liste2} verif2
@@ -856,7 +853,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 		}
 		catch { close ${liste2} }
 	}
-	if { ${config(aident)} == 1 	} {
+	if { ${config(aident)} == 1	} {
 		catch { open [Script:Get:Directory]/db/ident.db r } liste3
 		while { ![eof ${liste3}] } {
 			gets ${liste3} verif3
@@ -878,7 +875,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 		}
 		catch { close ${liste3} }
 	}
-	if { ${config(areal)} == 1 	} {
+	if { ${config(areal)} == 1	} {
 		catch { open [Script:Get:Directory]/db/real.db r } liste4
 		while { ![eof ${liste4}] } {
 			gets ${liste4} verif4
@@ -900,7 +897,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 		}
 		catch { close ${liste4} }
 	}
-	if { ${config(anick)} == 1 	} {
+	if { ${config(anick)} == 1	} {
 		catch { open [Script:Get:Directory]/db/nick.db r } liste5
 		while { ![eof ${liste5}] } {
 			gets ${liste5} verif5
@@ -937,7 +934,7 @@ proc ::EvaServ::protection { user level } {
 			if { [info exists netadmin(${user})] } {
 				return ok
 			} elseif { [
-				info exists admins(${user})]							&& \
+				info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) n]
 			} {
 				return ok
@@ -980,7 +977,6 @@ proc ::EvaServ::rnick { user } {
 	variable config
 	if { ${config(rnick)} == 1 } { return "(${user})" }
 }
-
 
 proc ::EvaServ::prerehash { arg } {
 	variable config
@@ -1055,7 +1051,7 @@ proc ::EvaServ::deconnect { nick idx arg } {
 	variable config
 	if { ${config(dem)} == 0 } {
 		if {
-			[info exists config(idx)]									&& \
+			[info exists config(idx)]										&& \
 			[valididx ${config(idx)}]
 		} {
 			gestion
@@ -1077,7 +1073,7 @@ proc ::EvaServ::deconnect { nick idx arg } {
 proc ::EvaServ::uptime { nick idx arg } {
 	variable config
 	if {
-		[info exists config(idx)]								&& \
+		[info exists config(idx)]											&& \
 		[valididx ${config(idx)}]
 	} {
 		set show		""
@@ -1088,14 +1084,14 @@ proc ::EvaServ::uptime { nick idx arg } {
 		set up			[expr (${up} % 3600)]
 		set minute		[expr (${up} / 60)]
 		set seconde		[expr (${up} % 60)]
-		if { ${jour} == 1 			} { 
+		if { ${jour} == 1			} { 
 			append show "${jour} jour "
 		} elseif { ${jour} > 1		} {
 			append show "${jour} jours "
 		}
 		if { ${heure} == 1			} { 
 			append show "${heure} heure "
-		} elseif { ${heure} > 1 	} {
+		} elseif { ${heure} > 1	} {
 			append show "${heure} heures " 
 		}
 		if { ${minute} == 1			} { 
@@ -1149,7 +1145,7 @@ proc ::EvaServ::debug { nick idx arg } {
 	set arg			[split ${arg}]
 	set status		[string tolower [lindex ${arg} 0]]
 	if {
-		${status} != "on"									&& \
+		${status} != "on"														&& \
 		${status} != "off"
 	} {
 		sent2ppl ${idx} ".evadebug on/off";
@@ -1216,51 +1212,61 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				set USER_NAME	[lindex ${IRC_DATA} 2]
 				set USER_PASS	[lindex ${IRC_DATA} 3]
 			}
-			
-			if { [passwdok ${USER_NAME} ${USER_PASS}] } {
-				if {
-						[matchattr ${USER_NAME} o]						|| \
-						[matchattr ${USER_NAME} m]						|| \
-						[matchattr ${USER_NAME} n]
-				 } {
-					if { ${config(login)} == 1 } {
-						foreach { pseudo login } [array get admins] {
-							if {
-								${login} == [string tolower ${USER_NAME}]	&& \
-								${pseudo} != ${USER_LOWER} 
-							} {
-								sent2socket ":${config(server_id)} NOTICE [UID:CONVERT ${USER_LOWER}] :Maximum de Login atteint.";
-								return 0;
-							}
-						}
-					}
-					if { ![info exists admins(${USER_LOWER})] } {
-						set admins(${USER_LOWER})		[string tolower ${USER_NAME}]
+			# Verification si des utilisateurs 'eva' exists
+			if { [dbuser::count] == 0 } {
+				# Si aucun utilisateurs Eva, nous creons le compte en tant que ircop supreme
+				if { [getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}] == "" } {
+					SENT:MSG:TO:USER ${user} "${USER_NAME}, pour creer votre compte ircop, vous devez être operateur sur le salon ${SERVICE_BOT(channel)}."
+					return 0
+				}
+				set USER_HOSTMASK	[getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}]
+				adduser ${USER_NAME} ${USER_HOSTMASK}
+				setuser ${USER_NAME} XTRA EVASERV [list "ADMIN" "1"]
+				setuser ${USER_NAME} PASS ${USER_PASS}
+				return 0
+			}
+			if { ![passwdok ${USER_NAME} ${USER_PASS}] } {
+				SENT:MSG:TO:USER ${USER_LOWER} "L'authentification à échoué.";
+				return 0;
+			}
+			if {
+					![matchattr ${USER_NAME} o]								|| \
+					![matchattr ${USER_NAME} m]								|| \
+					[matchattr ${USER_NAME} n]
+			 } {
+				if { ${config(login)} == 1 } {
+					foreach { pseudo login } [array get admins] {
 						if {
-							[info exists vhost(${USER_LOWER})]						&& \
-							![info exists protect($vhost(${USER_LOWER}))] 
+							${login} == [string tolower ${USER_NAME}]		&& \
+							${pseudo} != ${USER_LOWER} 
 						} {
-							SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost(${USER_LOWER}) de ${USER_LOWER} (Activé)"
-							set protect($vhost(${USER_LOWER}))		1
+							sent2socket ":${config(server_id)} NOTICE [UID:CONVERT ${USER_LOWER}] :Maximum de Login atteint.";
+							return 0;
 						}
-						setuser [string tolower ${USER_NAME}] LASTON [unixtime]
-						SENT:MSG:TO:USER ${USER_LOWER} "Authentification Réussie."
-						sent2socket ":${config(server_id)} INVITE ${USER_LOWER} ${SERVICE_BOT(channel_logs)}"
-						if { [console 1] == "ok" } {
-							SHOW:INFO:TO:CHANLOG "Auth" "${user}"
-						}
-						return 0
-					} else {
-						SENT:MSG:TO:USER ${USER_LOWER} "Vous êtes déjà authentifié.";
-						return 0;
 					}
-				} elseif { [matchattr ${USER_NAME} p] } {
-					SENT:MSG:TO:USER ${USER_LOWER} "Authentification Helpeur Refusée.";
+				}
+				if { ![info exists admins(${USER_LOWER})] } {
+					set admins(${USER_LOWER})		[string tolower ${USER_NAME}]
+					if {
+						[info exists vhost(${USER_LOWER})]					&& \
+						![info exists protect($vhost(${USER_LOWER}))] 
+					} {
+						SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost(${USER_LOWER}) de ${USER_LOWER} (Activé)"
+						set protect($vhost(${USER_LOWER}))		1
+					}
+					setuser [string tolower ${USER_NAME}] LASTON [unixtime]
+					SENT:MSG:TO:USER ${USER_LOWER} "Authentification Réussie."
+					sent2socket ":${config(server_id)} INVITE ${USER_LOWER} ${SERVICE_BOT(channel_logs)}"
+					if { [console 1] == "ok" } {
+						SHOW:INFO:TO:CHANLOG "Auth" "${user}"
+					}
+					return 0
+				} else {
+					SENT:MSG:TO:USER ${USER_LOWER} "Vous êtes déjà authentifié.";
 					return 0;
 				}
-
-			} else {
-				SENT:MSG:TO:USER ${USER_LOWER} "Accès Refusé.";
+			} elseif { [matchattr ${USER_NAME} p] } {
+				SENT:MSG:TO:USER ${USER_LOWER} "Authentification Helpeur Refusée.";
 				return 0;
 			}
 		}
@@ -1268,7 +1274,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			if { [info exists admins(${USER_LOWER})] } {
 				if {
 					[matchattr $admins(${USER_LOWER}) o]					|| \
-					[matchattr $admins(${USER_LOWER}) m] 					|| \
+					[matchattr $admins(${USER_LOWER}) m]					|| \
 					[matchattr $admins(${USER_LOWER}) n]
 				 } {
 					if {
@@ -1300,7 +1306,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"console" {
 			if {
-				${value2} == "" || \
+				${value2} == ""											|| \
 				[regexp "\[^0-3\]" ${value2}]
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Console :</b> /msg ${SERVICE_BOT(name)} console 0/1/2/3"
@@ -1381,10 +1387,10 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			sent2socket ":${config(server_id)} JOIN ${SERVICE_BOT(channel_logs)}"
 			FCT:SENT:MODE ${SERVICE_BOT(channel_logs)} "+${config(smode)}"
 			if { 
-				${config(chanmode)} == "q" || \
-				${config(chanmode)} == "a" || \
-				${config(chanmode)} == "o" || \
-				${config(chanmode)} == "h" || \
+				${config(chanmode)} == "q"									|| \
+				${config(chanmode)} == "a"									|| \
+				${config(chanmode)} == "o"									|| \
+				${config(chanmode)} == "h"									|| \
 				${config(chanmode)} == "v"
 			} {
 				FCT:SENT:MODE ${SERVICE_BOT(channel_logs)} "+${config(chanmode)}" ${SERVICE_BOT(name)}
@@ -1441,10 +1447,10 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			close ${join};
 			sent2socket ":${config(server_id)} JOIN ${value1}"
 			if {
-				${config(chanmode)} == "q" || \
-				${config(chanmode)} == "a" || \
-				${config(chanmode)} == "o" || \
-				${config(chanmode)} == "h" || \
+				${config(chanmode)} == "q"									|| \
+				${config(chanmode)} == "a"									|| \
+				${config(chanmode)} == "o"									|| \
+				${config(chanmode)} == "h"									|| \
 				${config(chanmode)} == "v" 
 			} {
 				FCT:SENT:MODE ${value1} "+${config(chanmode)}" ${SERVICE_BOT(name)}
@@ -1471,7 +1477,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				gets ${liste} verif;
 				if { ![string compare -nocase ${value2} ${verif}] } { set stop		1 }
 				if {
-					[string compare -nocase ${value2} ${verif}]		&& \
+					[string compare -nocase ${value2} ${verif}]			&& \
 					${verif} != ""
 				} {
 					lappend salle "${verif}" 
@@ -1521,25 +1527,25 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			SENT:MSG:TO:USER ${USER_LOWER} "<b><c01,01>--------------------------------------- <c00>Commandes de ${SCRIPT(name)} <c01>---------------------------------------"
 			SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 0
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) p]
 			} {
 				SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 1
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) o]
 			} {
 				SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 2
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) m]
 			} {
 				SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 3
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) n]
 			} {
 				SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 4
@@ -1554,25 +1560,25 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			SENT:MSG:TO:USER ${USER_LOWER} "<c>"
 			SHOW:CMD:BY:LEVEL ${USER_LOWER} 0
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) p]
 			} {
 				SHOW:CMD:BY:LEVEL ${USER_LOWER} 1
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) o]
 			} {
 				SHOW:CMD:BY:LEVEL ${USER_LOWER} 2
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) m]
 			} {
 				SHOW:CMD:BY:LEVEL ${USER_LOWER} 3
 			}
 			if {
-				[info exists admins(${USER_LOWER})]			&& \
+				[info exists admins(${USER_LOWER})]							&& \
 				[matchattr $admins(${USER_LOWER}) n]
 			} {
 				SHOW:CMD:BY:LEVEL ${USER_LOWER} 4
@@ -1584,7 +1590,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"maxlogin" {
 			if {
-				${value2} != "on" && \
+				${value2} != "on"											&& \
 				${value2} != "off"
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Maxlogin :</b> /msg ${SERVICE_BOT(name)} maxlogin on/off";
@@ -1780,7 +1786,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"protection" {
 			if {
-				${value2} == "" || \
+				${value2} == ""												|| \
 				[regexp "\[^0-4\]" ${value2}]
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protection :</b> /msg ${SERVICE_BOT(name)} protection 0/1/2/3/4"
@@ -1873,7 +1879,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"access" {
 			if {
-				${value1} == "*" || \
+				${value1} == "*"											|| \
 				${value1} == ""
 			} {
 				if { [console 1] == "ok" } {
@@ -2025,7 +2031,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			if {
 				${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
-				[info exists users(${value4})] || \
+				[info exists users(${value4})]								|| \
 				[protection ${value4} ${config(protection)}] == "ok"
 			} {
 				SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
@@ -2138,7 +2144,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			sent2socket ":${config(link)} NAMES ${value1}"
 			if {
-				[console 1] == "ok" 										&& \
+				[console 1] == "ok"										&& \
 				${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 			} {
 				SHOW:INFO:TO:CHANLOG "Ownerall" "${value1} par ${user}"
@@ -2232,7 +2238,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			if {
 				${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
-				[info exists users(${value4})] || \
+				[info exists users(${value4})]								|| \
 				[protection ${value4} ${config(protection)}] == "ok"
 			} {
 				SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
@@ -2382,8 +2388,8 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 
 			if {
-				${value4} == [string tolower ${SERVICE_BOT(name)}] || \
-				[info exists users(${value4})] || \
+				${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
+				[info exists users(${value4})]								|| \
 				[protection ${value4} ${config(protection)}] == "ok"
 			} {
 				SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
@@ -2505,7 +2511,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 		}
 		"kick" {
-			if { [string index ${value1} 0] != "#" || \
+			if { [string index ${value1} 0] != "#"							|| \
 				${value4} == ""
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kick :</b> /msg ${SERVICE_BOT(name)} kick #salon pseudo raison";
@@ -2514,7 +2520,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			if {
 				${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
-				[info exists users(${value4})] || \
+				[info exists users(${value4})]								|| \
 				[protection ${value4} ${config(protection)}] == "ok"
 			} {
 				SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
@@ -2679,7 +2685,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"mode" {
 			if {
-				[string index ${value1} 0] != "#" || \
+				[string index ${value1} 0] != "#"							|| \
 				${value3} == ""
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Mode :</b> /msg ${SERVICE_BOT(name)} mode #salon +/-mode";
@@ -3041,7 +3047,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"ungline" {
 			if {
-				${value1} == "" || \
+				${value1} == ""												|| \
 				![string match *@* ${value1}]
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ungline :</b> /msg ${SERVICE_BOT(name)} ungline ident@host";
@@ -3083,7 +3089,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"unshun" {
 			if {
-				${value1} == "" || \
+				${value1} == ""												|| \
 				![string match *@* ${value1}] 
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unshun :</b> /msg ${SERVICE_BOT(name)} unshun ident@host";
@@ -3125,7 +3131,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"unkline" {
 			if {
-				${value1} == "" || \
+				${value1} == ""												|| \
 				![string match *@* ${value1}] 
 			} {
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unkline :</b> /msg ${SERVICE_BOT(name)} unkline ident@host";
@@ -3698,7 +3704,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 
 			if {
-				[string match *${value2}* [string tolower ${SERVICE_BOT(hostname)}]] || \
+				[string match *${value2}* [string tolower ${SERVICE_BOT(hostname)}]]	|| \
 				[info exists protect(${value2})]
 			} {
 				SENT:MSG:TO:USER ${user} "Accès Refusé : Hostname Protégée";
@@ -4131,7 +4137,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				}
 				"pass" {
 					if {
-						${value4} == "" 									|| \
+						${value4} == ""									|| \
 						${value8} == ""
 					} {
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Pass :</b> /msg ${SERVICE_BOT(name)} accessmod pass pseudo mot-de-passe";
@@ -4169,15 +4175,15 @@ proc ::EvaServ::cmds { IRC_DATA } {
 }
 proc ::EvaServ::help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
 proc ::EvaServ::help:description:auth {}			{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de vous authentifier sur ${SERVICE_BOT(name)}."
 }
 proc ::EvaServ::help:description:copyright {}		{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de voir l'auteur de ${SERVICE_BOT(name)}."
 }
 proc ::EvaServ::help:description:deauth {}			{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de vous déauthentifier sur ${SERVICE_BOT(name)}."
 }
 proc ::EvaServ::help:description:seen {}			{ return "Permet de voir la dernière authentification du pseudo." }
@@ -4210,7 +4216,7 @@ proc ::EvaServ::help:description:halfop {}			{ return "Permet d'halfoper un util
 proc ::EvaServ::help:description:halfopall {}		{ return "Permet d'halfoper tous les utilisateurs d'un salon." }
 proc ::EvaServ::help:description:invite {}			{ return "Permet d'inviter un utilisateur sur un salon." }
 proc ::EvaServ::help:description:inviteme {}		{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de s'inviter sur ${SERVICE_BOT(channel_logs)}."
 }
 proc ::EvaServ::help:description:kick {}			{ return "Permet de kicker un utilisateur d'un salon." }
@@ -4248,14 +4254,14 @@ proc ::EvaServ::help:description:closelist {}		{ return "Permet de voir la liste
 proc ::EvaServ::help:description:hostlist {}		{ return "Permet de voir la liste des hostnames interdites." }
 proc ::EvaServ::help:description:identlist {}		{ return "Permet de voir la liste des idents interdits." }
 proc ::EvaServ::help:description:join {}			{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de faire joindre ${SERVICE_BOT(name)} sur un salon."
 }
 proc ::EvaServ::help:description:list {}			{ return "Permet de voir les autojoin salons."}
 proc ::EvaServ::help:description:nicklist {}		{ return "Permet de voir la liste des pseudos interdits." }
 proc ::EvaServ::help:description:notice {}			{ return "Permet d'envoyer une notice à tous les utilisateurs."}
 proc ::EvaServ::help:description:part {}			{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de faire partir ${SERVICE_BOT(name)} d'un salon."
 }
 proc ::EvaServ::help:description:reallist {}		{ return "Permet de voir la liste des realnames interdits." }
@@ -4276,7 +4282,7 @@ proc ::EvaServ::help:description:realadd {}			{ return "Permet d'ajouter un real
 proc ::EvaServ::help:description:trustadd {}		{ return "Permet d'ajouter un trust sur un mask." }
 proc ::EvaServ::help:description:backup {}			{ return "Permet de créer une sauvegarde des databases." }
 proc ::EvaServ::help:description:chanlog {}			{
-	variable config
+	variable SERVICE_BOT
 	return "Permet de changer le salon de log de ${SERVICE_BOT(name)}."
 }
 proc ::EvaServ::help:description:client {}			{ return "Permet d'activer ou désactiver les clients IRC interdits." }
@@ -4295,7 +4301,6 @@ proc ::EvaServ::help:description:accessmod {}		{ return "Permet de modifier un a
 proc ::EvaServ::help:description:protection {}		{ return "Permet d'activer la protection en fonction du level." }
 proc ::EvaServ::help:description:restart {}			{ return "Permet de redémarrer ${SCRIPT(name)}." }
 proc ::EvaServ::help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
-
 
 proc ::EvaServ::Commands:Help { NICK_SOURCE hcmd } {
 	variable SERVICE_BOT
@@ -4737,6 +4742,7 @@ proc ::EvaServ::Commands:Help { NICK_SOURCE hcmd } {
 
 proc ::EvaServ::connexion:server { } {
 	variable config
+	variable SERVICE_BOT
 	sent2socket "EOS"
 	sent2socket ":${config(SID)} SQLINE ${SERVICE_BOT(name)} :Reserved for services"
 	sent2socket ":${config(SID)} UID ${SERVICE_BOT(name)} 1 [unixtime] ${SERVICE_BOT(username)} ${SERVICE_BOT(hostname)} ${config(server_id)} * +qioS * * * :${SERVICE_BOT(gecos)}"
@@ -4802,7 +4808,6 @@ proc ::EvaServ::verif { } {
 		}
 	}
 }
-
 
 proc remove_modenicklist { data } {
 	return [::tcl::string::map -nocase {
@@ -4913,7 +4918,7 @@ proc ::EvaServ::link { idx arg } {
 			if { ![info exists DBU_INFO(${uid},IDENT)] }		{ set DBU_INFO(${uid},IDENT)		${username} }
 			if { ![info exists DBU_INFO(${uid},NICK)] }		{ set DBU_INFO(${uid},NICK)		${nickname} }
 			if { ![info exists DBU_INFO(${uid},REALNAME)] }	{ set DBU_INFO(${uid},REALNAME)	${gecos} }
-			
+		
 
 			if {
 				![info exists users(${nickname})]							&& \
@@ -5068,7 +5073,7 @@ proc ::EvaServ::link { idx arg } {
 			foreach n [split ${user}] {
 				if {
 					${config(cmd)} == "ownerall"							&& \
-					![info exists users(${n})] 								&& \
+					![info exists users(${n})]								&& \
 					${n} != [string tolower ${SERVICE_BOT(name)}]			&& \
 					![info exists admins(${n})]								&& \
 					[protection ${n} ${config(protection)}] != "ok"
@@ -5150,7 +5155,7 @@ proc ::EvaServ::link { idx arg } {
 				${config(cmd)} == "kickall"									&& \
 				![info exists users(${n})]									&& \
 				${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
-				![info exists admins(${n})] && \
+				![info exists admins(${n})]								&& \
 				[protection ${n} ${config(protection)}] != "ok"
 			} {
 				sent2socket ":${config(server_id)} KICK ${chan} ${n} Kicked [rnick ${config(rep)}]"
@@ -5266,8 +5271,8 @@ proc ::EvaServ::link { idx arg } {
 		set pmode		[join [lrange ${arg} 4 end]]
 		set unix		[lindex ${arg} end]
 		if {
-			[console 3] == "ok"						 						&& \
-			${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}] 		&& \
+			[console 3] == "ok"												&& \
+			${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]		&& \
 			${config(init)} == 0											&& \
 			[string tolower ${user}] != [string tolower ${SERVICE_BOT(name)}]
 		} {
@@ -5300,7 +5305,7 @@ proc ::EvaServ::link { idx arg } {
 			unset netadmin(${user})	
 		}
 		if {
-			[console 3] == "ok" && \
+			[console 3] == "ok"												&& \
 			${config(init)} == 0
 		} {
 			if { [string match *+*S* ${umode}] } {
@@ -5378,7 +5383,7 @@ proc ::EvaServ::link { idx arg } {
 			unset netadmin(${USER_LOWER})
 		}
 		if {
-			[console 3] == "ok" && \
+			[console 3] == "ok"												&& \
 			${config(init)} == 0
 		} {
 			SHOW:INFO:TO:CHANLOG "Nick" "${user} change son pseudo en ${new}"
@@ -5518,7 +5523,7 @@ proc ::EvaServ::link { idx arg } {
 	"SETNAME" {
 		set real		[join [string trim [lrange ${arg} 2 end] :]]
 		if {
-			[console 3] == "ok" 											&& \
+			[console 3] == "ok"											&& \
 			${config(init)} == 0
 		} {
 			SHOW:INFO:TO:CHANLOG "Setname" "Changement du realname de ${user} en ${real}"

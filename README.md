@@ -61,7 +61,6 @@ EvaServ est utile pour :
 * La gestion des salons sur votre réseau
 * ...
 
-
 ### Prerequisites
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
 * [Unrealircd (v5.0+)](http://www.eggheads.org/)
@@ -72,7 +71,6 @@ EvaServ est utile pour :
 * [Client Git](https://git-scm.com/downloads)
 * [tcllib](https://github.com/tcltk/tcllib)
 * [tcl-tls](https://core.tcl-lang.org/tcltls/home)
-
 
 ### Installation
 1.1.  Récuperer le code EvaServ
@@ -166,8 +164,6 @@ Les contributions sont ce qui fait de la communauté open source un endroit incr
 
 Distributed under the SoonDecision License. See `LICENSE` for more information.
 
-
-
 <!-- CONTACT -->
 ## Contact
 
@@ -190,7 +186,6 @@ Vous pouvez me contacter sur IRC :
 * TiSMA de Exolia.net pour le code d'origine
 * Amandine de eggdrop.Fr pour son aide/idées/testes/..
 * MenzAgitat car dans mes developpements il y a toujours des astuces/maniere de faire fournis par MenzAgitat ou bout code de MenzAgitat
-
 
 ## infos en vrac
 
