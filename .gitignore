@@ -37,3 +37,4 @@ EvaServ.conf
 db/*.db
 db/*.bak
 .devcontainer
+mods/*
