@@ -108,7 +108,10 @@ Troisième étape, renommez le fichier ```Eva.example.conf``` en ```EvaServ.conf
 Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisée dans "EvaServ.conf". 
 
 [Comment créer un link Service sur UnrealIRCd](http://www.exolia.fr/guide-lire-11.html)
-
+# premier lancement
+Lors du premier lancement, aucun compte utilisateur n'existe, pour creer votre compte vous devez vous identifier
+```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
+Celà aura comme effet de vous creer un compte de niveau 4 (Admin) par default
 2. Un peu plus loin
 2.1. Debug general
 Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line  pour voir les erreurs directement dans le fichier "logs/Eva.debug".

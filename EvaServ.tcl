@@ -101,6 +101,8 @@ namespace eval ::EvaServ {
 		"console_com"															\
 		"console_deco"															\
 		"console_txt"															\
+		"nick_length"															\
+		"password_length"														\
 	];
 	array set SCRIPT			 [list											\
 		"name"					"EvaServ Service"								\
@@ -108,6 +110,7 @@ namespace eval ::EvaServ {
 		"auteur"				"ZarTek"										\
 		"path_dir"				"[file dirname [info script]]"					\
 		"need_ircs"				"0.0.7"											\
+		"need_zct"				"0.0.4"											\
 	];
 	set VARS_SCRIPT				 [list											\
 		"name"																	\
@@ -157,17 +160,72 @@ namespace eval ::EvaServ {
 		namespace delete ::EvaServ
 		
 	}
-	namespace eval ::EvaServ::dbuser {}
+	namespace eval ::EvaServ::dbuser {
+		namespace import -force ::EvaServ::*
+	}
 }
 proc ::EvaServ::dbuser::count { } {
 	set USER_COUNT	0
 	foreach User [userlist] { 
-		if { [getuser ${User} XTRA EVA] != "" }  {
+		if { [getuser ${User} XTRA EvaServ] != "" }  {
 			incr USER_COUNT
-
 		}
 	}
 	return ${USER_COUNT}
+}
+proc ::EvaServ::dbuser::add { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
+	variable ::EvaServ::commands
+	variable ::EvaServ::config
+	if ![dict exists ${commands} ${USER_NIVEAU}] {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "Le niveau <b>%s</b> n'existe pas dans la configuration" ${USER_NIVEAU}]
+		return 0
+	}
+	if [validuser ${USER_NAME}] {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "L'utilisateur <b>%s</b> existe déjà. Opération échoué" ${USER_NAME}]
+		return 0
+	}
+	if {
+		[dict exists ${commands} ${USER_NIVEAU} attr]			&& \
+		[dict get ${commands} ${USER_NIVEAU} attr] != ""
+	} {
+		set USER_ATTR	[dict get ${commands} ${USER_NIVEAU} attr] ;
+	} else {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "La valeur <b>attr</b> est absente pour le niveau <b>%s</b>" ${USER_NIVEAU}]
+		return 0
+	}
+	if {
+		[dict exists ${commands} ${USER_NIVEAU} name]			&& \
+		[dict get ${commands} ${USER_NIVEAU} name] != ""
+	} {
+		set NIVEAU_NAME	[dict get ${commands} ${USER_NIVEAU} name];
+	} else {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "La valeur <b>name</b> est absente pour le niveau <b>%s</b>" ${USER_NIVEAU}]
+		return 0
+	}
+	if { [string length ${USER_NAME}] > ${config(nick_length)} } {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "Le pseudo doit contenir maximum <b>%s</b> caractères." ${config(nick_length)}];
+		return 0;
+	}
+	if { [string length ${USER_PASS}] < ${config(password_length)} } {
+		::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "Le mot de passe doit contenir minimum <b>%s</b> caractères." ${config(password_length)} ];
+		return 0;
+	}
+	set DATE_TODAY		[strftime ${config(date_format)}]
+	adduser ${USER_NAME};
+	setuser ${USER_NAME} PASS ${USER_PASS};
+	setuser ${USER_NAME} HOSTS ${USER_NAME}*!*@*;
+	setuser ${USER_NAME} HOSTS -telnet!*@*
+	setuser ${USER_NAME} XTRA EvaServ	[list 									\
+											"ROLE"		"${NIVEAU_NAME}"		\
+											"NIVEAU"	"${USER_NIVEAU}"		\
+											"ADDED_BY"	"${USER_ADDER}"			\
+											"ADDED_AT"	"${DATE_TODAY}"			\
+										];
+	if { ${USER_ATTR} != "" } { chattr ${USER_NAME} ${USER_ATTR}; }
+	catch {save}
+	::EvaServ::SENT:MSG:TO:USER ${USER_ADDER} [format "<b>%s</b> a bien été ajouté dans la liste des <b>%ss</b>." ${USER_NAME} ${NIVEAU_NAME}]
+	::EvaServ::SHOW:INFO:TO:CHANLOG "auth" [format "Le compte <b>%s</b> à été creer au rang de <b>%s</b> par <b>%s</b>" ${USER_NAME} ${NIVEAU_NAME} ${USER_ADDER}];
+	return 1
 }
 proc ::EvaServ::INIT { } {
 	variable SCRIPT
@@ -229,6 +287,10 @@ proc ::EvaServ::INIT { } {
 	}
 	if { [catch { package require IRCServices ${SCRIPT(need_ircs)} }] } { putloglev o * "\00304\[${SCRIPT(name)} - erreur\]\003 ${SCRIPT(name)} nécessite le package IRCServices ${SCRIPT(need_ircs)} (ou plus) pour fonctionner, Télécharger sur 'github.com/ZarTek-Creole/TCL-PKG-IRCServices'.\nLe chargement du script a été annulé." ; return }
 
+	if { [file exists [Script:Get:Directory]/TCL-ZCT/ZCT.tcl] } { catch { source [Script:Get:Directory]/TCL-ZCT/ZCT.tcl } }
+	if { [catch { package require ZCT ${SCRIPT(need_zct)} } err] } {
+		die "\[${PKG(name)} - erreur\] Nécessite le package ZCT ${PKG(need_zct)} (ou plus) pour fonctionner, Télécharger sur 'https://github.com/ZarTek-Creole/TCL-ZCT'.\nLe chargement du script a été annulé." ;
+	} else { namespace import -force ::ZCT::* }
 	Database:Load:Data
 	Service:Connexion
 	putlog "v${SCRIPT(version)} par ${SCRIPT(auteur)} OK." success
@@ -255,7 +317,7 @@ proc ::EvaServ::Service:Connexion { } {
 	${BOT_ID} create ${SERVICE_BOT(name)} ${SERVICE_BOT(username)} ${SERVICE_BOT(hostname)} ${SERVICE_BOT(gecos)} ${SERVICE_BOT(mode_service)}]; # Creation d'un bot service
 	${BOT_ID} join ${SERVICE_BOT(channel)}
 	${BOT_ID} registerevent EOS {
-		global ::EvaServ::config
+		global ::EvaServ::SERVICE_BOT
 		[sid] mode ${SERVICE_BOT(channel)} ${SERVICE_BOT(mode_channel)}
 		if { ${SERVICE_BOT(mode_user)} != "" } { 
 			[sid] mode ${SERVICE_BOT(channel)} ${SERVICE_BOT(mode_user)} ${SERVICE_BOT(name)}
@@ -489,13 +551,13 @@ proc ::EvaServ::FloodControl:Reset { pseudo } {
 proc ::EvaServ::authed { user IRC_CMD } {
 	variable admins
 	switch -exact [CMD:TO:LEVEL ${IRC_CMD}] {
-		0 { return ok }
+		0 { return 1 }
 		1 {
 			if {
 				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) p]
 			} {
-				return ok
+				return 1
 			} else {
 				SENT:MSG:TO:USER ${user} "Accès Refusé";
 				return 0
@@ -506,7 +568,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) o]
 			 } {
-				return ok
+				return 1
 			} else {
 				SENT:MSG:TO:USER ${user} "Accès Refusé";
 				return 0;
@@ -517,7 +579,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) m]
 			} {
-				return ok;
+				return 1;
 			} else {
 
 				SENT:MSG:TO:USER ${user} "Accès Refusé";
@@ -529,7 +591,7 @@ proc ::EvaServ::authed { user IRC_CMD } {
 				[info exists admins(${user})]								&& \
 				[matchattr $admins(${user}) n]
 			} {
-				return ok;
+				return 1;
 			} else {
 
 				SENT:MSG:TO:USER ${user} "Accès Refusé";
@@ -635,14 +697,15 @@ proc ::EvaServ::DBU:GET { UID WHAT } {
 		return -1;
 	}
 }
-
+proc ::EvaServ::FCT:SENT:SERV { args } {
+	variable BOT_ID
+	${BOT_ID} ${args}
+}
 proc ::EvaServ::FCT:SENT:MODE { DEST {MODE ""} {CIBLE ""} } {
-	variable config
-	sent2socket ":${config(server_id)} MODE ${DEST} ${MODE} ${CIBLE}"
+	FCT:SENT:SERV MODE ${DEST} ${MODE} ${CIBLE};
 }
 proc ::EvaServ::FCT:SET:TOPIC { DEST TOPIC } {
-	variable config
-	sent2socket ":${config(server_id)} TOPIC ${DEST} :[FCT:apply_visuals ${TOPIC}]"
+	FCT:SENT:SERV TOPIC ${DEST} :[FCT:apply_visuals ${TOPIC}];
 }
 proc ::EvaServ::FCT:DATA:TO:NICK { DATA } {
 	if { [string range ${DATA} 0 0] == 0 } {
@@ -660,24 +723,7 @@ proc ::EvaServ::FCT:DATA:TO:UID { DATA } {
 	}
 	return ${UID};
 }
-proc ::EvaServ::FCT:TXT:ESPACE:DISPLAY { text length } {
-	set text			[string trim ${text}]
-	set text_length		[string length ${text}];
-	set espace_length	[expr (${length} - ${text_length})/2.0]
-	set ESPACE_TMP		[split ${espace_length} .]
-	set ESPACE_ENTIER	[lindex ${ESPACE_TMP} 0]
-	set ESPACE_DECIMAL	[lindex ${ESPACE_TMP} 1]
-	if { ${ESPACE_DECIMAL} == 0 } {
-		set espace_one			[string repeat " " ${ESPACE_ENTIER}];
-		set espace_two			[string repeat " " ${ESPACE_ENTIER}];
-		return "${espace_one}${text}${espace_two}"
-	} else {
-		set espace_one			[string repeat " " ${ESPACE_ENTIER}];
-		set espace_two			[string repeat " " [expr (${ESPACE_ENTIER}+1)]];
-		return "${espace_one}${text}${espace_two}"
-	}
 
-}
 
 proc ::EvaServ::putdebug { string } {
 	set FILE_PIPE		[open logs/EvaServ.debug a]
@@ -722,7 +768,6 @@ proc ::EvaServ::gestion { } {
 	puts ${FILE_PIPE} "config(aclient) ${config(aclient)}"
 	close ${FILE_PIPE}
 }
-
 proc ::EvaServ::dbback { min h d m y } {
 	variable config
 	gestion
@@ -845,7 +890,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 				} {
 					SHOW:INFO:TO:CHANLOG "Kill" "${nickname} a été killé : ${config(rhost)}"
 				}
-				sent2socket ":${config(server_id)} KILL ${nickname} ${config(rhost)}";
+				FCT:SENT:SERV KILL ${nickname} ${config(rhost)};
 				break;
 				refresh ${nickname};
 				return 0
@@ -867,7 +912,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 				} {
 					SHOW:INFO:TO:CHANLOG "Kill" "${nickname} (${verif3}) a été killé : ${config(rident)}"
 				}
-				sent2socket ":${config(server_id)} KILL ${nickname} ${config(rident)}";
+				FCT:SENT:SERV KILL ${nickname} ${config(rident)};
 				break ;
 				refresh ${nickname};
 				return 0;
@@ -889,7 +934,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 				} {
 					SHOW:INFO:TO:CHANLOG "Kill" "${nickname} (Realname: ${verif4}) a été killé : ${config(rreal)}"
 				}
-				sent2socket ":${config(server_id)} KILL ${nickname} ${config(rreal)}";
+				FCT:SENT:SERV KILL ${nickname} ${config(rreal)};
 				break;
 				refresh ${nickname};
 				return 0;
@@ -911,7 +956,7 @@ proc ::EvaServ::connexion:user:security:check { nickname hostname username gecos
 				} {
 					SHOW:INFO:TO:CHANLOG "Kill" "${nickname} a été killé : ${config(ruser)}"
 				}
-				sent2socket ":${config(server_id)} KILL ${nickname} ${config(ruser)}";
+				FCT:SENT:SERV KILL ${nickname} ${config(ruser)};
 				break;
 				refresh ${nickname};
 				return 0;
@@ -1004,7 +1049,7 @@ proc ::EvaServ::evenement { arg } {
 		[valididx ${config(idx)}]
 	} {
 		gestion
-		sent2socket ":${config(server_id)} QUIT :${config(raison)}"
+		FCT:SENT:SERV QUIT :${config(raison)};
 		sent2socket ":${config(link)} SQUIT ${config(link)} :${config(raison)}"
 		foreach kill [utimers] {
 			if { [lindex ${kill} 1] == "verif" } { killutimer [lindex ${kill} 2] }
@@ -1056,7 +1101,7 @@ proc ::EvaServ::deconnect { nick idx arg } {
 		} {
 			gestion
 			sent2ppl ${idx} "<c01>\[ <c03>Déconnexion<c01> \] <c01> Arret de ${SCRIPT(name)}..."
-			sent2socket ":${config(server_id)} QUIT :${config(raison)}"
+			FCT:SENT:SERV QUIT :${config(raison)};
 			sent2socket ":${config(link)} SQUIT ${config(link)} :${config(raison)}"
 			foreach kill [utimers] {
 				if { [lindex ${kill} 1] == "verif" } { killutimer [lindex ${kill} 2] }
@@ -1155,14 +1200,14 @@ proc ::EvaServ::debug { nick idx arg } {
 	if { ${status} == "on" } {
 		if { ${config(debug)} == 0 } {
 			set config(debug)		1;
-			sent2ppl ${idx} "<c01>\[ <c03>Debug<c01> \] <c01> Activé"
+			sent2ppl ${idx} "<c01>\[ <c03>Debug<c01> \] <c01>Activé"
 		} else {
 			sent2ppl ${idx} "Le mode debug est déjà activé."
 		}
 	} elseif { ${status} == "off" } {
 		if { ${config(debug)} == 1 } {
 			set config(debug)		0;
-			sent2ppl ${idx} "<c01>\[ <c03>Debug<c01> \] <c01> Désactivé"
+			sent2ppl ${idx} "<c01>\[ <c03>Debug<c01> \] <c01>Désactivé"
 			if { [file exists "logs/EvaServ.debug"] } { exec rm -rf logs/EvaServ.debug }
 		} else {
 			sent2ppl ${idx} "Le mode debug est déjà désactivé."
@@ -1198,7 +1243,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 	set value8		[lindex ${IRC_DATA} 4]
 	set value9		[string tolower [lindex ${IRC_DATA} 4]]
 	set stop		0
-	if { [authed ${USER_LOWER} ${IRC_CMD}] != "ok" } { return 0 }
+	if { ![authed ${USER_LOWER} ${IRC_CMD}] } { return 0 }
 	switch -exact ${IRC_CMD} {
 		"auth" {
 			if { [lindex ${IRC_DATA} 2] == "" } {
@@ -1215,24 +1260,24 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			# Verification si des utilisateurs 'eva' exists
 			if { [dbuser::count] == 0 } {
 				# Si aucun utilisateurs Eva, nous creons le compte en tant que ircop supreme
-				if { [getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}] == "" } {
+				if {
+					![validuser ${USER_NAME}]								&& \
+					[getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}] == ""
+				} {
 					SENT:MSG:TO:USER ${user} "${USER_NAME}, pour creer votre compte ircop, vous devez être operateur sur le salon ${SERVICE_BOT(channel)}."
 					return 0
 				}
-				set USER_HOSTMASK	[getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}]
-				adduser ${USER_NAME} ${USER_HOSTMASK}
-				setuser ${USER_NAME} XTRA EVASERV [list "ADMIN" "1"]
-				setuser ${USER_NAME} PASS ${USER_PASS}
-				return 0
+				if ![dbuser::add ${user} ${USER_NAME} ${USER_PASS} 4] { return 0 }
 			}
 			if { ![passwdok ${USER_NAME} ${USER_PASS}] } {
 				SENT:MSG:TO:USER ${USER_LOWER} "L'authentification à échoué.";
+				SHOW:INFO:TO:CHANLOG "auth" "L'authentification à échoué pour ${user} (${USER_NAME}).";
 				return 0;
 			}
 			if {
-					![matchattr ${USER_NAME} o]								|| \
-					![matchattr ${USER_NAME} m]								|| \
-					[matchattr ${USER_NAME} n]
+				![matchattr ${USER_NAME} o]									|| \
+				![matchattr ${USER_NAME} m]									|| \
+				[matchattr ${USER_NAME} n]
 			 } {
 				if { ${config(login)} == 1 } {
 					foreach { pseudo login } [array get admins] {
@@ -1240,7 +1285,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 							${login} == [string tolower ${USER_NAME}]		&& \
 							${pseudo} != ${USER_LOWER} 
 						} {
-							sent2socket ":${config(server_id)} NOTICE [UID:CONVERT ${USER_LOWER}] :Maximum de Login atteint.";
+							FCT:SENT:SERV NOTICE [UID:CONVERT ${USER_LOWER}] :Maximum de Login atteint.;
 							return 0;
 						}
 					}
@@ -1256,9 +1301,10 @@ proc ::EvaServ::cmds { IRC_DATA } {
 					}
 					setuser [string tolower ${USER_NAME}] LASTON [unixtime]
 					SENT:MSG:TO:USER ${USER_LOWER} "Authentification Réussie."
-					sent2socket ":${config(server_id)} INVITE ${USER_LOWER} ${SERVICE_BOT(channel_logs)}"
+					FCT:SENT:SERV INVITE ${USER_LOWER} ${SERVICE_BOT(channel_logs)};
+					
 					if { [console 1] == "ok" } {
-						SHOW:INFO:TO:CHANLOG "Auth" "${user}"
+						SHOW:INFO:TO:CHANLOG "Auth" [format "L'utilisateur %s s'est identifié au compte %s." ${user} ${USER_NAME}]
 					}
 					return 0
 				} else {
@@ -1381,10 +1427,10 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 			catch { close ${liste3} }
 			if { ${stop} == 1 } { return 0 }
-			sent2socket ":${config(server_id)} PART ${SERVICE_BOT(channel_logs)}"
+			FCT:SENT:SERV PART ${SERVICE_BOT(channel_logs)};
 			FCT:SENT:MODE ${SERVICE_BOT(channel_logs)} "-O"
 			set SERVICE_BOT(channel_logs)		${value1}
-			sent2socket ":${config(server_id)} JOIN ${SERVICE_BOT(channel_logs)}"
+			FCT:SENT:SERV JOIN ${SERVICE_BOT(channel_logs)};
 			FCT:SENT:MODE ${SERVICE_BOT(channel_logs)} "+${config(smode)}"
 			if { 
 				${config(chanmode)} == "q"									|| \
@@ -1445,7 +1491,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			set join		[open "[Script:Get:Directory]/db/chan.db" a];
 			puts ${join} ${value2};
 			close ${join};
-			sent2socket ":${config(server_id)} JOIN ${value1}"
+			FCT:SENT:SERV JOIN ${value1};
 			if {
 				${config(chanmode)} == "q"									|| \
 				${config(chanmode)} == "a"									|| \
@@ -1497,7 +1543,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 					close ${FILE_PIPE}
 				}
 				FCT:SENT:MODE ${value1} "-sntio";
-				sent2socket ":${config(server_id)} PART ${value1}"
+				FCT:SENT:SERV PART ${value1};
 				SENT:MSG:TO:USER ${USER_LOWER} "${SERVICE_BOT(name)} part de <b>${value1}</b>"
 				if { [console 1] == "ok" } {
 					SHOW:INFO:TO:CHANLOG "Part" "${value1} par ${user}"
@@ -1642,7 +1688,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 			SENT:MSG:TO:USER ${USER_LOWER} "Redémarrage de ${SCRIPT(name)}."
 			gestion;
-			sent2socket ":${config(server_id)} QUIT ${config(raison)}";
+			FCT:SENT:SERV QUIT ${config(raison)};
 			sent2socket ":${config(link)} SQUIT ${config(link)} :${config(raison)}"
 			foreach kill [utimers] {
 				if { [lindex ${kill} 1] == "verif" } { killutimer [lindex ${kill} 2] }
@@ -1658,7 +1704,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 			SENT:MSG:TO:USER ${USER_LOWER} "Arrêt de ${SCRIPT(name)}."
 			gestion;
-			sent2socket ":${config(server_id)} QUIT ${config(raison)}";
+			FCT:SENT:SERV QUIT ${config(raison)};
 			sent2socket ":${config(link)} SQUIT ${config(link)} :${config(raison)}"
 			foreach kill [utimers] {
 				if { [lindex ${kill} 1] == "::EvaServ::verif" } { killutimer [lindex ${kill} 2] }
@@ -1844,7 +1890,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"map" {
 			set config(rep)		${USER_LOWER}
-			sent2socket ":${config(server_id)} LINKS"
+			FCT:SENT:SERV LINKS;
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Map" "${user}"
 			}
@@ -2528,7 +2574,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 
 			if { ${value5} == "" } { set value5		"Kicked" }
-			sent2socket ":${config(server_id)} KICK ${value2} ${value4} ${value5} [rnick ${user}]"
+			FCT:SENT:SERV KICK ${value2} ${value4} ${value5} [rnick ${user}];
 			if {
 				[console 1] == "ok"											&& \
 				${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
@@ -2594,7 +2640,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			if { ${value5} == "" } { set value5		"Nick Banned" }
 			FCT:SENT:MODE ${value1} "+b" "${value4}*!*@*"
-			sent2socket ":${config(server_id)} KICK ${value1} ${value3} ${value5} [rnick ${user}]"
+			FCT:SENT:SERV KICK ${value1} ${value3} ${value5} [rnick ${user}];
 			if {
 				[console 1] == "ok"											&& \
 				${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
@@ -2627,7 +2673,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 
 			if { ${value5} == "" } { set value5		"Kick Banned" }
 			FCT:SENT:MODE ${value1} "+b" "*!*@$vhost(${value4})"
-			sent2socket ":${config(server_id)} KICK ${value1} ${value3} ${value5} [rnick ${user}]"
+			FCT:SENT:SERV KICK ${value1} ${value3} ${value5} [rnick ${user}];
 			if {
 				[console 1] == "ok"											&& \
 				${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
@@ -2658,7 +2704,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} SVSMODE ${value1} -b"
+			FCT:SENT:SERV SVSMODE ${value1} -b;
 			if {
 				[console 1] == "ok"											&& \
 				${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
@@ -2750,10 +2796,10 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				SENT:MSG:TO:USER ${user} "Accès Refusé";
 				return 0;
 			}
-
-			sent2socket ":${config(server_id)} SVSMODE ${value1} -beIqaohv"
+		[sid] mode ${SERVICE_BOT(channel)} ${SERVICE_BOT(mode_user)} ${SERVICE_BOT(name)}
+			FCT:SENT:SERV SVSMODE ${value1} -beIqaohv;
 			FCT:SENT:MODE ${value1}
-			sent2socket ":${config(server_id)} SVSMODE ${value1} -b"
+			FCT:SENT:SERV SVSMODE ${value1} -b;
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Clearallmodes" "${user} sur ${value1}"
 			}
@@ -2779,7 +2825,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 
 			if { ${value6} == "" } { set value6		"Killed" }
-			sent2socket ":${config(server_id)} KILL ${value1} ${value6} [rnick ${user}]";
+			FCT:SENT:SERV KILL ${value1} ${value6} [rnick ${user}];
 			refresh ${value2}
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Kill" "${value1} a été killé par ${user} : ${value6}"
@@ -2826,7 +2872,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} SVSJOIN [UID:CONVERT ${value3}] ${value1}"
+			FCT:SENT:SERV SVSJOIN [UID:CONVERT ${value3}] ${value1};
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Svsjoin" "${value3} entre sur ${value1} par ${user}"
 			}
@@ -2854,7 +2900,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} SVSPART ${value3} ${value1}"
+			FCT:SENT:SERV SVSPART ${value3} ${value1};
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Svspart" "${value3} part de ${value1} par ${user}"
 			}
@@ -2895,7 +2941,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(SID)} SVSNICK [UID:CONVERT ${value1}] ${value3} [unixtime]"
+			FCT:SENT:SERV SVSNICK [UID:CONVERT ${value1}] ${value3} [unixtime];
 			if {
 				[info exists vhost(${value1})]								&& \
 				${value1} != ${value3}
@@ -2938,13 +2984,13 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} INVITE ${value3} ${value1}"
+			FCT:SENT:SERV INVITE ${value3} ${value1};
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Invite" "${user} invite ${value3} sur ${value1}"
 			}
 		}
 		"inviteme" {
-			sent2socket ":${config(server_id)} INVITE ${user} ${SERVICE_BOT(channel_logs)}"
+			FCT:SENT:SERV INVITE ${user} ${SERVICE_BOT(channel_logs)};
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Inviteme" "${user}"
 			}
@@ -2955,7 +3001,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} WALLOPS ${value7} (${user})"
+			FCT:SENT:SERV WALLOPS ${value7} (${user});
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Wallops" "${user} : ${value7}"
 			}
@@ -2966,7 +3012,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} GLOBOPS ${value7} (${user})"
+			FCT:SENT:SERV GLOBOPS ${value7} (${user});
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Globops" "${user} : ${value7}"
 			}
@@ -2994,7 +3040,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				return 0;
 			}
 
-			sent2socket ":${config(server_id)} WHOIS ${value1}"
+			FCT:SENT:SERV WHOIS ${value1};
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Whois" "${user}"
 			}
@@ -3146,7 +3192,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		"glinelist" {
 			set config(cmd)		"gline";
 			set config(rep)		${USER_LOWER}
-			sent2socket ":${config(server_id)} STATS G"
+			FCT:SENT:SERV STATS G;
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Glinelist" "${user}"
 			}
@@ -3154,7 +3200,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		"shunlist" {
 			set config(cmd)		"shun";
 			set config(rep)		${USER_LOWER}
-			sent2socket ":${config(server_id)} STATS s"
+			FCT:SENT:SERV STATS s;
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Shunlist" "${user}"
 			}
@@ -3162,14 +3208,14 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		"klinelist" {
 			set config(cmd)		"kline";
 			set config(rep)		${USER_LOWER}
-			sent2socket ":${config(server_id)} STATS K"
+			FCT:SENT:SERV STATS K;
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Klinelist" "${user}"
 			}
 		}
 		"cleargline" {
 			set config(cmd)		"cleargline"
-			sent2socket ":${config(server_id)} STATS G"
+			FCT:SENT:SERV STATS G;
 			SENT:MSG:TO:USER ${USER_LOWER} "Liste des glines vidée."
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Cleargline" "${user}"
@@ -3177,7 +3223,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 		"clearkline" {
 			set config(cmd)		"clearkline"
-			sent2socket ":${config(server_id)} STATS K"
+			FCT:SENT:SERV STATS K;
 			SENT:MSG:TO:USER ${USER_LOWER} "Liste des klines vidée."
 			if { [console 1] == "ok" } {
 				SHOW:INFO:TO:CHANLOG "Clearkline" "${user}"
@@ -3344,7 +3390,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			puts ${FILE_PIPE} ${value2};
 			close ${FILE_PIPE}
 			SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> vient d'être ajouté dans la liste des salons fermés."
-			sent2socket ":${config(server_id)} JOIN ${value1}";
+			FCT:SENT:SERV JOIN ${value1};
 			FCT:SENT:MODE ${value1} +sntio "${SERVICE_BOT(name)}";
 			FCT:SET:TOPIC ${value1} "<c1>Salon Fermé le [duree [unixtime]]"
 			sent2socket ":${config(link)} NAMES ${value1}"
@@ -3385,7 +3431,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				SENT:MSG:TO:USER ${user} "<b>${value1}</b> a bien été supprimé de la liste des salons fermés."
 				FCT:SENT:MODE ${value1}
 				FCT:SET:TOPIC ${value1} "Bienvenue sur ${value1}"
-				sent2socket ":${config(server_id)} PART ${value1}"
+				FCT:SENT:SERV PART ${value1};
 				if { [console 1] == "ok" } {
 					SHOW:INFO:TO:CHANLOG "closedel" "${value1} par ${user}"
 				}
@@ -3417,7 +3463,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 				if { ${salon} != "" } {
 					FCT:SENT:MODE ${salon}
 					FCT:SET:TOPIC ${salon} "Bienvenue sur ${salon}"
-					sent2socket ":${config(server_id)} PART ${salon}"
+					FCT:SENT:SERV PART ${salon};
 				}
 			}
 			catch { close ${liste} }
@@ -3874,7 +3920,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 					set FILE_PIPE		[open "[Script:Get:Directory]/db/salon.db" w+];
 					close ${FILE_PIPE}
 				}
-				sent2socket ":${config(server_id)} PART ${value1}"
+				FCT:SENT:SERV PART ${value1};
 				SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des salons interdits."
 				if { [console 1] == "ok" } {
 					SHOW:INFO:TO:CHANLOG "chandel" "${user}"
@@ -3994,62 +4040,24 @@ proc ::EvaServ::cmds { IRC_DATA } {
 			}
 		}
 		"accessadd" {
+			set USER_NAME	${value2}
+			set USER_PASS	${value3}
 			if {
-					${value2} == ""											|| \
-					${value4} == ""											|| \
+					${USER_NAME} == ""										|| \
+					${USER_PASS} == ""										|| \
 					${value8} == ""											|| \
 					[regexp "\[^1-4\]" ${value8}]
 			} {
-				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessadd :</b> /msg ${SERVICE_BOT(name)} accessadd pseudo password level"
-				SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 1 <c04>:<c01> Helpeur"
-				SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 2 <c04>:<c01> Géofront"
-				SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 3 <c04>:<c01> IRCop"
-				SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 4 <c04>:<c01> Admin"
+				SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessadd :</b> /msg ${SERVICE_BOT(name)} accessadd <pseudo> <password> <level>"
+				dict for {NIVEAU DATA} $::EvaServ::commands {
+					dict with DATA {
+						SENT:MSG:TO:USER ${USER_LOWER} "<c02>Niveau ${NIVEAU} <c04>:<c01> ${name} (attr ${attr}) "
+					}
+				}
+
 				return 0
 			}
-			if { [string length ${value2}]>="10" } {
-				SENT:MSG:TO:USER ${USER_LOWER} "Le pseudo doit contenir maximum 9 caractères.";
-				return 0;
-			}
-
-			foreach verif [userlist] {
-				if { [string tolower ${value2}] == [string tolower ${verif}] } {
-					SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> est déja dans la liste des accès.";
-					return 0;
-				}
-
-			}
-			if { [string length ${value4}] <= 5 } {
-				SENT:MSG:TO:USER ${USER_LOWER} "Le mot de passe doit contenir minimum 6 caractères.";
-				return 0;
-			}
-
-			adduser ${value1};
-			setuser ${value1} PASS ${value3};
-			setuser ${value1} HOSTS ${value1}*!*@*;
-			setuser ${value1} HOSTS -telnet!*@*
-			switch -exact ${value8} {
-				1 {
-					chattr ${value1} +p;
-					set lvl		"helpeurs"
-				}
-				2 {
-					chattr ${value1} +op;
-					set lvl		"géofronts"
-				}
-				3 {
-					chattr ${value1} +mop;
-					set lvl		"IRCops"
-				}
-				4 {
-					chattr ${value1} +nmop;
-					set lvl		"Admins"
-				}
-			}
-			SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des ${lvl}."
-			if { [console 1] == "ok" } {
-				SHOW:INFO:TO:CHANLOG "accessadd" "${user}"
-			}
+			return [dbuser::add ${USER_LOWER} ${USER_NAME} ${USER_PASS} ${value8}]
 		}
 		"accessdel" {
 			if { ${value1} == "" } {
@@ -4173,6 +4181,7 @@ proc ::EvaServ::cmds { IRC_DATA } {
 		}
 	}
 }
+
 proc ::EvaServ::help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
 proc ::EvaServ::help:description:auth {}			{
 	variable SERVICE_BOT
@@ -4744,10 +4753,10 @@ proc ::EvaServ::connexion:server { } {
 	variable config
 	variable SERVICE_BOT
 	sent2socket "EOS"
-	sent2socket ":${config(SID)} SQLINE ${SERVICE_BOT(name)} :Reserved for services"
-	sent2socket ":${config(SID)} UID ${SERVICE_BOT(name)} 1 [unixtime] ${SERVICE_BOT(username)} ${SERVICE_BOT(hostname)} ${config(server_id)} * +qioS * * * :${SERVICE_BOT(gecos)}"
-	sent2socket ":${config(SID)} SJOIN [unixtime] ${SERVICE_BOT(channel_logs)} + :${config(server_id)}"
-	sent2socket ":${config(SID)} MODE ${SERVICE_BOT(channel_logs)} +${config(smode)}"
+	FCT:SENT:SERV SQLINE ${SERVICE_BOT(name)} :Reserved for services;
+	FCT:SENT:SERV UID ${SERVICE_BOT(name)} 1 [unixtime] ${SERVICE_BOT(username)} ${SERVICE_BOT(hostname)} ${config(server_id)} * +qioS * * * :${SERVICE_BOT(gecos)};
+	FCT:SENT:SERV SJOIN [unixtime] ${SERVICE_BOT(channel_logs)} + :${config(server_id)};
+	FCT:SENT:SERV MODE ${SERVICE_BOT(channel_logs)} +${config(smode)};
 	for { set i		0 } { ${i} < [string length ${config(chanmode)}] } { incr i } {
 		set tmode		[string index ${config(chanmode)} ${i}]
 		if { 
@@ -4764,7 +4773,7 @@ proc ::EvaServ::connexion:server { } {
 	while { ![eof ${autojoin}] } {
 		gets ${autojoin} salon;
 		if { ${salon} != "" } {
-			sent2socket ":${config(server_id)} JOIN ${salon}";
+			FCT:SENT:SERV JOIN ${salon};
 			if {
 				${config(chanmode)} == "q"									|| \
 				${config(chanmode)} == "a"									|| \
@@ -4781,7 +4790,7 @@ proc ::EvaServ::connexion:server { } {
 	while { ![eof ${ferme}] } {
 		gets ${ferme} salle;
 		if { ${salle} != "" } {
-			sent2socket ":${config(server_id)} JOIN ${salle}";
+			FCT:SENT:SERV JOIN ${salle};
 			FCT:SENT:MODE ${salle} "+sntio" ${SERVICE_BOT(name)};
 			FCT:SET:TOPIC ${salle} "<c1>Salon Fermé le [duree [unixtime]]";
 			sent2socket ":${config(link)} NAMES ${salle}"
@@ -5158,7 +5167,7 @@ proc ::EvaServ::link { idx arg } {
 				![info exists admins(${n})]								&& \
 				[protection ${n} ${config(protection)}] != "ok"
 			} {
-				sent2socket ":${config(server_id)} KICK ${chan} ${n} Kicked [rnick ${config(rep)}]"
+				FCT:SENT:SERV KICK ${chan} ${n} Kicked [rnick ${config(rep)}];
 			} elseif {
 				${config(cmd)} == "chankill"								&& \
 				![info exists users(${n})]									&& \
@@ -5166,7 +5175,7 @@ proc ::EvaServ::link { idx arg } {
 				![info exists admins(${n})]									&& \
 				[protection ${n} ${config(protection)}] != "ok"
 			} {
-				sent2socket ":${config(server_id)} KILL ${n} Chan Killed [rnick ${config(rep)}]";
+				FCT:SENT:SERV KILL ${n} Chan Killed [rnick ${config(rep)}];
 				refresh ${n}
 			} elseif {
 				${config(cmd)} == "changline"								&& \
@@ -5183,7 +5192,7 @@ proc ::EvaServ::link { idx arg } {
 				![info exists admins(${n})]									&& \
 				[protection ${n} ${config(protection)}] != "ok"
 			} {
-				sent2socket ":${config(server_id)} KICK ${chan} ${n} Salon Interdit"
+				FCT:SENT:SERV KICK ${chan} ${n} Salon Interdit;
 			} elseif {
 				${config(cmd)} == "closeadd"								&& \
 				![info exists users(${n})]									&& \
@@ -5192,9 +5201,9 @@ proc ::EvaServ::link { idx arg } {
 				[protection ${n} ${config(protection)}] != "ok"
 			} {
 				if { [info exists config(rep)] } {
-					sent2socket ":${config(server_id)} KICK ${chan} ${n} Closed [rnick ${config(rep)}]"
+					FCT:SENT:SERV KICK ${chan} ${n} Closed [rnick ${config(rep)}];
 				} else {
-					sent2socket ":${config(server_id)} KICK ${chan} ${n} Closed"
+					FCT:SENT:SERV KICK ${chan} ${n} Closed;
 				}
 
 			}
@@ -5256,7 +5265,7 @@ proc ::EvaServ::link { idx arg } {
 					} {
 						SHOW:INFO:TO:CHANLOG "Kill" "${user} a été killé : ${config(rclient)}"
 					}
-					sent2socket ":${config(server_id)} KILL ${USER_LOWER} ${config(rclient)}";
+					FCT:SENT:SERV KILL ${USER_LOWER} ${config(rclient)};
 					refresh ${USER_LOWER}
 					break
 				}
@@ -5406,7 +5415,7 @@ proc ::EvaServ::link { idx arg } {
 					} {
 						SHOW:INFO:TO:CHANLOG "Kill" "${new} a été killé : ${config(ruser)}"
 					}
-					sent2socket ":${config(server_id)} KILL ${vnew} ${config(ruser)}";
+					FCT:SENT:SERV KILL ${vnew} ${config(ruser)};
 					break;
 					refresh ${vnew}
 				}
@@ -5554,7 +5563,7 @@ proc ::EvaServ::link { idx arg } {
 				[protection ${USER_LOWER} ${config(protection)}] != "ok"
 			} {
 				set config(cmd)		"badchan";
-				sent2socket ":${config(server_id)} JOIN ${vchan}";
+				FCT:SENT:SERV JOIN ${vchan};
 				FCT:SENT:MODE ${vchan} "+ntsio" ${SERVICE_BOT(name)}
 				FCT:SET:TOPIC ${vchan} "<c1>Salon Interdit le [duree [unixtime]]";
 				sent2socket ":${config(link)} NAMES ${vchan}"
