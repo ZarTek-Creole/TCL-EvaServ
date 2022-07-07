@@ -36,7 +36,7 @@
       <a href="#about-the-project">About The Project / À propos du projet</a>
     </li>
     <li>
-      <a href="#getting-started">Getting Started / Commencer</a>
+      <a href="#getting-started">Getting Started / Commencez</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites / Conditions préalables</a></li>
         <li><a href="#installation">Installation / Configuration</a></li>
@@ -54,8 +54,8 @@
 <!-- ABOUT THE PROJECT -->
 ## A propos EvaServ
 
-EvaServ est un ensemble de Services IRC écris en TCL et fonctionenant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
-Il à été tester sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveau protocol IRC, il est compatible avec la nouvelle generation de serveurs d'IRCD.
+EvaServ est un ensemble de Services IRC écris en TCL et fonctionnant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
+Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveau protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
 
 EvaServ est utile pour :
 * La gestion des salons sur votre réseau
@@ -73,16 +73,16 @@ EvaServ est utile pour :
 * [tcl-tls](https://core.tcl-lang.org/tcltls/home)
 
 ### Installation
-1.1.  Récuperer le code EvaServ
-1.1.1 Première étape, véfirier que les dependances sont installer et présente :
+1.1.  Récuperez le code EvaServ
+1.1.1 Première étape, vérifier que les dépendances sont installées et présentes :
 * [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 * [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
 * [Client Git](https://git-scm.com/downloads)
 * [tcllib](https://github.com/tcltk/tcllib)
 * [tcl-tls](https://core.tcl-lang.org/tcltls/home)
 
-1.1.2 Télécharger EvaServ
-Télécharger le code d'EvaServ dans votre répertoire scripts/ de votre eggdrop
+1.1.2 Téléchargez EvaServ
+Téléchargez le code d'EvaServ dans votre répertoire scripts/ de votre eggdrop
 
 Exemple ```/home/votre-dossier/eggdrop/scripts/EvaServ```
 ```
@@ -95,39 +95,39 @@ unzip EvaServ.zip -d /home/votre-dossier/eggdrop/scripts/EvaServ
 ```
 
 1.2. Configuration de l'eggdrop
-Deuxieme étape, ouvrez le fichier de configuration de votre eggdrop ```eggdrop.conf``` et ajoutez la ligne ci-dessous :
+Deuxième étape, ouvrez le fichier de configuration de votre eggdrop ```eggdrop.conf``` et ajoutez la ligne ci-dessous :
 ```
 source /home/votre-dossier/eggdrop/scripts/Eva/EvaServ.tcl
 ```
-Si vous devez charger des dependances pensez a le mettre au dessus de EvaServ.tcl dans votre fichier eggdrop.conf
+Si vous devez charger des dépendances pensez à le mettre au dessus de EvaServ.tcl dans votre fichier eggdrop.conf
 
 1.3.  Configuration de Eva Service
 Troisième étape, renommez le fichier ```Eva.example.conf``` en ```EvaServ.conf``` et configurez celui-ci en fonction de votre serveur IRCD
 
 1.4.  Configuration de votre IRCD (UnrealIRCd 5 et +)
-Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisée dans "EvaServ.conf". 
+Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisé dans "EvaServ.conf". 
 
 [Comment créer un link Service sur UnrealIRCd](http://www.exolia.fr/guide-lire-11.html)
 # premier lancement
-Lors du premier lancement, aucun compte utilisateur n'existe, pour creer votre compte vous devez vous identifier
+Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
-Celà aura comme effet de vous creer un compte de niveau 4 (Admin) par default
+Cela aura comme effet de vous créer un compte de niveau 4 (Admin) par défaut
 2. Un peu plus loin
-2.1. Debug general
+2.1. Débug général
 Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line  pour voir les erreurs directement dans le fichier "logs/Eva.debug".
 ```
 .evadebug on 
 ```
 2.2. Debug Socket/Link
-Pour activer le mode *socket debug* changer la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
+Pour activer le mode *socket debug* changez la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Avant de l'utiliser prenez conscient que EvaServ ce compose de deux elements distinct : 
+Avant de l'utiliser prenez conscience que EvaServ se compose de deux éléments distincts : 
 * Votre eggdrop
 * Le service EvaServ
 Votre eggdrop permet de charger les services Eva et annoncer sur votre salon services ```SERVICE_BOT(channel)``` des informations de l'utilisation.
-Tandis que le service Eva (bot separer sur irc) est le services en lui même ou les commandes seront envoyer
+Tandis que le service Eva (bot séparer sur irc) est le service en lui-même ou les commandes seront envoyées
 
 Pour obtenir de l'aide
 ```/msg <nom d'eva> help```
@@ -155,11 +155,11 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a [Pull Request](github.com/ZarTek-Creole/TCL-Eva-Service/pulls)
 
 ---
-Les contributions sont ce qui fait de la communauté open source un endroit incroyable pour apprendre, inspirer et créer. Toute contribution que vous apportez est ** grandement appréciée **.
+Les contributions sont ce qui font de la communauté open source un endroit incroyable pour apprendre, inspirer et créer. Toute contribution que vous apportez est ** grandement appréciée **.
 1. Forkez le projet
 2. Créez votre branche de fonctionnalités (`git checkout -b feature/AmazingFeature`)
 3. Validez vos modifications (`git commit -m 'Add some AmazingFeature'`)
-4. Pousser vers la branche (`git push origin feature/AmazingFeature`)
+4. Poussez vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrez une [Pull Request](github.com/ZarTek-Creole/TCL-Eva-Service/pulls)
 
 <!-- LICENSE -->
@@ -175,7 +175,7 @@ ZarTek - [@ZarTek](github.com/ZarTek-Creole) - ZarTek.Creole@GMail.com
 Project Link: [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
 
 1. Tickets
-Signalez tout bugs, toutes idées :
+Signalez tout bug, toutes idées :
 * [Creez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
 
 2. IRC
@@ -188,11 +188,11 @@ Vous pouvez me contacter sur IRC :
 ## Acknowledgements
 * TiSMA de Exolia.net pour le code d'origine
 * Amandine de eggdrop.Fr pour son aide/idées/testes/..
-* MenzAgitat car dans mes developpements il y a toujours des astuces/maniere de faire fournis par MenzAgitat ou bout code de MenzAgitat
+* MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
 
 ## infos en vrac
 
-Dans le fichier configuration pous pouvez configurer chaques commandes a un niveau precis 
+Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
@@ -207,4 +207,3 @@ Dans le fichier configuration pous pouvez configurer chaques commandes a un nive
 [license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
 [license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
-
