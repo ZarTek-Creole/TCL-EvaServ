@@ -226,7 +226,7 @@ Vous pouvez me contacter sur IRC :
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
 * TiSMA de Exolia.net pour le code d'origine
-* Amandine de eggdrop.Fr pour son aide/idées/testes/..
+* Amandine de eggdrop.Fr pour son aide/idées/tests/..
 * MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
 
 ## infos en vrac
