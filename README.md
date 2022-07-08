@@ -107,14 +107,14 @@ Troisième étape, renommez le fichier ```Eva.example.conf``` en ```EvaServ.conf
 1.4.  Configuration de votre IRCD (UnrealIRCd 5 et +)
 Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisé dans "EvaServ.conf". 
 
-```Comment créer un link Service sur UnrealIRCd```
+```Comment créer un link EvaServ sur UnrealIRCd```
 
-Afin de réaliser votre link Service, veuillez vérifier si vous disposez d'un port dédié pour vos links ( plusieurs listen ) ou bien d'un mono port ( un seul listen ) :  
+Afin de réaliser votre link EvaServ, veuillez vérifier si vous disposez d'un port dédié pour vos links ( plusieurs listen ) ou bien d'un mono port ( un seul listen ) :  
 
 * Port dédié
 ```
 listen IP-serveur:port-dedie {  
-options {  
+    options {  
 serversonly;  
 };  
 };  
@@ -127,7 +127,7 @@ listen IP-serveur:mono-port;
 * Ajouter la uline
 ```
 ulines {  
-Service.nom-de-domaine.fr;  
+EvaServ.nom-de-domaine.fr;  
 ...  
 ...  
 };
@@ -145,7 +145,7 @@ password-receive "mot-de-passe-link";
 class servers;  
 };
 ```
-Enregistrez le fichier de configuration et uploadez le sur le FTP. N'oubliez pas de _Rehash_ votre serveur.  
+Enregistrez le fichier de configuration. N'oubliez pas de _Rehash_ votre serveur.  
 ```/rehash```
 # Premier lancement
 Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
