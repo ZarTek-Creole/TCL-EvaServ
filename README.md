@@ -44,7 +44,7 @@
     </li>
     <li><a href="#usage">Usage / Utilisation</a></li>
     <li><a href="#roadmap">Roadmap / Feuille de route</a></li>
-    <li><a href="#contributing">Contributing / Contribuant </a></li>
+    <li><a href="#contributing">Contributing / Contributions</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgements">Acknowledgements /Remerciements</a></li>
@@ -55,13 +55,13 @@
 ## A propos EvaServ
 
 EvaServ est un ensemble de Services IRC écris en TCL et fonctionnant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
-Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveau protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
+Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
 
 EvaServ est utile pour :
 * La gestion des salons sur votre réseau
 * ...
 
-### Prerequisites
+### Prérequis
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
 * [Unrealircd (v5.0+)](http://www.eggheads.org/)
   * EN: IRC server new protocol
@@ -73,8 +73,8 @@ EvaServ est utile pour :
 * [tcl-tls](https://core.tcl-lang.org/tcltls/home)
 
 ### Installation
-1.1.  Récuperez le code EvaServ
-1.1.1 Première étape, vérifier que les dépendances sont installées et présentes :
+1.1.  Récupérez le code EvaServ
+1.1.1 Première étape, vérifiez que les dépendances sont installées et présentes :
 * [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 * [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
 * [Client Git](https://git-scm.com/downloads)
@@ -107,8 +107,47 @@ Troisième étape, renommez le fichier ```Eva.example.conf``` en ```EvaServ.conf
 1.4.  Configuration de votre IRCD (UnrealIRCd 5 et +)
 Quatrième étape, il vous suffit de configurer le link dans votre fichier "unrealircd.conf" en fonction de la configuration que vous aurez réalisé dans "EvaServ.conf". 
 
-[Comment créer un link Service sur UnrealIRCd](http://www.exolia.fr/guide-lire-11.html)
-# premier lancement
+```Comment créer un link Service sur UnrealIRCd```
+
+Afin de réaliser votre link Service, veuillez vérifier si vous disposez d'un port dédié pour vos links ( plusieurs listen ) ou bien d'un mono port ( un seul listen ) :  
+
+* Port dédié
+```
+listen IP-serveur:port-dedie {  
+options {  
+serversonly;  
+};  
+};  
+```  
+* Mono Port 
+```
+listen IP-serveur:mono-port;
+```
+  
+* Ajouter la uline
+```
+ulines {  
+Service.nom-de-domaine.fr;  
+...  
+...  
+};
+```
+* Ajouter le link
+```
+link Service.nom-de-domaine.fr {  
+username *;  
+hostname IP-link;  
+bind-ip *;  
+port Port-link;  
+hub *;  
+password-connect "mot-de-passe-link";  
+password-receive "mot-de-passe-link";  
+class servers;  
+};
+```
+Enregistrez le fichier de configuration et uploadez le sur le FTP. N'oubliez pas de _Rehash_ votre serveur.  
+```/rehash```
+# Premier lancement
 Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
 Cela aura comme effet de vous créer un compte de niveau 4 (Admin) par défaut
@@ -207,3 +246,4 @@ Dans le fichier configuration vous pouvez configurer chaque commande à un nivea
 [license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
 [license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
+
