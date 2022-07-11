@@ -67,7 +67,7 @@ namespace eval ::EvaServ {
 		"rident"				"L'accès à ce t'chat est un privilège et non un droit. (IR)"	\
 		"rreal"					"L'accès à ce t'chat est un privilège et non un droit. (BR)"	\
 		"ruser"					"L'accès à ce t'chat est un privilège et non un droit. (BN)"	\
-		"raison"				"Maintenance Technique"							\
+		"<Raison>"				"Maintenance Technique"							\
 		"console_com"			"02"											\
 		"console_deco"			"03"											\
 		"console_txt"			"01"											\
@@ -97,7 +97,7 @@ namespace eval ::EvaServ {
 		"rident"																\
 		"rreal"																	\
 		"ruser"																	\
-		"raison"																\
+		"<Raison>"																\
 		"console_com"															\
 		"console_deco"															\
 		"console_txt"															\
@@ -160,9 +160,9 @@ namespace eval ::EvaServ {
 		namespace delete ::EvaServ
 
 	}
-	namespace eval ::EvaServ::dbuser {
-		namespace import -force ::EvaServ::*
-	}
+}
+namespace eval ::EvaServ::dbuser {
+	namespace import -force ::EvaServ::*
 }
 proc ::EvaServ::dbuser::count { } {
 	set USER_COUNT	0
@@ -172,6 +172,9 @@ proc ::EvaServ::dbuser::count { } {
 		}
 	}
 	return ${USER_COUNT}
+}
+proc ::EvaServ::dbuser::getlevel { USER_NAME } {
+	return [dict get [getuser ${USER_NAME} XTRA EvaServ] NIVEAU]
 }
 proc ::EvaServ::dbuser::add { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
 	variable ::EvaServ::commands
@@ -227,6 +230,509 @@ proc ::EvaServ::dbuser::add { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
 	::EvaServ::SHOW:INFO:TO:CHANLOG "auth" [format "Le compte <b>%s</b> à été creer au rang de <b>%s</b> par <b>%s</b>" ${USER_NAME} ${NIVEAU_NAME} ${USER_ADDER}];
 	return 1
 }
+namespace eval ::EvaServ::command {
+	namespace import -force ::EvaServ::*
+	namespace export *
+}
+#TODO: Deplacer le données help dans un dictionnaire dans la conf
+proc ::EvaServ::command::help { NICK_SOURCE hcmd } {
+	variable SERVICE_BOT
+	if { ![authed ${NICK_SOURCE} ${hcmd}] } { return 0 }
+	switch -exact ${hcmd} {
+		"deauth" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deauth" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deauth]
+		}
+		"seen" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s seen <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:seen]
+		}
+		"showcommands" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s showcommands" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:showcommands]
+		}
+		"map" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s map" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:map]
+		}
+		"whois" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s whois <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:whois]
+		}
+		"shun" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s shun <Pseudonyme-ou-IP> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:shun]
+		}
+		"access" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s access <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:access]
+		}
+		"ban" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s ban <#Salon> <Mask>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ban]
+		}
+		"clearallmodes" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clearallmodes <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearallmodes]
+		}
+		"clearbans" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clearbans <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearbans]
+		}
+		"clearmodes" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clearmodes <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearmodes]
+		}
+		"dehalfop" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s dehalfop <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:dehalfop]
+		}
+		"dehalfopall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s dehalfopall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:dehalfopall]
+		}
+		"deop" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deop <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deop]
+		}
+		"deopall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deopall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deopall]
+		}
+		"deowner" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deowner <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deowner]
+		}
+		"deownerall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deownerall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deownerall]
+		}
+		"deprotect" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deprotect <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deprotect]
+		}
+		"deprotectall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s deprotectall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deprotectall]
+		}
+		"devoice" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s devoice <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:devoice]
+		}
+		"devoiceall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s devoiceall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:devoiceall]
+		}
+		"gline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s gline <Pseudonyme-ou-IP> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:gline]
+		}
+		"glinelist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s glinelist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:glinelist]
+		}
+		"shunlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s shunlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:shunlist]
+		}
+		"globops" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s globops <Message>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:globops]
+		}
+		"halfop" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s halfop <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:halfop]
+		}
+		"halfopall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s halfopall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:halfopall]
+		}
+		"invite" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s invite <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:invite]
+		}
+		"inviteme" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s inviteme" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:inviteme]
+		}
+		"kick" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s kick <#Salon> <Pseudonyme> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kick]
+		}
+		"kickall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s kickall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kickall]
+		}
+		"kickban" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s kickban <#Salon> <Pseudonyme> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kickban]
+		}
+		"kill" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s kill <Pseudonyme> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kill]
+		}
+		"kline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s kline <Pseudonyme-ou-IP> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kline]
+		}
+		"klinelist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s klinelist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:klinelist]
+		}
+		"mode" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s mode <#Salon> <+/-Mode(s)>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:mode]
+		}
+		"newpass" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s newpass <Mot-De-Passe>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:newpass]
+		}
+		"nickban" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s nickban <#Salon> <Pseudonyme> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickban]
+		}
+		"op" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s op <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:op]
+		}
+		"opall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s opall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:opall]
+		}
+		"owner" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s owner <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:owner]
+		}
+		"ownerall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s ownerall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ownerall]
+		}
+		"protect" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s protect <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protect]
+		}
+		"protectall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s protectall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protectall]
+		}
+		"topic" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s topic <#Salon> <Topic>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:topic]
+		}
+		"unban" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s unban <#Salon> <Mask>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unban]
+		}
+		"ungline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s ungline <Ident@HostName-or-IP>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ungline]
+		}
+		"unshun" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s unshun <Pseudonyme> <Raison>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unshun]
+		}
+		"unkline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s unkline <Ident@HostName-or-IP>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unkline]
+		}
+
+		"voice" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s voice <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:voice]
+		}
+		"voiceall" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s voiceall <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:voiceall]
+		}
+		"wallops" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s wallops <Message>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:wallops]
+		}
+		"changline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s changline <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:changline]
+		}
+		"chankill" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s chankill <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chankill]
+		}
+		"chanlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s chanlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanlist]
+		}
+		"closeclear" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s closeclear" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closeclear]
+		}
+		"cleargline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s cleargline" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:cleargline]
+		}
+		"clearkline" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clearkline" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearkline]
+		}
+		"clientlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clientlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientlist]
+		}
+		"closeadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s closeadd <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closeadd]
+		}
+		"closelist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s closelist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closelist]
+		}
+		"hostlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s hostlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostlist]
+		}
+		"identlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s identlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identlist]
+		}
+		"join" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s join <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:join]
+		}
+		"list" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s list" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:list]
+		}
+		"nicklist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s nicklist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nicklist]
+		}
+		"notice" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s notice <Message>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:notice]
+		}
+		"part" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s part <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:part]
+		}
+		"reallist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s reallist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:reallist]
+		}
+		"say" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s say <#Salon> <Message>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:say]
+		}
+		"status" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s status" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:status]
+		}
+		"svsjoin" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s svsjoin <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svsjoin]
+		}
+		"svsnick" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s svsnick <Ancien-Pseudonyme> <Nouveau-Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svsnick]
+		}
+		"svspart" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s svspart <#Salon> <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svspart]
+		}
+		"trustlist" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s trustlist" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustlist]
+		}
+		"closedel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s closedel <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closedel]
+		}
+		"accessadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s accessadd <Pseudonyme> <Mot-De-Passe> level" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessadd]
+		}
+		"chanadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s chanadd <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanadd]
+		}
+		"clientadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clientadd <Version>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientadd]
+		}
+		"hostadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s hostadd <HostName>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostadd]
+		}
+		"identadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s identadd <ident>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identadd]
+		}
+		"nickadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s nickadd <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickadd]
+		}
+		"realadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s realadd <realname>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:realadd]
+		}
+		"trustadd" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s trustadd <Mask>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustadd]
+		}
+		"backup" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s backup" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:backup]
+		}
+		"chanlog" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s chanlog <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanlog]
+		}
+		"client" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s client <On/Off>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:client]
+		}
+		"console" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s console <0/1/2/3>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 0 <c04>:<c01> Aucune console"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 1 <c04>:<c01> Console commande"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 3 <c04>:<c01> Toutes les consoles"
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:console]
+		}
+		"accessdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s accessdel <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessdel]
+		}
+		"chandel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s chandel <#Salon>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chandel]
+		}
+		"clientdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s clientdel <Version>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientdel]
+		}
+		"hostdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s hostdel <hostname>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostdel]
+		}
+		"identdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s identdel <ident>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identdel]
+		}
+		"nickdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s nickdel <Pseudonyme>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickdel]
+		}
+		"realdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s realdel <realname>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:realdel]
+		}
+		"trustdel" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s trustdel <Mask>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustdel]
+		}
+		"die" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s die" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:die]
+		}
+		"maxlogin" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s maxlogin <On/Off>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:maxlogin]
+		}
+		"accessmod" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s accessmod pass <Pseudonyme> <Mot-De-Passe>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s accessmod level <Pseudonyme> <Niveau>" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessmod]
+		}
+		"protection" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s protection 0/1/2/3/4" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 0 <c04>:<c01> Aucune Protection"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 1 <c04>:<c01> Protection Admins"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
+			SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protection]
+		}
+		"restart" {
+			SENT:MSG:TO:USER ${NICK_SOURCE} [format "<b>Commande Help :</b> /msg %s restart" ${SERVICE_BOT(name)}];
+			SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:restart]
+		}
+	}
+}
+namespace eval ::EvaServ::command::irc {
+	namespace import -force ::EvaServ::*
+	namespace export *
+}
+proc ::EvaServ::command::irc::auth { IRC_DATA } {
+	set IRC_USER		[lindex ${IRC_DATA} 1]
+	set IRC_USER_LOWER	[string tolower ${IRC_USER}]
+	if { [lindex ${IRC_DATA} 2] == "" } { ::EvaServ::command::help ${IRC_USER} [namespace tail [namespace current]]; return 0 }
+	if { [lindex ${IRC_DATA} 3] == "" } {
+		set USER_NAME	${IRC_USER}
+		set USER_PASS	[lindex ${IRC_DATA} 2]
+	} else {
+		set USER_NAME	[lindex ${IRC_DATA} 2]
+		set USER_PASS	[lindex ${IRC_DATA} 3]
+	}
+	# Verification si des utilisateurs 'eva' exists
+	if { [::EvaServ::dbuser::count] == 0 } {
+		# Si aucun utilisateurs Eva, nous creons le compte en tant que ircop supreme
+		if {
+			![validuser ${USER_NAME}]										&& \
+				[getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}] == ""		&& \
+			} {
+				SENT:MSG:TO:USER ${IRC_USER} \
+				[format "%s, pour creer votre compte ircop, vous devez être operateur sur le salon %s." \
+				${USER_NAME} ${SERVICE_BOT(channel)}];
+			return 0
+		}
+		if ![dbuser::add ${IRC_USER} ${USER_NAME} ${USER_PASS} 4] { return 0 }
+	}
+	if { ![passwdok ${USER_NAME} ${USER_PASS}] } {
+		SENT:MSG:TO:USER ${IRC_USER} "L'authentification à échoué, un mauvais mot de passe à été fournis.";
+		SHOW:INFO:TO:CHANLOG "auth" [format "L'authentification à échoué pour le Pseudonyme %s du compte de %s." ${IRC_USER} ${USER_NAME}];
+		return 0;
+	}
+	if {
+		![matchattr ${USER_NAME} o]											|| \
+			![matchattr ${USER_NAME} m]											|| \
+			[matchattr ${USER_NAME} n]
+	} {
+		if { ${config(login)} == 1 } {
+			foreach { pseudo login } [array get admins] {
+				if {
+					${login} == [string tolower ${USER_NAME}]				&& \
+						${pseudo} != ${IRC_USER_LOWER}
+				} {
+					SENT:MSG:TO:USER ${IRC_USER} [format "Maximum de connexion est atteint pour %s." ${USER_NAME}];
+					return 0;
+				}
+			}
+		}
+		if { ![info exists admins(${IRC_USER_LOWER})] } {
+			set admins(${IRC_USER_LOWER})		[string tolower ${USER_NAME}]= "ok"
+			if {
+				[info exists vhost(${IRC_USER_LOWER})]						&& \
+					![info exists protect($vhost(${IRC_USER_LOWER}))]
+			} {
+				SHOW:INFO:TO:CHANLOG "Protecion du host" [format "%s de %s (Activé)" $vhost(${IRC_USER_LOWER}) ${USER_LOWER}]
+				set protect($vhost(${IRC_USER_LOWER}))		1
+			}
+			setuser [string tolower ${USER_NAME}] LASTON [unixtime]
+			SENT:MSG:TO:USER ${IRC_USER} "Authentification Réussie."
+			FCT:SENT:SERV INVITE ${IRC_USER} ${SERVICE_BOT(channel_logs)};
+
+			if { [ShowOnPartyLine 1] } {
+				SHOW:INFO:TO:CHANLOG "Auth" [format "L'utilisateur %s s'est identifié au compte %s." ${user} ${USER_NAME}]
+			}
+			return 0
+		} else {
+			SENT:MSG:TO:USER ${IRC_USER} "Vous êtes déjà authentifié.";
+			return 0;
+		}
+	} elseif { [matchattr ${USER_NAME} p] } {
+		SENT:MSG:TO:USER ${IRC_USER} "Authentification Helpeur Refusée.";
+		return 0;
+	}
+
+}
 proc ::EvaServ::INIT { } {
 	variable SCRIPT
 	variable UPLINK
@@ -246,6 +752,7 @@ proc ::EvaServ::INIT { } {
 		putlog "Probleme de chargement de '[Script:Get:Directory]/EvaServ.conf':\n${err}" error
 		exit
 	}
+	#TODO: Verifié les bind dcc (ancien code)
 	bind time	- "00 00 * * *"	dbback
 	bind evnt	n prerestart	evenement
 	bind evnt	n sighup		evenement
@@ -307,7 +814,7 @@ proc ::EvaServ::INIT { } {
 		if { ${SERVICE(sid)} != ""		} { set config(uplink_ts6) 1 } else { set config(uplink_ts6) 0 }
 
 		set CONNECT_ID	[::IRCServices::connection]; # Creer une instance services
-		putlog:info "Connexion du link service ${SERVICE(hostname)}"
+		putlog:info "Connexion du link EvaServ ${SERVICE(hostname)}"
 		${CONNECT_ID} connect ${UPLINK(hostname)} ${UPLINK(port)} ${UPLINK(password)} ${config(uplink_ts6)} ${SERVICE(hostname)} ${SERVICE(sid)}; # Connexion de l'instance service
 		if { ${SERVICE(mode_debug)} == 1 } { ${CONNECT_ID} config logger 1; ${CONNECT_ID} config debug 1; }
 
@@ -389,7 +896,7 @@ proc ::EvaServ::INIT { } {
 								${SUB_CMD} != ""
 						} {
 							if { [CMD:EXIST ${SUB_CMD}] } {
-								Commands:Help ${NICK_SOURCE} ${CMD_VALUE}
+								::EvaServ::command::help ${NICK_SOURCE} ${CMD_VALUE}
 							} else {
 								SENT:MSG:TO:USER ${NICK_SOURCE} "Aide <b>${SUB_CMD}</b> Inconnue."
 							}
@@ -398,7 +905,7 @@ proc ::EvaServ::INIT { } {
 							cmds "${CMD_NAME} ${NICK_SOURCE} ${CMD_VALUE}"
 							return 0
 						}
-						Commands:Help ${NICK_SOURCE} ${CMD_VALUE}
+						::EvaServ::command::help ${NICK_SOURCE} ${CMD_VALUE}
 					} else {
 						SENT:MSG:TO:USER ${NICK_SOURCE} "Commande <b>${CMD_NAME}</b> Inconnue."
 					}
@@ -424,7 +931,7 @@ proc ::EvaServ::INIT { } {
 				} {
 					# verifie si c une command eva
 					if { [CMD:EXIST ${CMD_HELP}] } {
-						Commands:Help "${CMD_HELP} ${NICK_SOURCE} ${IRC_DATA}"
+						::EvaServ::command::help "${CMD_HELP} ${NICK_SOURCE} ${IRC_DATA}"
 					} else {
 						SENT:MSG:TO:USER ${NICK_SOURCE} "Aide <b>${CMD_HELP}</b> Inconnue."
 					}
@@ -441,7 +948,7 @@ proc ::EvaServ::INIT { } {
 							${CMD_HELP} != ""
 					} {
 						if { [CMD:EXIST ${CMD_HELP}] } {
-							Commands:Help "${CMD_HELP} ${user} ${IRC_DATA}"
+							::EvaServ::command::help "${CMD_HELP} ${user} ${IRC_DATA}"
 						}
 					} else {
 						cmds "${IRC_CMD} ${NICK_SOURCE} ${IRC_DATA}"
@@ -496,12 +1003,12 @@ proc ::EvaServ::INIT { } {
 		}
 		proc ::EvaServ::SENT:NOTICE { DEST MSG } {
 			variable BOT_ID
-			${BOT_ID}	notice ${DEST} [apply_visuals ${MSG}]
+			${BOT_ID}	notice ${DEST} [::ZCT::TXT visuals apply ${MSG}]
 		}
 
 		proc ::EvaServ::SENT:PRIVMSG { DEST MSG } {
 			variable BOT_ID
-			${BOT_ID}	privmsg ${DEST} [apply_visuals ${MSG}]
+			${BOT_ID}	privmsg ${DEST} [::ZCT::TXT visuals apply ${MSG}]
 		}
 		proc ::EvaServ::SENT:MSG:TO:USER { DEST MSG } {
 			variable SERVICE
@@ -548,68 +1055,18 @@ proc ::EvaServ::INIT { } {
 
 		}
 
-		proc ::EvaServ::authed { user IRC_CMD } {
+		proc ::EvaServ::authed { IRC_USER IRC_CMD } {
 			variable admins
-			switch -exact [CMD:TO:LEVEL ${IRC_CMD}] {
-				0 { return 1 }
-				1 {
-					if {
-						[info exists admins(${user})]								&& \
-							[matchattr $admins(${user}) p]
-					} {
-						return 1
-					} else {
-						SENT:MSG:TO:USER ${user} "Accès Refusé";
-						return 0
-					}
-				}
-				2 {
-					if {
-						[info exists admins(${user})]								&& \
-							[matchattr $admins(${user}) o]
-					} {
-						return 1
-					} else {
-						SENT:MSG:TO:USER ${user} "Accès Refusé";
-						return 0;
-					}
-				}
-				3 {
-					if {
-						[info exists admins(${user})]								&& \
-							[matchattr $admins(${user}) m]
-					} {
-						return 1;
-					} else {
-
-						SENT:MSG:TO:USER ${user} "Accès Refusé";
-						return 0;
-					}
-				}
-				4 {
-					if {
-						[info exists admins(${user})]								&& \
-							[matchattr $admins(${user}) n]
-					} {
-						return 1;
-					} else {
-
-						SENT:MSG:TO:USER ${user} "Accès Refusé";
-						return 0;
-					}
-				}
-				-1 {
-					SENT:MSG:TO:USER ${user} "Command inconnue";
-					return 0;
-				}
-				default {
-					SENT:MSG:TO:USER ${user} "Niveau inconnue";
-					return 0;
-				}
+			set CMD_LEVEL	[CMD:TO:LEVEL ${IRC_CMD}];
+			if { ${CMD_LEVEL} == "-1" } { SENT:MSG:TO:USER ${user} "Command inconnue";return 0; }
+			if { [info exists admins(${IRC_USER})] && [::EvaServ::dbuser::getlevel IRC_USER] =< ${CMD_LEVEL} } {
+				return 1
 			}
+			SENT:MSG:TO:USER ${user} [format "L'accès à la commande %s vous est refusé" ${IRC_CMD}];
+			return 0
 		}
 		###################################################################################################################################################################################################
-
+		#TODO: Enlever les résidu de l'ancien systeme de protocol
 		proc ::EvaServ::sent2socket { MSG } {
 			variable config
 			if { ${SERVICE(mode_debug)} } {
@@ -627,7 +1084,7 @@ proc ::EvaServ::INIT { } {
 			set CMD_LIST		""
 			SENT:MSG:TO:USER ${DEST} "<c01>\[ Level [dict get ${commands} ${LEVEL} name] - Niveau ${LEVEL} \]"
 			foreach CMD [lsort [dict get ${commands} ${LEVEL} cmd]] {
-				lappend CMD_LIST	"<c02>[ESPACE:DISPLAY ${CMD} ${l_espace}]<c01>"
+				lappend CMD_LIST	"<c02>[::ZCT::TXT visuals espace ${CMD} ${l_espace}]<c01>"
 				if { [incr i] > ${max}-1 } {
 					unset i
 					SENT:MSG:TO:USER ${DEST} [join ${CMD_LIST} " | "];
@@ -647,9 +1104,9 @@ proc ::EvaServ::INIT { } {
 				set CMD_LOWER	[string tolower ${CMD}];
 				set CMD_UPPER	[string toupper ${CMD}];
 				if { [info commands [subst help:description:${CMD_LOWER}]] != "" } {
-					SENT:MSG:TO:USER ${DEST} "<c02>[ESPACE:DISPLAY ${CMD_UPPER} ${l_espace}]<c01> \[<c04> [[subst help:description:${CMD_LOWER}]] <c01>\]";
+					SENT:MSG:TO:USER ${DEST} "<c02>[::ZCT::TXT visuals espace ${CMD_UPPER} ${l_espace}]<c01> \[<c04> [[subst help:description:${CMD_LOWER}]] <c01>\]";
 				} else {
-					SENT:MSG:TO:USER ${DEST} "<c02>[ESPACE:DISPLAY ${CMD_UPPER} ${l_espace}]<c01> \[<c07> Aucune description disponibles <c01>\]";
+					SENT:MSG:TO:USER ${DEST} "<c02>[::ZCT::TXT visuals espace ${CMD_UPPER} ${l_espace}]<c01> \[<c07> Aucune description disponibles <c01>\]";
 				}
 			}
 			SENT:MSG:TO:USER ${DEST} "<c>";
@@ -657,7 +1114,7 @@ proc ::EvaServ::INIT { } {
 		proc ::EvaServ::SHOW:INFO:TO:CHANLOG { TYPE DATA } {
 			variable config
 			variable SERVICE_BOT
-			SENT:MSG:TO:USER ${SERVICE_BOT(channel_logs)} "<c${config(console_com)}>[ESPACE:DISPLAY ${TYPE} 16]<c${config(console_deco)}>:<c${config(console_txt)}> ${DATA}"
+			SENT:MSG:TO:USER ${SERVICE_BOT(channel_logs)} "<c${config(console_com)}>[::ZCT::TXT visuals espace ${TYPE} 16]<c${config(console_deco)}>:<c${config(console_txt)}> ${DATA}"
 		}
 		proc ::EvaServ::CMD:LIST { } {
 			variable commands
@@ -679,6 +1136,7 @@ proc ::EvaServ::INIT { } {
 			if { [lsearch -nocase [CMD:LIST] ${CMD}] == "-1" } { return 0 }
 			return 1
 		}
+		#TODO: Enlever les résidu de l'ancien systeme de protocol (suite)
 		proc ::EvaServ::UID:CONVERT { ID } {
 			variable UID_DB
 			if { [info exists UID_DB([string toupper ${ID}])] } {
@@ -705,7 +1163,7 @@ proc ::EvaServ::INIT { } {
 			FCT:SENT:SERV MODE ${DEST} ${MODE} ${CIBLE};
 		}
 		proc ::EvaServ::FCT:SET:TOPIC { DEST TOPIC } {
-			FCT:SENT:SERV TOPIC ${DEST} :[apply_visuals ${TOPIC}];
+			FCT:SENT:SERV TOPIC ${DEST} :[::ZCT::TXT visuals apply ${TOPIC}];
 		}
 		proc ::EvaServ::FCT:DATA:TO:NICK { DATA } {
 			if { [string range ${DATA} 0 0] == 0 } {
@@ -768,6 +1226,7 @@ proc ::EvaServ::INIT { } {
 			puts ${FILE_PIPE} "config(aclient) ${config(aclient)}"
 			close ${FILE_PIPE}
 		}
+		#TODO: mettre la liste des db en namespace parent
 		proc ::EvaServ::dbback { min h d m y } {
 			variable config
 			gestion
@@ -775,11 +1234,11 @@ proc ::EvaServ::INIT { } {
 			foreach DB_NAME ${DB_LIST} {
 				exec cp -f [Script:Get:Directory]/db/${DB_NAME}.db [Script:Get:Directory]/db/${DB_NAME}.bak
 			}
-			if { [console 1] == "ok" } {
+			if { [ShowOnPartyLine 1] } {
 				SHOW:INFO:TO:CHANLOG "Backup" "Sauvegarde des databases."
 			}
 		}
-
+		#TODO: exporter dans ZCT
 		proc ::EvaServ::duree { temps } {
 			switch -exact [lindex [ctime ${temps}] 1] {
 				"Jan" { set mois	"01" }
@@ -812,19 +1271,19 @@ proc ::EvaServ::INIT { } {
 			set seen		"${jour}/${mois}/${annee} à ${heure}"
 			return ${seen}
 		}
-
-		proc ::EvaServ::console { level } {
+		proc ::EvaServ::ShowOnPartyLine  { level } {
 			variable config
 			switch -exact ${level} {
 				1	{
-					if { ${config(console)} >= 1 } { return ok }
+					if { ${config(console)} >= 1 } { return 1 }
 				}
 				2	{
-					if { ${config(console)} >= 2 } { return ok }
+					if { ${config(console)} >= 2 } { return 1 }
 				}
 				3	{
-					if { ${config(console)} >= 3 } { return ok }
+					if { ${config(console)} >= 3 } { return 1 }
 				}
+				default { return 0 }
 			}
 		}
 
@@ -867,7 +1326,7 @@ proc ::EvaServ::INIT { } {
 			# verif nick?
 			if { ${config(anick)} == 1 } { lappend MSG_security_check "Nick: On"; } else { lappend MSG_security_check "Nick: Off"; }
 
-			if { [console 2] == "ok" } {
+			if { [ShowOnPartyLine 2] } {
 				SHOW:INFO:TO:CHANLOG "Security Check" [join ${MSG_security_check} " | "]
 			}
 
@@ -885,7 +1344,7 @@ proc ::EvaServ::INIT { } {
 							${verif2} != ""
 					} {
 						if {
-							[console 1] == "ok"										&& \
+							[ShowOnPartyLine 1]										&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Kill" "${nickname} a été killé : ${config(rhost)}"
@@ -907,7 +1366,7 @@ proc ::EvaServ::INIT { } {
 							${verif3} != ""
 					} {
 						if {
-							[console 1] == "ok"										&& \
+							[ShowOnPartyLine 1]										&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Kill" "${nickname} (${verif3}) a été killé : ${config(rident)}"
@@ -929,7 +1388,7 @@ proc ::EvaServ::INIT { } {
 							${verif4} != ""
 					} {
 						if {
-							[console 1] == "ok"										&& \
+							[ShowOnPartyLine 1]										&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Kill" "${nickname} (Realname: ${verif4}) a été killé : ${config(rreal)}"
@@ -951,7 +1410,7 @@ proc ::EvaServ::INIT { } {
 							${verif5} != ""
 					} {
 						if {
-							[console 1] == "ok"										&& \
+							[ShowOnPartyLine 1]										&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Kill" "${nickname} a été killé : ${config(ruser)}"
@@ -965,64 +1424,65 @@ proc ::EvaServ::INIT { } {
 				catch { close ${liste5} }
 			}
 		}
-
-		proc ::EvaServ::protection { user level } {
+		#TODO: a refaire
+		proc ::EvaServ::protection { user {level ""} } {
 			variable config
 			variable netadmin
 			variable admins
 			variable vhost
+			if { ${level} == "" } { set level ${config(protection)} }
 			switch -exact ${level} {
 				0 {
-					if { [info exists netadmin(${user})] } { return ok }
+					if { [info exists netadmin(${user})] } { return 1 }
 				}
 				1 {
 					if { [info exists netadmin(${user})] } {
-						return ok
+						return 1
 						} elseif { [
 							info exists admins(${user})]								&& \
 								[matchattr $admins(${user}) n]
 						} {
-						return ok
+						return 1
 					}
 				}
 				2 {
 					if { [info exists netadmin(${user})] } {
-						return ok
+						return 1
 					} elseif {
 						[info exists admins(${user})]								&& \
 							[matchattr $admins(${user}) m]
 					} {
-						return ok
+						return 1
 					}
 				}
 				3 {
 					if { [info exists netadmin(${user})] } {
-						return ok
+						return 1
 					} elseif {
 						[info exists admins(${user})]								&& \
 							[matchattr $admins(${user}) o]
 					} {
-						return ok
+						return 1
 					}
 				}
 				4 {
 					if { [info exists netadmin(${user})] } {
-						return ok
+						return 1
 					} elseif {
 						[info exists admins(${user})]								&& \
 							[matchattr $admins(${user}) p]
 					} {
-						return ok
+						return 1
 					}
 				}
 			}
 		}
-
+		#TODO: c'est quoi? sert a quoi?
 		proc ::EvaServ::rnick { user } {
 			variable config
 			if { ${config(rnick)} == 1 } { return "(${user})" }
 		}
-
+		#TODO: verifié si tjs valide
 		proc ::EvaServ::prerehash { arg } {
 			variable config
 			if {
@@ -1057,14 +1517,14 @@ proc ::EvaServ::INIT { } {
 					unset config(idx)
 				}
 			}
-
+			#TODO: deplacer les commande ppl dans un namespace special
 			proc ::EvaServ::eva { nick idx arg } {
 				variable SCRIPT
 				sent2ppl ${idx} "<c01,01>------------<b><c00> Commandes de ${SCRIPT(name)} <c01>------------"
 				sent2ppl ${idx} " "
 				sent2ppl ${idx} "<c01> .evaconnect <c03>: <c14>Connexion de ${SCRIPT(name)}"
 				sent2ppl ${idx} "<c01> .evadeconnect <c03>: <c14>Déconnexion de ${SCRIPT(name)}"
-				sent2ppl ${idx} "<c01> .evadebug on/off <c03>: <c14>Mode debug de ${SCRIPT(name)}"
+				sent2ppl ${idx} "<c01> .evadebug On/Off <c03>: <c14>Mode debug de ${SCRIPT(name)}"
 				sent2ppl ${idx} "<c01> .evainfos <c03>: <c14>Voir les infos de ${SCRIPT(name)}"
 				sent2ppl ${idx} "<c01> .evauptime <c03>: <c14>Uptime de ${SCRIPT(name)}"
 				sent2ppl ${idx} "<c01> .evaversion <c03>: <c14>Version de ${SCRIPT(name)}"
@@ -1193,7 +1653,7 @@ proc ::EvaServ::INIT { } {
 					${status} != "on"														&& \
 						${status} != "off"
 				} {
-					sent2ppl ${idx} ".evadebug on/off";
+					sent2ppl ${idx} ".evadebug On/Off";
 					return 0;
 				}
 
@@ -1218,7 +1678,7 @@ proc ::EvaServ::INIT { } {
 			############
 			# Eva Cmds #
 			############
-
+			#TODO: deplacer dans des procs propres command::irc::<cmd>
 			proc ::EvaServ::cmds { IRC_DATA } {
 				variable SCRIPT
 				variable SERVICE_BOT
@@ -1231,6 +1691,7 @@ proc ::EvaServ::INIT { } {
 				variable trust
 				set IRC_DATA	[split ${IRC_DATA}]
 				set IRC_CMD		[lindex ${IRC_DATA} 0]
+				set IRC_CMD_LOWER	[string tolower ${IRC_CMD}]
 				set user		[lindex ${IRC_DATA} 1]
 				set USER_LOWER	[string tolower ${user}]
 				set value1		[lindex ${IRC_DATA} 2]
@@ -1246,75 +1707,7 @@ proc ::EvaServ::INIT { } {
 				if { ![authed ${USER_LOWER} ${IRC_CMD}] } { return 0 }
 				switch -exact ${IRC_CMD} {
 					"auth" {
-						if { [lindex ${IRC_DATA} 2] == "" } {
-							SENT:MSG:TO:USER ${user} "<b>Commande Auth :</b> /msg ${SERVICE_BOT(name)} auth \[pseudo\] <password>";
-							return 0
-						}
-						if { [lindex ${IRC_DATA} 3] == "" } {
-							set USER_NAME	${user}
-							set USER_PASS	[lindex ${IRC_DATA} 2]
-						} else {
-							set USER_NAME	[lindex ${IRC_DATA} 2]
-							set USER_PASS	[lindex ${IRC_DATA} 3]
-						}
-						# Verification si des utilisateurs 'eva' exists
-						if { [dbuser::count] == 0 } {
-							# Si aucun utilisateurs Eva, nous creons le compte en tant que ircop supreme
-							if {
-								![validuser ${USER_NAME}]								&& \
-									[getchanhost ${USER_NAME} ${SERVICE_BOT(channel)}] == ""
-							} {
-								SENT:MSG:TO:USER ${user} "${USER_NAME}, pour creer votre compte ircop, vous devez être operateur sur le salon ${SERVICE_BOT(channel)}."
-								return 0
-							}
-							if ![dbuser::add ${user} ${USER_NAME} ${USER_PASS} 4] { return 0 }
-						}
-						if { ![passwdok ${USER_NAME} ${USER_PASS}] } {
-							SENT:MSG:TO:USER ${USER_LOWER} "L'authentification à échoué.";
-							SHOW:INFO:TO:CHANLOG "auth" "L'authentification à échoué pour ${user} (${USER_NAME}).";
-							return 0;
-						}
-						if {
-							![matchattr ${USER_NAME} o]									|| \
-								![matchattr ${USER_NAME} m]									|| \
-								[matchattr ${USER_NAME} n]
-						} {
-							if { ${config(login)} == 1 } {
-								foreach { pseudo login } [array get admins] {
-									if {
-										${login} == [string tolower ${USER_NAME}]		&& \
-											${pseudo} != ${USER_LOWER}
-									} {
-										FCT:SENT:SERV NOTICE [UID:CONVERT ${USER_LOWER}] :Maximum de Login atteint.;
-										return 0;
-									}
-								}
-							}
-							if { ![info exists admins(${USER_LOWER})] } {
-								set admins(${USER_LOWER})		[string tolower ${USER_NAME}]
-								if {
-									[info exists vhost(${USER_LOWER})]					&& \
-										![info exists protect($vhost(${USER_LOWER}))]
-								} {
-									SHOW:INFO:TO:CHANLOG "Protecion du host" "$vhost(${USER_LOWER}) de ${USER_LOWER} (Activé)"
-									set protect($vhost(${USER_LOWER}))		1
-								}
-								setuser [string tolower ${USER_NAME}] LASTON [unixtime]
-								SENT:MSG:TO:USER ${USER_LOWER} "Authentification Réussie."
-								FCT:SENT:SERV INVITE ${USER_LOWER} ${SERVICE_BOT(channel_logs)};
-
-								if { [console 1] == "ok" } {
-									SHOW:INFO:TO:CHANLOG "Auth" [format "L'utilisateur %s s'est identifié au compte %s." ${user} ${USER_NAME}]
-								}
-								return 0
-							} else {
-								SENT:MSG:TO:USER ${USER_LOWER} "Vous êtes déjà authentifié.";
-								return 0;
-							}
-						} elseif { [matchattr ${USER_NAME} p] } {
-							SENT:MSG:TO:USER ${USER_LOWER} "Authentification Helpeur Refusée.";
-							return 0;
-						}
+						if { [ catch { ::EvaServ::command::irc::${IRC_CMD_LOWER} ${IRC_DATA} } err ] } { SHOW:INFO:TO:CHANLOG "ERROR" ${err}; }
 					}
 					"deauth" {
 						if { [info exists admins(${USER_LOWER})] } {
@@ -1332,7 +1725,7 @@ proc ::EvaServ::INIT { } {
 								}
 								unset admins(${USER_LOWER});
 								SENT:MSG:TO:USER ${USER_LOWER} "Déauthentification Réussie."
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "Deauth" "${user}"
 								}
 							} elseif { [matchattr $admins(${USER_LOWER}) p] } {
@@ -1345,8 +1738,8 @@ proc ::EvaServ::INIT { } {
 						}
 					}
 					"copyright" {
-						SENT:MSG:TO:USER ${user} "<c01>${SCRIPT(name)} ${SCRIPT(version)} by ${SCRIPT(auteur)}"
-						if { [console 1] == "ok" } {
+						SENT:MSG:TO:USER ${user} "<c01>${SCRIPT(name)} v${SCRIPT(version)} by ${SCRIPT(auteur)}"
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Copyright" "${user}"
 						}
 					}
@@ -1391,7 +1784,7 @@ proc ::EvaServ::INIT { } {
 							return 0
 						}
 						if { [string index ${value2} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Chanlog :</b> /msg ${SERVICE_BOT(name)} chanlog #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Chanlog :</b> /msg ${SERVICE_BOT(name)} chanlog <#Salon>";
 							return 0
 						}
 						catch { open "[Script:Get:Directory]/db/salon.db" r } liste1
@@ -1442,13 +1835,13 @@ proc ::EvaServ::INIT { } {
 							FCT:SENT:MODE ${SERVICE_BOT(channel_logs)} "+${config(chanmode)}" ${SERVICE_BOT(name)}
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "Changement du salon de log reussi (${value1})"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Chanlog" "Changement du salon de log par ${user} (${value1})"
 						}
 					}
 					"join" {
 						if { [string index ${value2} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Join :</b> /msg ${SERVICE_BOT(name)} join #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Join :</b> /msg ${SERVICE_BOT(name)} join <#Salon>";
 							return 0
 						}
 						if { ${value2} == [string tolower ${SERVICE_BOT(channel_logs)}] } {
@@ -1503,13 +1896,13 @@ proc ::EvaServ::INIT { } {
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "${SERVICE_BOT(name)} entre sur <b>${value1}</b>"
 
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Join" "${value1} par ${user}"
 						}
 					}
 					"part" {
 						if { [string index ${value2} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Part :</b> /msg ${SERVICE_BOT(name)} part #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Part :</b> /msg ${SERVICE_BOT(name)} part <#Salon>";
 							return 0;
 						}
 
@@ -1545,7 +1938,7 @@ proc ::EvaServ::INIT { } {
 							FCT:SENT:MODE ${value1} "-sntio";
 							FCT:SENT:SERV PART ${value1};
 							SENT:MSG:TO:USER ${USER_LOWER} "${SERVICE_BOT(name)} part de <b>${value1}</b>"
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "Part" "${value1} par ${user}"
 							}
 						}
@@ -1565,7 +1958,7 @@ proc ::EvaServ::INIT { } {
 						if { ${stop} == 0 } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Salon"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "List" "${user}"
 						}
 					}
@@ -1597,7 +1990,7 @@ proc ::EvaServ::INIT { } {
 							SHOW:CMD:DESCRIPTION:BY:LEVEL ${USER_LOWER} 4
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02>Aide sur une commande<c01> \[<c04> /msg ${SERVICE_BOT(name)} help <la_commande> <c01>\]"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Showcommands" "${user}"
 						}
 					}
@@ -1630,7 +2023,7 @@ proc ::EvaServ::INIT { } {
 							SHOW:CMD:BY:LEVEL ${USER_LOWER} 4
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02>Listes des commandes<c01> \[<c04> /msg ${SERVICE_BOT(name)} showcommands <c01>\]"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Help" "${user}"
 						}
 					}
@@ -1639,7 +2032,7 @@ proc ::EvaServ::INIT { } {
 							${value2} != "on"											&& \
 								${value2} != "off"
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Maxlogin :</b> /msg ${SERVICE_BOT(name)} maxlogin on/off";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Maxlogin :</b> /msg ${SERVICE_BOT(name)} maxlogin On/Off";
 							return 0;
 						}
 
@@ -1647,7 +2040,7 @@ proc ::EvaServ::INIT { } {
 							if { ${config(login)} == 0 } {
 								set config(login)		1;
 								SENT:MSG:TO:USER ${USER_LOWER} "Protection maxlogin activée"
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "Maxlogin" "${user}"
 								}
 							} else {
@@ -1657,7 +2050,7 @@ proc ::EvaServ::INIT { } {
 							if { ${config(login)} == 1 } {
 								set config(login)		0;
 								SENT:MSG:TO:USER ${USER_LOWER} "Protection maxlogin désactivée"
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "Maxlogin" "${user}"
 								}
 							} else {
@@ -1678,12 +2071,12 @@ proc ::EvaServ::INIT { } {
 						exec cp -f [Script:Get:Directory]/db/salon.db [Script:Get:Directory]/db/salon.bak
 						exec cp -f [Script:Get:Directory]/db/trust.db [Script:Get:Directory]/db/trust.bak
 						SENT:MSG:TO:USER ${USER_LOWER} "Sauvegarde des databases réalisée."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Backup" "${user}"
 						}
 					}
 					"restart" {
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Restart" "${user}"
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "Redémarrage de ${SCRIPT(name)}."
@@ -1699,7 +2092,7 @@ proc ::EvaServ::INIT { } {
 						utimer 1 ::EvaServ::connexion
 					}
 					"die" {
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Die" "${user}"
 						}
 						SENT:MSG:TO:USER ${USER_LOWER} "Arrêt de ${SCRIPT(name)}."
@@ -1730,18 +2123,19 @@ proc ::EvaServ::INIT { } {
 						set up			[expr (${up} % 3600)]
 						set minute		[expr (${up} / 60)]
 						set seconde		[expr (${up} % 60)]
-						if { ${jour} == 1 }		{ append show "${jour} jour " } elseif { ${jour} > 1 } { append show "${jour} jours " }
+						if { ${jour} == 1 }			{ append show "${jour} jour " } elseif { ${jour} > 1 } { append show "${jour} jours " }
 						if { ${heure} == 1 }		{ append show "${heure} heure " } elseif { ${heure} > 1 } { append show "${heure} heures " }
 						if { ${minute} == 1 }		{ append show "${minute} minute " } elseif { ${minute} > 1 } { append show "${minute} minutes " }
-						if { ${seconde} == 1 }	{ append show "${seconde} seconde " } elseif { ${seconde} > 1 } { append show "${seconde} secondes " }
+						if { ${seconde} == 1 }		{ append show "${seconde} seconde " } elseif { ${seconde} > 1 } { append show "${seconde} secondes " }
+						#TODO: ca me semble repepitiif peut etre creer une fonvrion
 						catch { open [Script:Get:Directory]/db/client.db r } liste
-						while { ![eof ${liste}] } {
+						while { ![eof ${liste}] } 	{
 							gets ${liste} sclients;
 							if { ${sclients} != "" } { incr numclient 1 }
 						}
 						catch { close ${liste} }
 						catch { open [Script:Get:Directory]/db/chan.db r } liste2
-						while { ![eof ${liste2}] } {
+						while { ![eof ${liste2}] } 	{
 							gets ${liste2} schans;
 							if { ${schans} != "" } { incr numchan 1 }
 						}
@@ -1794,6 +2188,7 @@ proc ::EvaServ::INIT { } {
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02> Salon de logs : <c01>${SERVICE_BOT(channel_logs)}"
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02> Salon Autojoin : <c01>${numchan}"
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02> Uptime : <c01>${show}"
+						#TODO: switch useless
 						switch -exact ${config(console)} {
 							0 { SENT:MSG:TO:USER ${USER_LOWER} "<c02> Level Console : <c01>0" }
 							1 { SENT:MSG:TO:USER ${USER_LOWER} "<c02> Level Console : <c01>1" }
@@ -1826,7 +2221,7 @@ proc ::EvaServ::INIT { } {
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02> Nbre de Clients IRC : <c01>${numclient}"
 						SENT:MSG:TO:USER ${USER_LOWER} "<c02> Nbre de Trusts : <c01>${numtrust}"
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Status" "${user}"
 						}
 					}
@@ -1835,7 +2230,8 @@ proc ::EvaServ::INIT { } {
 							${value2} == ""												|| \
 								[regexp "\[^0-4\]" ${value2}]
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protection :</b> /msg ${SERVICE_BOT(name)} protection 0/1/2/3/4"
+							#TODO: dynamiser les niveau
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protection :</b> /msg ${SERVICE_BOT(name)} protection <0/1/2/3/4>"
 							SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 0 <c04>:<c01> Aucune Protection"
 							SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 1 <c04>:<c01> Protection Admins"
 							SENT:MSG:TO:USER ${USER_LOWER} "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
@@ -1873,7 +2269,7 @@ proc ::EvaServ::INIT { } {
 					}
 					"newpass" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Newpass :</b> /msg ${SERVICE_BOT(name)} newpass mot-de-passe";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Newpass :</b> /msg ${SERVICE_BOT(name)} newpass <Mot-De-Passe>";
 							return 0;
 						}
 
@@ -1884,20 +2280,20 @@ proc ::EvaServ::INIT { } {
 
 						setuser $admins(${USER_LOWER}) PASS ${value1}
 						SENT:MSG:TO:USER ${user} "Changement du mot de passe reussi."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Newpass" "${user}"
 						}
 					}
 					"map" {
 						set config(rep)		${USER_LOWER}
 						FCT:SENT:SERV LINKS;
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Map" "${user}"
 						}
 					}
 					"seen" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${user} "<b>Commande Seen :</b> /msg ${SERVICE_BOT(name)} seen pseudo";
+							SENT:MSG:TO:USER ${user} "<b>Commande Seen :</b> /msg ${SERVICE_BOT(name)} seen <Pseudonyme>";
 							return 0;
 						}
 
@@ -1906,7 +2302,7 @@ proc ::EvaServ::INIT { } {
 							if { ${annee} != "1970" } { set seen		[duree [getuser ${value1} LASTON]] } else {
 								set seen		"Jamais"
 							}
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "Seen" "${user}"
 							}
 							if { [matchattr ${value1} n] } {
@@ -1919,6 +2315,7 @@ proc ::EvaServ::INIT { } {
 								SENT:MSG:TO:USER ${USER_LOWER} "<c1>Pseudo \[<c4>${value1}<c1>\] <c> Level \[<c03>Helpeur<c1>\] <c> Seen \[<c02>${seen}<c1>\]"
 							}
 						} else {
+							#TODO: le pseudo,yme blabla mode format
 							SENT:MSG:TO:USER ${USER_LOWER} "Pseudo inconnu.";
 							return 0;
 						}
@@ -1928,7 +2325,7 @@ proc ::EvaServ::INIT { } {
 							${value1} == "*"											|| \
 								${value1} == ""
 						} {
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "Access" "${user}"
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b><c1,1>------------------------------- <c0>Liste des Accès <c1>-------------------------------"
@@ -1957,6 +2354,7 @@ proc ::EvaServ::INIT { } {
 									}
 								}
 								if { ![info exists aprotect] } { set aprotect		"<c04>Off" }
+								#TODO: ca me semble aussi repepitig
 								if { [matchattr ${acces} n] } {
 									SENT:MSG:TO:USER ${USER_LOWER} "<c01> Pseudo \[<c04>${acces}<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>${seen}<c01>\]"
 									SENT:MSG:TO:USER ${USER_LOWER} "<c01> Statut \[${status}<c01>\] <c01> Protection \[${aprotect}<c01>\]"
@@ -1991,6 +2389,7 @@ proc ::EvaServ::INIT { } {
 								if { ${reg} == [string tolower ${value1}] } { set status		"<c03>Online" }
 							}
 							if { ![info exists status] } { set status		"<c04>Offline" }
+							#TODO: sitch useless
 							switch -exact ${config(protection)} {
 								1 {
 									if { [matchattr ${value1} n] } { set aprotect		"<c03>On" }
@@ -2006,11 +2405,12 @@ proc ::EvaServ::INIT { } {
 								}
 							}
 							if { ![info exists aprotect] } { set aprotect		"<c04>Off" }
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "Access" "${user}"
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b><c1,1>--------------------------- <c0>Accès de ${value1} <c1>---------------------------"
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>"
+							#TODO: a revoir
 							if { [matchattr ${value1} n] } {
 								SENT:MSG:TO:USER ${USER_LOWER} "<c01> Pseudo \[<c04>${value1}<c01>\] <c01> Level \[<c03>Admin<c01>\] <c01> Seen \[<c12>${seen}<c01>\]"
 								SENT:MSG:TO:USER ${USER_LOWER} "<c01> Statut \[${status}<c01>\] <c01> Protection \[${aprotect}<c01>\]"
@@ -2035,14 +2435,14 @@ proc ::EvaServ::INIT { } {
 					}
 					"owner" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Owner :</b> /msg ${SERVICE_BOT(name)} owner #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Owner :</b> /msg ${SERVICE_BOT(name)} owner <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2054,7 +2454,7 @@ proc ::EvaServ::INIT { } {
 							}
 							FCT:SENT:MODE ${value1} "+q" ${value3}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Owner" "${value3} sur ${value1} par ${user}"
@@ -2062,7 +2462,7 @@ proc ::EvaServ::INIT { } {
 						} else {
 							FCT:SENT:MODE ${value1} "+q" ${user}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Owner" "${user} sur ${value1}"
@@ -2071,14 +2471,14 @@ proc ::EvaServ::INIT { } {
 					}
 					"deowner" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deowner :</b> /msg ${SERVICE_BOT(name)} deowner #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deowner :</b> /msg ${SERVICE_BOT(name)} deowner <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2092,7 +2492,7 @@ proc ::EvaServ::INIT { } {
 
 							FCT:SENT:MODE ${value1} "-q" ${value3}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Deowner" "${value3} sur ${value1} par ${user}"
@@ -2100,7 +2500,7 @@ proc ::EvaServ::INIT { } {
 						} else {
 							FCT:SENT:MODE ${value1} "-q" ${user}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Deowner" "${user} sur ${value1}"
@@ -2109,13 +2509,13 @@ proc ::EvaServ::INIT { } {
 					}
 					"protect" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protect :</b> /msg ${SERVICE_BOT(name)} protect #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protect :</b> /msg ${SERVICE_BOT(name)} protect <#Salon> <Pseudonyme>";
 							return 0;
 						}
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2129,7 +2529,7 @@ proc ::EvaServ::INIT { } {
 
 							FCT:SENT:MODE ${value1} "+a" ${value3}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Protect" "${value3} sur ${value1} par ${user}"
@@ -2137,7 +2537,7 @@ proc ::EvaServ::INIT { } {
 						} else {
 							FCT:SENT:MODE ${value1} "+a" ${user}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Protect" "${user} sur ${value1}"
@@ -2146,14 +2546,14 @@ proc ::EvaServ::INIT { } {
 					}
 					"deprotect" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deprotect :</b> /msg ${SERVICE_BOT(name)} deprotect #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deprotect :</b> /msg ${SERVICE_BOT(name)} deprotect <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2167,14 +2567,14 @@ proc ::EvaServ::INIT { } {
 
 							FCT:SENT:MODE ${value1} "-a" ${value3}
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}] } {
 										SHOW:INFO:TO:CHANLOG "Deprotect" "${value3} sur ${value1} par ${user}"
 								}
 							} else {
 								FCT:SENT:MODE ${value1} "-a" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Deprotect" "${user} sur ${value1}"
@@ -2184,13 +2584,13 @@ proc ::EvaServ::INIT { } {
 						"ownerall" {
 							set config(cmd)		"ownerall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ownerall :</b> /msg ${SERVICE_BOT(name)} ownerall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ownerall :</b> /msg ${SERVICE_BOT(name)} ownerall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"										&& \
+								[ShowOnPartyLine 1]										&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Ownerall" "${value1} par ${user}"
@@ -2199,13 +2599,13 @@ proc ::EvaServ::INIT { } {
 						"deownerall" {
 							set config(cmd)		"deownerall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deownerall :</b> /msg ${SERVICE_BOT(name)} deownerall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deownerall :</b> /msg ${SERVICE_BOT(name)} deownerall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Deownerall" "${value1} par ${user}"
@@ -2214,13 +2614,13 @@ proc ::EvaServ::INIT { } {
 						"protectall" {
 							set config(cmd)		"protectall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protectall :</b> /msg ${SERVICE_BOT(name)} protectall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Protectall :</b> /msg ${SERVICE_BOT(name)} protectall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Protectall" "${value1} par ${user}"
@@ -2229,13 +2629,13 @@ proc ::EvaServ::INIT { } {
 						"deprotectall" {
 							set config(cmd)		"deprotectall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deprotectall :</b> /msg ${SERVICE_BOT(name)} deprotectall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deprotectall :</b> /msg ${SERVICE_BOT(name)} deprotectall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Deprotectall" "${value1} par ${user}"
@@ -2243,13 +2643,13 @@ proc ::EvaServ::INIT { } {
 						}
 						"op" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Op :</b> /msg ${SERVICE_BOT(name)} op #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Op :</b> /msg ${SERVICE_BOT(name)} op <#Salon> <Pseudonyme>";
 								return 0
 							}
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0
@@ -2261,7 +2661,7 @@ proc ::EvaServ::INIT { } {
 								}
 								FCT:SENT:MODE ${value1} "+o" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Op" "${value3} a été opé par ${user} sur ${value1}"
@@ -2269,7 +2669,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "+o" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Op" "${user} a été opé sur ${value1}"
@@ -2278,14 +2678,14 @@ proc ::EvaServ::INIT { } {
 						}
 						"deop" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deop :</b> /msg ${SERVICE_BOT(name)} deop #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deop :</b> /msg ${SERVICE_BOT(name)} deop <#Salon> <Pseudonyme>";
 								return 0;
 							}
 
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0;
@@ -2299,7 +2699,7 @@ proc ::EvaServ::INIT { } {
 
 								FCT:SENT:MODE ${value1} "-o" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Deop" "${value3} a été déopé par ${user} sur ${value1}"
@@ -2307,7 +2707,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "-o" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Deop" "${user} a été déopé sur ${value1}"
@@ -2316,13 +2716,13 @@ proc ::EvaServ::INIT { } {
 						}
 						"halfop" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Halfop :</b> /msg ${SERVICE_BOT(name)} halfop #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Halfop :</b> /msg ${SERVICE_BOT(name)} halfop <#Salon> <Pseudonyme>";
 								return 0;
 							}
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0;
@@ -2336,7 +2736,7 @@ proc ::EvaServ::INIT { } {
 
 								FCT:SENT:MODE ${value1} "+h" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Halfop" "${value3} a été halfopé par ${user} sur ${value1}"
@@ -2344,7 +2744,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "+h" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Halfop" "${user} a été halfopé sur ${value1}"
@@ -2353,14 +2753,14 @@ proc ::EvaServ::INIT { } {
 						}
 						"dehalfop" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Dehalfop :</b> /msg ${SERVICE_BOT(name)} dehalfop #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Dehalfop :</b> /msg ${SERVICE_BOT(name)} dehalfop <#Salon> <Pseudonyme>";
 								return 0;
 							}
 
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0;
@@ -2374,7 +2774,7 @@ proc ::EvaServ::INIT { } {
 
 								FCT:SENT:MODE ${value1} "-h" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Dehalfop" "${value3} a été déhalfopé par ${user} sur ${value1}"
@@ -2382,7 +2782,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "-h" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Dehalfop" "${user} a été déhalfopé sur ${value1}"
@@ -2391,14 +2791,14 @@ proc ::EvaServ::INIT { } {
 						}
 						"voice" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Voice :</b> /msg ${SERVICE_BOT(name)} voice #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Voice :</b> /msg ${SERVICE_BOT(name)} voice <#Salon> <Pseudonyme>";
 								return 0;
 							}
 
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0;
@@ -2412,7 +2812,7 @@ proc ::EvaServ::INIT { } {
 
 								FCT:SENT:MODE ${value1} "+v" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Voice" "${value3} a été voicé par ${user} sur ${value1}"
@@ -2420,7 +2820,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "+v" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Voice" "${user} a été voicé sur ${value1}"
@@ -2429,14 +2829,14 @@ proc ::EvaServ::INIT { } {
 						}
 						"devoice" {
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Devoice :</b> /msg ${SERVICE_BOT(name)} devoice #salon pseudo";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Devoice :</b> /msg ${SERVICE_BOT(name)} devoice <#Salon> <Pseudonyme>";
 								return 0;
 							}
 
 							if {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 									[info exists users(${value4})]								|| \
-									[protection ${value4} ${config(protection)}] == "ok"
+									[protection ${value4}]
 							} {
 								SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 								return 0;
@@ -2450,7 +2850,7 @@ proc ::EvaServ::INIT { } {
 
 								FCT:SENT:MODE ${value1} "-v" ${value3}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Devoice" "${value3} a été dévoicé par ${user} sur ${value1}"
@@ -2458,7 +2858,7 @@ proc ::EvaServ::INIT { } {
 							} else {
 								FCT:SENT:MODE ${value1} "-v" ${user}
 								if {
-									[console 1] == "ok"										&& \
+									[ShowOnPartyLine 1]										&& \
 										${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 								} {
 									SHOW:INFO:TO:CHANLOG "Devoice" "${user} a été dévoicé sur ${value1}"
@@ -2469,13 +2869,13 @@ proc ::EvaServ::INIT { } {
 							set config(cmd)		"opall"
 
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Opall :</b> /msg ${SERVICE_BOT(name)} opall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Opall :</b> /msg ${SERVICE_BOT(name)} opall <#Salon>";
 								return 0;
 							}
 							sent2socket ":${config(link)} NAMES ${value1}"
 
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Opall" "${value1} par ${user}"
@@ -2484,13 +2884,13 @@ proc ::EvaServ::INIT { } {
 						"deopall" {
 							set config(cmd)		"deopall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deopall :</b> /msg ${SERVICE_BOT(name)} deopall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Deopall :</b> /msg ${SERVICE_BOT(name)} deopall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Deopall" "${value1} par ${user}"
@@ -2499,13 +2899,13 @@ proc ::EvaServ::INIT { } {
 						"halfopall" {
 							set config(cmd)		"halfopall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Halfopall :</b> /msg ${SERVICE_BOT(name)} halfopall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Halfopall :</b> /msg ${SERVICE_BOT(name)} halfopall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Halfopall" "${value1} par ${user}"
@@ -2514,13 +2914,13 @@ proc ::EvaServ::INIT { } {
 						"dehalfopall" {
 							set config(cmd)		"dehalfopall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Dehalfopall :</b> /msg ${SERVICE_BOT(name)} dehalfopall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Dehalfopall :</b> /msg ${SERVICE_BOT(name)} dehalfopall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Dehalfopall" "${value1} par ${user}"
@@ -2529,13 +2929,13 @@ proc ::EvaServ::INIT { } {
 						"voiceall" {
 							set config(cmd)		"voiceall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Voiceall :</b> /msg ${SERVICE_BOT(name)} voiceall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Voiceall :</b> /msg ${SERVICE_BOT(name)} voiceall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Voiceall" "${value1} par ${user}"
@@ -2544,13 +2944,13 @@ proc ::EvaServ::INIT { } {
 						"devoiceall" {
 							set config(cmd)		"devoiceall"
 							if { [string index ${value1} 0] != "#" } {
-								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Devoiceall :</b> /msg ${SERVICE_BOT(name)} devoiceall #salon";
+								SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Devoiceall :</b> /msg ${SERVICE_BOT(name)} devoiceall <#Salon>";
 								return 0;
 							}
 
 							sent2socket ":${config(link)} NAMES ${value1}"
 							if {
-								[console 1] == "ok"											&& \
+								[ShowOnPartyLine 1]											&& \
 									${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 							} {
 								SHOW:INFO:TO:CHANLOG "Devoiceall" "${value1} par ${user}"
@@ -2560,14 +2960,14 @@ proc ::EvaServ::INIT { } {
 							if { [string index ${value1} 0] != "#"							|| \
 								${value4} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kick :</b> /msg ${SERVICE_BOT(name)} kick #salon pseudo raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kick :</b> /msg ${SERVICE_BOT(name)} kick <#Salon> <Pseudonyme> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2576,7 +2976,7 @@ proc ::EvaServ::INIT { } {
 						if { ${value5} == "" } { set value5		"Kicked" }
 						FCT:SENT:SERV KICK ${value2} ${value4} ${value5} [rnick ${user}];
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Kick" "${value3} a été kické par ${user} sur ${value1} - Raison : ${value5}"
@@ -2586,13 +2986,13 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"kickall";
 						set config(rep)		${user}
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kickall :</b> /msg ${SERVICE_BOT(name)} kickall #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kickall :</b> /msg ${SERVICE_BOT(name)} kickall <#Salon>";
 							return 0;
 						}
 
 						sent2socket ":${config(link)} NAMES ${value1}"
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Kickall" "${value1} par ${user}"
@@ -2603,13 +3003,13 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ban :</b> /msg ${SERVICE_BOT(name)} ban #salon mask";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ban :</b> /msg ${SERVICE_BOT(name)} ban <#Salon> <Mask>";
 							return 0;
 						}
 
 						FCT:SENT:MODE ${value1} "+b" ${value3}
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Ban" "${value3} a été banni par ${user} sur ${value1}"
@@ -2620,14 +3020,14 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Nickban :</b> /msg ${SERVICE_BOT(name)} nickban #salon pseudo raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Nickban :</b> /msg ${SERVICE_BOT(name)} nickban <#Salon> <Pseudonyme> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2642,7 +3042,7 @@ proc ::EvaServ::INIT { } {
 						FCT:SENT:MODE ${value1} "+b" "${value4}*!*@*"
 						FCT:SENT:SERV KICK ${value1} ${value3} ${value5} [rnick ${user}];
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Nickban" "${value3} a été banni par ${user} sur ${value1} - Raison : ${value5}"
@@ -2653,14 +3053,14 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kickban :</b> /msg ${SERVICE_BOT(name)} kickban #salon pseudo raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kickban :</b> /msg ${SERVICE_BOT(name)} kickban <#Salon> <Pseudonyme> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2675,7 +3075,7 @@ proc ::EvaServ::INIT { } {
 						FCT:SENT:MODE ${value1} "+b" "*!*@$vhost(${value4})"
 						FCT:SENT:SERV KICK ${value1} ${value3} ${value5} [rnick ${user}];
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Kickban" "${value3} a été banni par ${user} sur ${value1} - Raison : ${value5}"
@@ -2686,13 +3086,13 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unban :</b> /msg ${SERVICE_BOT(name)} unban #salon mask";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unban :</b> /msg ${SERVICE_BOT(name)} unban <#Salon> <Mask>";
 							return 0;
 						}
 
 						FCT:SENT:MODE ${value1} "-b" ${value3}
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Unban" "${value3} a été débanni par ${user} sur ${value1}"
@@ -2700,13 +3100,13 @@ proc ::EvaServ::INIT { } {
 					}
 					"clearbans" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearbans :</b> /msg ${SERVICE_BOT(name)} clearbans #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearbans :</b> /msg ${SERVICE_BOT(name)} clearbans <#Salon>";
 							return 0;
 						}
 
 						FCT:SENT:SERV SVSMODE ${value1} -b;
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Clearbans" "${value1} par ${user}"
@@ -2717,13 +3117,13 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value6} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Topic :</b> /msg ${SERVICE_BOT(name)} topic #salon topic";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Topic :</b> /msg ${SERVICE_BOT(name)} topic <#Salon> topic";
 							return 0;
 						}
 
 						FCT:SET:TOPIC ${value1} ${value6}
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Topic" "${user} change le topic sur ${value1} : ${value6}"
@@ -2734,7 +3134,7 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Mode :</b> /msg ${SERVICE_BOT(name)} mode #salon +/-mode";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Mode :</b> /msg ${SERVICE_BOT(name)} mode <#Salon> <+/-Mode(s)>";
 							return 0;
 						}
 
@@ -2761,7 +3161,7 @@ proc ::EvaServ::INIT { } {
 
 						FCT:SENT:MODE ${value1} ${value6}
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Mode" "${user} applique le mode ${value6} sur ${value1}"
@@ -2769,7 +3169,7 @@ proc ::EvaServ::INIT { } {
 					}
 					"clearmodes" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearmodes :</b> /msg ${SERVICE_BOT(name)} clearmodes #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearmodes :</b> /msg ${SERVICE_BOT(name)} clearmodes <#Salon>";
 							return 0;
 						}
 
@@ -2780,7 +3180,7 @@ proc ::EvaServ::INIT { } {
 
 						FCT:SENT:MODE ${value1}
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Clearmodes" "${user} sur ${value1}"
@@ -2788,7 +3188,7 @@ proc ::EvaServ::INIT { } {
 					}
 					"clearallmodes" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearallmodes :</b> /msg ${SERVICE_BOT(name)} clearallmodes #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Clearallmodes :</b> /msg ${SERVICE_BOT(name)} clearallmodes <#Salon>";
 							return 0;
 						}
 
@@ -2800,20 +3200,20 @@ proc ::EvaServ::INIT { } {
 						FCT:SENT:SERV SVSMODE ${value1} -beIqaohv;
 						FCT:SENT:MODE ${value1}
 						FCT:SENT:SERV SVSMODE ${value1} -b;
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Clearallmodes" "${user} sur ${value1}"
 						}
 					}
 					"kill" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kill :</b> /msg ${SERVICE_BOT(name)} kill pseudo raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kill :</b> /msg ${SERVICE_BOT(name)} kill <Pseudonyme> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value2} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value2})]								|| \
-								[protection ${value2} ${config(protection)}] == "ok"
+								[protection ${value2}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2827,7 +3227,7 @@ proc ::EvaServ::INIT { } {
 						if { ${value6} == "" } { set value6		"Killed" }
 						FCT:SENT:SERV KILL ${value1} ${value6} [rnick ${user}];
 						refresh ${value2}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Kill" "${value1} a été killé par ${user} : ${value6}"
 						}
 					}
@@ -2835,7 +3235,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"chankill";
 						set config(rep)		${user}
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Chankill :</b> /msg ${SERVICE_BOT(name)} chankill #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Chankill :</b> /msg ${SERVICE_BOT(name)} chankill <#Salon>";
 							return 0;
 						}
 
@@ -2845,7 +3245,7 @@ proc ::EvaServ::INIT { } {
 						}
 
 						sent2socket ":${config(link)} NAMES ${value1}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Chankill" "${value1} par ${user}"
 						}
 					}
@@ -2854,7 +3254,7 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svsjoin :</b> /msg ${SERVICE_BOT(name)} svsjoin #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svsjoin :</b> /msg ${SERVICE_BOT(name)} svsjoin <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
@@ -2866,14 +3266,14 @@ proc ::EvaServ::INIT { } {
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
 						}
 
 						FCT:SENT:SERV SVSJOIN [UID:CONVERT ${value3}] ${value1};
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Svsjoin" "${value3} entre sur ${value1} par ${user}"
 						}
 					}
@@ -2882,7 +3282,7 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svspart :</b> /msg ${SERVICE_BOT(name)} svspart #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svspart :</b> /msg ${SERVICE_BOT(name)} svspart <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
@@ -2894,14 +3294,14 @@ proc ::EvaServ::INIT { } {
 						if {
 							${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
 						}
 
 						FCT:SENT:SERV SVSPART ${value3} ${value1};
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Svspart" "${value3} part de ${value1} par ${user}"
 						}
 					}
@@ -2910,7 +3310,7 @@ proc ::EvaServ::INIT { } {
 							${value1} == ""												|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svsnick :</b> /msg ${SERVICE_BOT(name)} svsnick ancien-pseudo nouveau-pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Svsnick :</b> /msg ${SERVICE_BOT(name)} svsnick ancien-pseudo nouveau-<Pseudonyme>";
 							return 0;
 						}
 
@@ -2924,8 +3324,8 @@ proc ::EvaServ::INIT { } {
 								${value4} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value2})]								|| \
 								[info exists users(${value4})]								|| \
-								[protection ${value2} ${config(protection)}] == "ok"		|| \
-								[protection ${value4} ${config(protection)}] == "ok"
+								[protection ${value2}]		|| \
+								[protection ${value4}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -2949,7 +3349,7 @@ proc ::EvaServ::INIT { } {
 							set vhost(${value3})		$vhost(${value1});
 							unset vhost(${value1})
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Svsnick" "${user} change le pseudo de ${value1} en ${value3}"
 						}
 					}
@@ -2958,13 +3358,13 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value6} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Say :</b> /msg ${SERVICE_BOT(name)} say #salon message";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Say :</b> /msg ${SERVICE_BOT(name)} say <#Salon> <Message>";
 							return 0;
 						}
 
 						SENT:MSG:TO:USER ${value1} "${value6}"
 						if {
-							[console 1] == "ok"											&& \
+							[ShowOnPartyLine 1]											&& \
 								${value2} != [string tolower ${SERVICE_BOT(channel_logs)}]
 						} {
 							SHOW:INFO:TO:CHANLOG "Say" "${user} sur ${value1} : ${value6}"
@@ -2975,7 +3375,7 @@ proc ::EvaServ::INIT { } {
 							[string index ${value1} 0] != "#"							|| \
 								${value3} == ""
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Invite :</b> /msg ${SERVICE_BOT(name)} invite #salon pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Invite :</b> /msg ${SERVICE_BOT(name)} invite <#Salon> <Pseudonyme>";
 							return 0;
 						}
 
@@ -2985,53 +3385,53 @@ proc ::EvaServ::INIT { } {
 						}
 
 						FCT:SENT:SERV INVITE ${value3} ${value1};
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Invite" "${user} invite ${value3} sur ${value1}"
 						}
 					}
 					"inviteme" {
 						FCT:SENT:SERV INVITE ${user} ${SERVICE_BOT(channel_logs)};
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Inviteme" "${user}"
 						}
 					}
 					"wallops" {
 						if { ${value7} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Wallops :</b> /msg ${SERVICE_BOT(name)} wallops message";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Wallops :</b> /msg ${SERVICE_BOT(name)} wallops <Message>";
 							return 0;
 						}
 
 						FCT:SENT:SERV WALLOPS ${value7} (${user});
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Wallops" "${user} : ${value7}"
 						}
 					}
 					"globops" {
 						if { ${value7} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Globops :</b> /msg ${SERVICE_BOT(name)} globops message";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Globops :</b> /msg ${SERVICE_BOT(name)} globops <Message>";
 							return 0;
 						}
 
 						FCT:SENT:SERV GLOBOPS ${value7} (${user});
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Globops" "${user} : ${value7}"
 						}
 					}
 					"notice" {
 						if { ${value7} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Notice :</b> /msg ${SERVICE_BOT(name)} notice message";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Notice :</b> /msg ${SERVICE_BOT(name)} notice <Message>";
 							return 0;
 						}
 
 						SENT:MSG:TO:USER "$*.*" "\[<b>Notice Globale</b>\] ${value7}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Notice" "${user}"
 						}
 					}
 					"whois" {
 						set config(rep)		${USER_LOWER}
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Whois :</b> /msg ${SERVICE_BOT(name)} whois pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Whois :</b> /msg ${SERVICE_BOT(name)} whois <Pseudonyme>";
 							return 0;
 						}
 
@@ -3041,7 +3441,7 @@ proc ::EvaServ::INIT { } {
 						}
 
 						FCT:SENT:SERV WHOIS ${value1};
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Whois" "${user}"
 						}
 					}
@@ -3049,7 +3449,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"changline";
 						set config(rep)		${user}
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Changline :</b> /msg ${SERVICE_BOT(name)} changline #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Changline :</b> /msg ${SERVICE_BOT(name)} changline <#Salon>";
 							return 0;
 						}
 
@@ -3059,20 +3459,20 @@ proc ::EvaServ::INIT { } {
 						}
 
 						sent2socket ":${config(link)} NAMES ${value1}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Changline" "${value1} par ${user}"
 						}
 					}
 					"gline" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Gline :</b> /msg ${SERVICE_BOT(name)} gline <pseudo ou ip> raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Gline :</b> /msg ${SERVICE_BOT(name)} gline <Pseudonyme-ou-IP> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value2} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value2})]								|| \
-								[protection ${value2} ${config(protection)}] == "ok"
+								[protection ${value2}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -3087,7 +3487,7 @@ proc ::EvaServ::INIT { } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Pseudo introuvable.";
 							return 0;
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Gline" "${value1} par ${user} - Raison : ${value6}"
 						}
 					}
@@ -3096,25 +3496,25 @@ proc ::EvaServ::INIT { } {
 							${value1} == ""												|| \
 								![string match *@* ${value1}]
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ungline :</b> /msg ${SERVICE_BOT(name)} ungline ident@host";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Ungline :</b> /msg ${SERVICE_BOT(name)} ungline <Ident@HostName-or-IP>";
 							return 0;
 						}
 
 						sent2socket ":${config(link)} TKL - G [lindex [split ${value1} @] 0] [lindex [split ${value1} @] 1] ${SERVICE_BOT(name)}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Ungline" "${value1} par ${user}"
 						}
 					}
 					"shun" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Shun :</b> /msg ${SERVICE_BOT(name)} shun <pseudo ou ip> raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Shun :</b> /msg ${SERVICE_BOT(name)} shun <Pseudonyme-ou-IP> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value2} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value2})]								|| \
-								[protection ${value2} ${config(protection)}] == "ok"
+								[protection ${value2}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -3129,7 +3529,7 @@ proc ::EvaServ::INIT { } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Pseudo introuvable.";
 							return 0;
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Shun" "${value1} par ${user} - Raison : ${value6}"
 						}
 					}
@@ -3138,25 +3538,25 @@ proc ::EvaServ::INIT { } {
 							${value1} == ""												|| \
 								![string match *@* ${value1}]
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unshun :</b> /msg ${SERVICE_BOT(name)} unshun ident@host";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unshun :</b> /msg ${SERVICE_BOT(name)} unshun <Ident@HostName-or-IP>";
 							return 0;
 						}
 
 						sent2socket ":${config(link)} TKL - s [lindex [split ${value1} @] 0] [lindex [split ${value1} @] 1] ${SERVICE_BOT(name)}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Unshun" "${value1} par ${user}"
 						}
 					}
 					"kline" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kline :</b> /msg ${SERVICE_BOT(name)} kline <pseudo ou ip> raison";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Kline :</b> /msg ${SERVICE_BOT(name)} kline <Pseudonyme-ou-IP> <Raison>";
 							return 0;
 						}
 
 						if {
 							${value2} == [string tolower ${SERVICE_BOT(name)}]			|| \
 								[info exists users(${value2})]								|| \
-								[protection ${value2} ${config(protection)}] == "ok"
+								[protection ${value2}]
 						} {
 							SENT:MSG:TO:USER ${user} "Accès Refusé : Pseudo Protégé";
 							return 0;
@@ -3171,7 +3571,7 @@ proc ::EvaServ::INIT { } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Pseudo introuvable.";
 							return 0;
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Kline" "${value1} par ${user} - Raison : ${value6}"
 						}
 					}
@@ -3180,12 +3580,12 @@ proc ::EvaServ::INIT { } {
 							${value1} == ""												|| \
 								![string match *@* ${value1}]
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unkline :</b> /msg ${SERVICE_BOT(name)} unkline ident@host";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Unkline :</b> /msg ${SERVICE_BOT(name)} unkline <Ident@HostName-or-IP>";
 							return 0;
 						}
 
 						sent2socket ":${config(link)} TKL - k [lindex [split ${value1} @] 0] [lindex [split ${value1} @] 1] ${SERVICE_BOT(name)}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Unkline" "${value1} par ${user}"
 						}
 					}
@@ -3193,7 +3593,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"gline";
 						set config(rep)		${USER_LOWER}
 						FCT:SENT:SERV STATS G;
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Glinelist" "${user}"
 						}
 					}
@@ -3201,7 +3601,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"shun";
 						set config(rep)		${USER_LOWER}
 						FCT:SENT:SERV STATS s;
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Shunlist" "${user}"
 						}
 					}
@@ -3209,7 +3609,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"kline";
 						set config(rep)		${USER_LOWER}
 						FCT:SENT:SERV STATS K;
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Klinelist" "${user}"
 						}
 					}
@@ -3217,7 +3617,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"cleargline"
 						FCT:SENT:SERV STATS G;
 						SENT:MSG:TO:USER ${USER_LOWER} "Liste des glines vidée."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Cleargline" "${user}"
 						}
 					}
@@ -3225,7 +3625,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"clearkline"
 						FCT:SENT:SERV STATS K;
 						SENT:MSG:TO:USER ${USER_LOWER} "Liste des klines vidée."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Clearkline" "${user}"
 						}
 					}
@@ -3244,7 +3644,7 @@ proc ::EvaServ::INIT { } {
 						if { ${stop} == 0 } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Aucun client IRC"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Clientlist" "${user}"
 						}
 					}
@@ -3269,7 +3669,7 @@ proc ::EvaServ::INIT { } {
 						puts ${bclient} [string tolower ${value7}];
 						close ${bclient}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value7}</b> a bien été ajouté à la liste des clients IRC interdits."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "clientadd" "${user}"
 						}
 					}
@@ -3304,7 +3704,7 @@ proc ::EvaServ::INIT { } {
 								close ${FILE_PIPE}
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value7}</b> a bien été supprimé de la liste des clients IRC interdits."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "clientdel" "${user}"
 							}
 						}
@@ -3314,7 +3714,7 @@ proc ::EvaServ::INIT { } {
 							${value2} != "on"											&& \
 								${value2} != "off"
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Client :</b> /msg ${SERVICE_BOT(name)} client on/off";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Client :</b> /msg ${SERVICE_BOT(name)} client On/Off";
 							return 0;
 						}
 
@@ -3322,7 +3722,7 @@ proc ::EvaServ::INIT { } {
 							if { ${config(aclient)} == 0 } {
 								set config(aclient)		1;
 								SENT:MSG:TO:USER ${USER_LOWER} "Protection clients IRC activée"
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "Client" "${user}"
 								}
 							} else {
@@ -3332,7 +3732,7 @@ proc ::EvaServ::INIT { } {
 							if { ${config(aclient)} == 1 } {
 								set config(aclient)		0;
 								SENT:MSG:TO:USER ${USER_LOWER} "Protection clients IRC désactivée"
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "Client" "${user}"
 								}
 							} else {
@@ -3344,7 +3744,7 @@ proc ::EvaServ::INIT { } {
 						set config(cmd)		"closeadd";
 						set config(rep)		${user}
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Close add :</b> /msg ${SERVICE_BOT(name)} closeadd #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande Close add :</b> /msg ${SERVICE_BOT(name)} closeadd <#Salon>";
 							return 0;
 						}
 
@@ -3394,13 +3794,13 @@ proc ::EvaServ::INIT { } {
 						FCT:SENT:MODE ${value1} +sntio "${SERVICE_BOT(name)}";
 						FCT:SET:TOPIC ${value1} "<c1>Salon Fermé le [duree [unixtime]]"
 						sent2socket ":${config(link)} NAMES ${value1}"
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "closeadd" "${value1} par ${user}"
 						}
 					}
 					"closedel" {
 						if { [string index ${value1} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande closedel :</b> /msg ${SERVICE_BOT(name)} closedel #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande closedel :</b> /msg ${SERVICE_BOT(name)} closedel <#Salon>";
 							return 0;
 						}
 
@@ -3432,7 +3832,7 @@ proc ::EvaServ::INIT { } {
 							FCT:SENT:MODE ${value1}
 							FCT:SET:TOPIC ${value1} "Bienvenue sur ${value1}"
 							FCT:SENT:SERV PART ${value1};
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "closedel" "${value1} par ${user}"
 							}
 						}
@@ -3452,7 +3852,7 @@ proc ::EvaServ::INIT { } {
 						if { ${stop} == 0 } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Salon."
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Closelist" "${user}"
 						}
 					}
@@ -3470,13 +3870,13 @@ proc ::EvaServ::INIT { } {
 						set FILE_PIPE		[open "[Script:Get:Directory]/db/close.db" w+];
 						close ${FILE_PIPE}
 						SENT:MSG:TO:USER ${user} "La liste des salons fermés à bien été vidée."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "closeclear" "${user}"
 						}
 					}
 					"nickadd" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande nickadd :</b> /msg ${SERVICE_BOT(name)} nickadd pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande nickadd :</b> /msg ${SERVICE_BOT(name)} nickadd <Pseudonyme>";
 							return 0;
 						}
 
@@ -3514,13 +3914,13 @@ proc ::EvaServ::INIT { } {
 						puts ${nick} ${value2};
 						close ${nick}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des pseudos interdits."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "nickadd" "${user}"
 						}
 					}
 					"nickdel" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande nickdel :</b> /msg ${SERVICE_BOT(name)} nickdel pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande nickdel :</b> /msg ${SERVICE_BOT(name)} nickdel <Pseudonyme>";
 							return 0;
 						}
 
@@ -3549,7 +3949,7 @@ proc ::EvaServ::INIT { } {
 								close ${FILE_PIPE}
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des pseudos interdits."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "nickdel" "${user}"
 							}
 						}
@@ -3567,15 +3967,15 @@ proc ::EvaServ::INIT { } {
 						}
 						catch { close ${liste} }
 						if { ${stop} == 0 } {
-							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Pseudo"
+							SENT:MSG:TO:USER ${USER_LOWER} "Aucun <Pseudonyme>"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Nicklist" "${user}"
 						}
 					}
 					"identadd" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande identadd :</b> /msg ${SERVICE_BOT(name)} identadd ident";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande identadd :</b> /msg ${SERVICE_BOT(name)} identadd <ident>";
 							return 0;
 						}
 
@@ -3599,13 +3999,13 @@ proc ::EvaServ::INIT { } {
 						puts ${ident} ${value2};
 						close ${ident}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des idents interdits."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "identadd" "${user}"
 						}
 					}
 					"identdel" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande identdel :</b> /msg ${SERVICE_BOT(name)} identdel ident";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande identdel :</b> /msg ${SERVICE_BOT(name)} identdel <ident>";
 							return 0;
 						}
 
@@ -3634,7 +4034,7 @@ proc ::EvaServ::INIT { } {
 								close ${FILE_PIPE}
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des idents interdits."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "identdel" "${user}"
 							}
 						}
@@ -3652,15 +4052,15 @@ proc ::EvaServ::INIT { } {
 						}
 						catch { close ${liste} }
 						if { ${stop} == 0 } {
-							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Ident"
+							SENT:MSG:TO:USER ${USER_LOWER} "Aucun <ident>"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Identlist" "${user}"
 						}
 					}
 					"realadd" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande realadd :</b> /msg ${SERVICE_BOT(name)} realadd realname";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande realadd :</b> /msg ${SERVICE_BOT(name)} realadd <realname>";
 							return 0;
 						}
 
@@ -3684,13 +4084,13 @@ proc ::EvaServ::INIT { } {
 						puts ${real} ${value2};
 						close ${real}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des realnames interdits."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "realadd" "${user}"
 						}
 					}
 					"realdel" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande realdel :</b> /msg ${SERVICE_BOT(name)} realdel realname";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande realdel :</b> /msg ${SERVICE_BOT(name)} realdel <realname>";
 							return 0;
 						}
 
@@ -3719,7 +4119,7 @@ proc ::EvaServ::INIT { } {
 								close ${FILE_PIPE}
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des realnames interdits."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "realdel" "${user}"
 							}
 						}
@@ -3737,15 +4137,15 @@ proc ::EvaServ::INIT { } {
 						}
 						catch { close ${liste} }
 						if { ${stop} == 0 } {
-							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Realname"
+							SENT:MSG:TO:USER ${USER_LOWER} "Aucun <realname>"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Reallist" "${user}"
 						}
 					}
 					"hostadd" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande hostadd :</b> /msg ${SERVICE_BOT(name)} hostadd hostname";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande hostadd :</b> /msg ${SERVICE_BOT(name)} hostadd <HostName>";
 							return 0;
 						}
 
@@ -3779,13 +4179,13 @@ proc ::EvaServ::INIT { } {
 						puts ${host} ${value2};
 						close ${host}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des hostnames interdites."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "hostadd" "${user}"
 						}
 					}
 					"hostdel" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande hostdel :</b> /msg ${SERVICE_BOT(name)} hostdel hostname";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande hostdel :</b> /msg ${SERVICE_BOT(name)} hostdel <HostName>";
 							return 0;
 						}
 
@@ -3814,7 +4214,7 @@ proc ::EvaServ::INIT { } {
 								close ${FILE_PIPE}
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des hostnames interdites."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "hostdel" "${user}"
 							}
 						}
@@ -3832,15 +4232,15 @@ proc ::EvaServ::INIT { } {
 						}
 						catch { close ${liste} }
 						if { ${stop} == 0 } {
-							SENT:MSG:TO:USER ${USER_LOWER} "Aucune Hostname"
+							SENT:MSG:TO:USER ${USER_LOWER} "Aucune <HostName>"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Hostlist" "${user}"
 						}
 					}
 					"chanadd" {
 						if { [string index ${value2} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande chanadd :</b> /msg ${SERVICE_BOT(name)} chanadd #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande chanadd :</b> /msg ${SERVICE_BOT(name)} chanadd <#Salon>";
 							return 0;
 						}
 
@@ -3886,13 +4286,13 @@ proc ::EvaServ::INIT { } {
 						puts ${chan} ${value2};
 						close ${chan}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajouté dans la liste des salons interdits."
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "chanadd" "${user}"
 						}
 					}
 					"chandel" {
 						if { [string index ${value2} 0] != "#" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande chandel :</b> /msg ${SERVICE_BOT(name)} chandel #salon";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande chandel :</b> /msg ${SERVICE_BOT(name)} chandel <#Salon>";
 							return 0;
 						}
 
@@ -3922,7 +4322,7 @@ proc ::EvaServ::INIT { } {
 							}
 							FCT:SENT:SERV PART ${value1};
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des salons interdits."
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "chandel" "${user}"
 							}
 						}
@@ -3942,13 +4342,13 @@ proc ::EvaServ::INIT { } {
 						if { ${stop} == 0 } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Salon"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Chanlist" "${user}"
 						}
 					}
 					"trustadd" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande trustadd :</b> /msg ${SERVICE_BOT(name)} trustadd mask";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande trustadd :</b> /msg ${SERVICE_BOT(name)} trustadd <Mask>";
 							return 0;
 						}
 
@@ -3979,13 +4379,13 @@ proc ::EvaServ::INIT { } {
 						close ${bprotect}
 						SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été ajoutée dans la trustlist."
 						if { ![info exists trust(${value2})] } { set trust(${value2})		1 }
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "trustadd" "${user}"
 						}
 					}
 					"trustdel" {
 						if { ${value2} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande trustdel :</b> /msg ${SERVICE_BOT(name)} trustdel mask";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande trustdel :</b> /msg ${SERVICE_BOT(name)} trustdel <Mask>";
 							return 0;
 						}
 
@@ -4015,7 +4415,7 @@ proc ::EvaServ::INIT { } {
 							}
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimée de la trustlist."
 							if { [info exists trust(${value2})] } { unset trust(${value2})		}
-							if { [console 1] == "ok" } {
+							if { [ShowOnPartyLine 1] } {
 								SHOW:INFO:TO:CHANLOG "trustdel" "${user}"
 							}
 						}
@@ -4035,7 +4435,7 @@ proc ::EvaServ::INIT { } {
 						if { ${stop} == 0 } {
 							SENT:MSG:TO:USER ${USER_LOWER} "Aucun Trust"
 						}
-						if { [console 1] == "ok" } {
+						if { [ShowOnPartyLine 1] } {
 							SHOW:INFO:TO:CHANLOG "Trustlist" "${user}"
 						}
 					}
@@ -4048,7 +4448,7 @@ proc ::EvaServ::INIT { } {
 								${value8} == ""											|| \
 								[regexp "\[^1-4\]" ${value8}]
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessadd :</b> /msg ${SERVICE_BOT(name)} accessadd <pseudo> <password> <level>"
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessadd :</b> /msg ${SERVICE_BOT(name)} accessadd <Pseudonyme> <Mot-De-Passe> <level>"
 							dict for {NIVEAU DATA} $::EvaServ::commands {
 								dict with DATA {
 									SENT:MSG:TO:USER ${USER_LOWER} "<c02>Niveau ${NIVEAU} <c04>:<c01> ${name} (attr ${attr}) "
@@ -4061,7 +4461,7 @@ proc ::EvaServ::INIT { } {
 					}
 					"accessdel" {
 						if { ${value1} == "" } {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessdel :</b> /msg ${SERVICE_BOT(name)} accessdel pseudo";
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessdel :</b> /msg ${SERVICE_BOT(name)} accessdel <Pseudonyme>";
 							return 0;
 						}
 
@@ -4077,7 +4477,7 @@ proc ::EvaServ::INIT { } {
 								}
 								deluser ${value2}
 								SENT:MSG:TO:USER ${USER_LOWER} "<b>${value1}</b> a bien été supprimé de la liste des accès."
-								if { [console 1] == "ok" } {
+								if { [ShowOnPartyLine 1] } {
 									SHOW:INFO:TO:CHANLOG "accessdel" "${user}"
 								}
 								return 0
@@ -4090,7 +4490,7 @@ proc ::EvaServ::INIT { } {
 							${value2} != "level"										&& \
 								${value2} != "pass"
 						} {
-							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Pass :</b> /msg ${SERVICE_BOT(name)} accessmod pass pseudo mot-de-passe"
+							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Pass :</b> /msg ${SERVICE_BOT(name)} accessmod pass <Pseudonyme> <Mot-De-Passe>"
 							SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Level :</b> /msg ${SERVICE_BOT(name)} accessmod level pseudo level"
 							return 0
 						}
@@ -4134,7 +4534,7 @@ proc ::EvaServ::INIT { } {
 											}
 										}
 										SENT:MSG:TO:USER ${USER_LOWER} "Changement du level de <b>${value4}</b> reussi."
-										if { [console 1] == "ok" } {
+										if { [ShowOnPartyLine 1] } {
 											SHOW:INFO:TO:CHANLOG "accessmod" "${user}"
 										}
 										return 0
@@ -4148,7 +4548,7 @@ proc ::EvaServ::INIT { } {
 									${value4} == ""									|| \
 										${value8} == ""
 								} {
-									SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Pass :</b> /msg ${SERVICE_BOT(name)} accessmod pass pseudo mot-de-passe";
+									SENT:MSG:TO:USER ${USER_LOWER} "<b>Commande accessmod Pass :</b> /msg ${SERVICE_BOT(name)} accessmod pass <Pseudonyme> <Mot-De-Passe>";
 									return 0;
 								}
 
@@ -4165,7 +4565,7 @@ proc ::EvaServ::INIT { } {
 										}
 										setuser ${value3} PASS ${value8}
 										SENT:MSG:TO:USER ${USER_LOWER} "Changement du mot de passe de <b>${value4}</b> reussi."
-										if { [console 1] == "ok" } {
+										if { [ShowOnPartyLine 1] } {
 											SHOW:INFO:TO:CHANLOG "accessmod" "${user}"
 										}
 										return 0
@@ -4182,15 +4582,6 @@ proc ::EvaServ::INIT { } {
 				}
 			}
 
-			proc ::EvaServ::help:description:help {}			{ return "Permet de voir l'aide détaillée de la commande." }
-			proc ::EvaServ::help:description:auth {}			{
-				variable SERVICE_BOT
-				return "Permet de vous authentifier sur ${SERVICE_BOT(name)}."
-			}
-			proc ::EvaServ::help:description:copyright {}		{
-				variable SERVICE_BOT
-				return "Permet de voir l'auteur de ${SERVICE_BOT(name)}."
-			}
 			proc ::EvaServ::help:description:deauth {}			{
 				variable SERVICE_BOT
 				return "Permet de vous déauthentifier sur ${SERVICE_BOT(name)}."
@@ -4311,439 +4702,7 @@ proc ::EvaServ::INIT { } {
 			proc ::EvaServ::help:description:restart {}			{ return "Permet de redémarrer ${SCRIPT(name)}." }
 			proc ::EvaServ::help:description:shun {}			{ return "Permet de shun un utilisateur du serveur." }
 
-			proc ::EvaServ::Commands:Help { NICK_SOURCE hcmd } {
-				variable SERVICE_BOT
-				if { [authed ${NICK_SOURCE} ${hcmd}] != "ok" } { return 0 }
-				switch -exact ${hcmd} {
-					"help" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} help nom-de-la-commande"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:help]
-					}
-					"auth" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} auth pseudo mot-de-passe"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:auth]
-					}
-					"copyright" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} copyright"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:copyright]
-					}
-					"deauth" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deauth"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deauth]
-					}
-					"seen" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} seen pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:seen]
-					}
-					"showcommands" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} showcommands"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:showcommands]
-					}
-					"map" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} map"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:map]
-					}
-					"whois" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} whois pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:whois]
-					}
-					"shun" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} shun <pseudo ou ip> raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:shun]
-					}
-					"access" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} access pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:access]
-					}
-					"ban" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} ban #salon mask"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ban]
-					}
-					"clearallmodes" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clearallmodes #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearallmodes]
-					}
-					"clearbans" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clearbans #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearbans]
-					}
-					"clearmodes" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clearmodes #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearmodes]
-					}
-					"dehalfop" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} dehalfop #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:dehalfop]
-					}
-					"dehalfopall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} dehalfopall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:dehalfopall]
-					}
-					"deop" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deop #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deop]
-					}
-					"deopall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deopall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deopall]
-					}
-					"deowner" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deowner #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deowner]
-					}
-					"deownerall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deownerall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deownerall]
-					}
-					"deprotect" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deprotect #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deprotect]
-					}
-					"deprotectall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} deprotectall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:deprotectall]
-					}
-					"devoice" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} devoice #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:devoice]
-					}
-					"devoiceall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} devoiceall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:devoiceall]
-					}
-					"gline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} gline <pseudo ou ip> raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:gline]
-					}
-					"glinelist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} glinelist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:glinelist]
-					}
-					"shunlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} shunlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:shunlist]
-					}
-					"globops" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} globops message"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:globops]
-					}
-					"halfop" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} halfop #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:halfop]
-					}
-					"halfopall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} halfopall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:halfopall]
-					}
-					"invite" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} invite #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:invite]
-					}
-					"inviteme" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} inviteme"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:inviteme]
-					}
-					"kick" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} kick #salon pseudo raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kick]
-					}
-					"kickall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} kickall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kickall]
-					}
-					"kickban" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} kickban #salon pseudo raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kickban]
-					}
-					"kill" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} kill pseudo raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kill]
-					}
-					"kline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} kline <pseudo ou ip> raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:kline]
-					}
-					"klinelist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} klinelist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:klinelist]
-					}
-					"mode" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} mode #salon +/-mode"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:mode]
-					}
-					"newpass" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} newpass mot-de-passe"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:newpass]
-					}
-					"nickban" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} nickban #salon pseudo raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickban]
-					}
-					"op" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} op #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:op]
-					}
-					"opall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} opall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:opall]
-					}
-					"owner" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} owner #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:owner]
-					}
-					"ownerall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} ownerall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ownerall]
-					}
-					"protect" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} protect #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protect]
-					}
-					"protectall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} protectall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protectall]
-					}
-					"topic" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} topic #salon topic"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:topic]
-					}
-					"unban" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} unban #salon mask"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unban]
-					}
-					"ungline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} ungline ident@host"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:ungline]
-					}
-					"unshun" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} unshun pseudo raison"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unshun]
-					}
-					"unkline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} unkline ident@host"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:unkline]
-					}
 
-					"voice" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} voice #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:voice]
-					}
-					"voiceall" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} voiceall #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:voiceall]
-					}
-					"wallops" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} wallops message"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:wallops]
-					}
-					"changline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} changline #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:changline]
-					}
-					"chankill" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} chankill #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chankill]
-					}
-					"chanlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} chanlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanlist]
-					}
-					"closeclear" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} closeclear"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closeclear]
-					}
-					"cleargline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} cleargline"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:cleargline]
-					}
-					"clearkline" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clearkline"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clearkline]
-					}
-					"clientlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clientlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientlist]
-					}
-					"closeadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} closeadd #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closeadd]
-					}
-					"closelist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} closelist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closelist]
-					}
-					"hostlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} hostlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostlist]
-					}
-					"identlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} identlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identlist]
-					}
-					"join" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} join #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:join]
-					}
-					"list" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} list"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:list]
-					}
-					"nicklist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} nicklist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nicklist]
-					}
-					"notice" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} notice message"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:notice]
-					}
-					"part" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} part #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:part]
-					}
-					"reallist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} reallist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:reallist]
-					}
-					"say" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} say #salon message"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:say]
-					}
-					"status" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} status"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:status]
-					}
-					"svsjoin" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} svsjoin #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svsjoin]
-					}
-					"svsnick" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} svsnick ancien-pseudo nouveau-pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svsnick]
-					}
-					"svspart" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} svspart #salon pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:svspart]
-					}
-					"trustlist" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} trustlist"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustlist]
-					}
-					"closedel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} closedel #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:closedel]
-					}
-					"accessadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} accessadd pseudo password level"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessadd]
-					}
-					"chanadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} chanadd #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanadd]
-					}
-					"clientadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clientadd version"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientadd]
-					}
-					"hostadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} hostadd hostname"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostadd]
-					}
-					"identadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} identadd ident"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identadd]
-					}
-					"nickadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} nickadd pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickadd]
-					}
-					"realadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} realadd realname"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:realadd]
-					}
-					"trustadd" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} trustadd mask"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustadd]
-					}
-					"backup" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} backup"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:backup]
-					}
-					"chanlog" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} chanlog #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chanlog]
-					}
-					"client" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} client on/off"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:client]
-					}
-					"console" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} console 0/1/2/3"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 0 <c04>:<c01> Aucune console"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 1 <c04>:<c01> Console commande"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 2 <c04>:<c01> Console commande & connexion & déconnexion"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 3 <c04>:<c01> Toutes les consoles"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:console]
-					}
-					"accessdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} accessdel pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessdel]
-					}
-					"chandel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} chandel #salon"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:chandel]
-					}
-					"clientdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} clientdel version"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:clientdel]
-					}
-					"hostdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} hostdel hostname"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:hostdel]
-					}
-					"identdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} identdel ident"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:identdel]
-					}
-					"nickdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} nickdel pseudo"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:nickdel]
-					}
-					"realdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} realdel realname"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:realdel]
-					}
-					"trustdel" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} trustdel mask"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:trustdel]
-					}
-					"die" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} die"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:die]
-					}
-					"maxlogin" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} maxlogin on/off"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:maxlogin]
-					}
-					"accessmod" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} accessmod pass pseudo mot-de-passe"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} accessmod level pseudo level"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:accessmod]
-					}
-					"protection" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} protection 0/1/2/3/4"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 0 <c04>:<c01> Aucune Protection"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 1 <c04>:<c01> Protection Admins"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 2 <c04>:<c01> Protection Admins + Ircops"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 3 <c04>:<c01> Protection Admins + Ircops + Géofronts"
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<c02>Level 4 <c04>:<c01> Protection de tous les accès"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:protection]
-					}
-					"restart" {
-						SENT:MSG:TO:USER ${NICK_SOURCE} "<b>Commande Help :</b> /msg ${SERVICE_BOT(name)} restart"
-						SENT:MSG:TO:USER ${NICK_SOURCE} [help:description:restart]
-					}
-				}
-			}
 
 			#################
 			# Eva Connexion #
@@ -4856,7 +4815,7 @@ proc ::EvaServ::INIT { } {
 					"SQUIT" {
 						set serv		[lindex ${arg} 1]
 						if {
-							[console 2] == "ok"											&& \
+							[ShowOnPartyLine 2]											&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Unlink" "${serv}"
@@ -4878,7 +4837,7 @@ proc ::EvaServ::INIT { } {
 					"MD"	{
 						#:001 MD client 001E6A4GK certfp :023f2eae234f23fed481be360d744e99df957f.....
 						if {
-							[console 2] == "ok"											&& \
+							[ShowOnPartyLine 2]											&& \
 								${config(init)} == 0
 						} {
 							set user	[FCT:DATA:TO:NICK [lindex ${arg} 3]]
@@ -4890,7 +4849,7 @@ proc ::EvaServ::INIT { } {
 					"REPUTATION"	{
 						#:001 REPUTATION xxx.xxx.xxx.xxx 373
 						if {
-							[console 2] == "ok"											&& \
+							[ShowOnPartyLine 2]											&& \
 								${config(init)} == 0
 						} {
 							set host	[lindex ${arg} 2]
@@ -4944,7 +4903,7 @@ proc ::EvaServ::INIT { } {
 							set stype		"Connexion"
 						}
 						if {
-							[console 2] == "ok"											&& \
+							[ShowOnPartyLine 2]											&& \
 								${config(init)} == 0
 						} {
 							set MSG_CONNECT		"[DBU:GET ${uid} NICK]"
@@ -5032,7 +4991,7 @@ proc ::EvaServ::INIT { } {
 						set real		[join [string trim [lrange ${arg} 7 end] :]]
 						SENT:MSG:TO:USER "${config(rep)}" "<b><c1,1>------------------------------ <c0>Whois <c1>------------------------------"
 						SENT:MSG:TO:USER "${config(rep)}" "<b>"
-						SENT:MSG:TO:USER "${config(rep)}" "<c01> \[<c03> Pseudo <c01>\] <c02> ${nick}"
+						SENT:MSG:TO:USER "${config(rep)}" "<c01> \[<c03> <Pseudonyme> <c01>\] <c02> ${nick}"
 						SENT:MSG:TO:USER "${config(rep)}" "<c01> \[<c03> Nom Réel <c01>\] <c02> ${real}"
 						SENT:MSG:TO:USER "${config(rep)}" "<c01> \[<c03> Host <c01>\] <c02> ${ident}@${host}"
 					}
@@ -5085,7 +5044,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]								&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]			&& \
 									![info exists admins(${n})]								&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "+q" ${n}
 							} elseif {
@@ -5093,7 +5052,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "-q" ${n}
 							} elseif {
@@ -5101,7 +5060,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "+a" ${n}
 							} elseif {
@@ -5109,7 +5068,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "-a" ${n}
 							} elseif {
@@ -5117,7 +5076,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "+o" ${n}
 							} elseif {
@@ -5125,7 +5084,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "-o" ${n}
 							} elseif {
@@ -5133,7 +5092,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "+h" ${n}
 							} elseif {
@@ -5141,7 +5100,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "-h" ${n}
 							} elseif {
@@ -5149,7 +5108,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "+v" ${n}
 							} elseif {
@@ -5157,7 +5116,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:MODE ${chan} "-v" ${n}
 							} elseif {
@@ -5165,7 +5124,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]								&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:SERV KICK ${chan} ${n} Kicked [rnick ${config(rep)}];
 							} elseif {
@@ -5173,7 +5132,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:SERV KILL ${n} Chan Killed [rnick ${config(rep)}];
 								refresh ${n}
@@ -5182,7 +5141,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								sent2socket ":${config(link)} TKL + G * $vhost(${n}) ${SERVICE_BOT(name)} [expr [unixtime] + ${config(gline_duration)}] [unixtime] :Chan Glined [rnick ${config(rep)}] (Expire le [duree [expr [unixtime] + ${config(gline_duration)}]])"
 							} elseif {
@@ -5190,7 +5149,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								FCT:SENT:SERV KICK ${chan} ${n} Salon Interdit;
 							} elseif {
@@ -5198,7 +5157,7 @@ proc ::EvaServ::INIT { } {
 									![info exists users(${n})]									&& \
 									${n} != [string tolower ${SERVICE_BOT(name)}]				&& \
 									![info exists admins(${n})]									&& \
-									[protection ${n} ${config(protection)}] != "ok"
+									![protection ${n}]
 							} {
 								if { [info exists config(rep)] } {
 									FCT:SENT:SERV KICK ${chan} ${n} Closed [rnick ${config(rep)}];
@@ -5238,7 +5197,7 @@ proc ::EvaServ::INIT { } {
 						set serv		[lindex ${arg} 2]
 						set desc		[join [string trim [lrange ${arg} 4 end] :]]
 						if {
-							[console 2] == "ok"												&& \
+							[ShowOnPartyLine 2]												&& \
 								${config(init)} == 0
 						} {
 							SHOW:INFO:TO:CHANLOG "Link" "${serv} : ${desc}"
@@ -5260,7 +5219,7 @@ proc ::EvaServ::INIT { } {
 								if { ${verscli} != "" } { continue }
 								if { [string match *${verscli}* ${vdata}] } {
 									if {
-										[console 3] == "ok"									&& \
+										[ShowOnPartyLine 3]									&& \
 											${config(init)} == 0
 									} {
 										SHOW:INFO:TO:CHANLOG "Kill" "${user} a été killé : ${config(rclient)}"
@@ -5280,7 +5239,7 @@ proc ::EvaServ::INIT { } {
 						set pmode		[join [lrange ${arg} 4 end]]
 						set unix		[lindex ${arg} end]
 						if {
-							[console 3] == "ok"												&& \
+							[ShowOnPartyLine 3]												&& \
 								${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]		&& \
 								${config(init)} == 0											&& \
 								[string tolower ${user}] != [string tolower ${SERVICE_BOT(name)}]
@@ -5314,7 +5273,7 @@ proc ::EvaServ::INIT { } {
 							unset netadmin(${user})
 						}
 						if {
-							[console 3] == "ok"												&& \
+							[ShowOnPartyLine 3]												&& \
 								${config(init)} == 0
 						} {
 							if { [string match *+*S* ${umode}] } {
@@ -5392,7 +5351,7 @@ proc ::EvaServ::INIT { } {
 								unset netadmin(${USER_LOWER})
 							}
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Nick" "${user} change son pseudo en ${new}"
@@ -5400,7 +5359,7 @@ proc ::EvaServ::INIT { } {
 							if {
 								![info exists users(${vnew})]									&& \
 									![info exists admins(${vnew})]									&& \
-									[protection ${vnew} ${config(protection)}] != "ok"
+									[protection ${vnew}]
 							} {
 								catch { open [Script:Get:Directory]/db/nick.db r } liste
 								while { ![eof ${liste}] } {
@@ -5410,7 +5369,7 @@ proc ::EvaServ::INIT { } {
 											${verif} != ""
 									} {
 										if {
-											[console 3] == "ok"									&& \
+											[ShowOnPartyLine 3]									&& \
 												${config(init)} == 0
 										} {
 											SHOW:INFO:TO:CHANLOG "Kill" "${new} a été killé : ${config(ruser)}"
@@ -5428,7 +5387,7 @@ proc ::EvaServ::INIT { } {
 							set vchan		[string tolower ${chan}]
 							set topic		[join [string trim [lrange ${arg} 5 end] :]]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]	&& \
 									${config(init)} == 0
 							} {
@@ -5441,7 +5400,7 @@ proc ::EvaServ::INIT { } {
 							set vchan		[string tolower [lindex ${arg} 2]]
 							set raison		[join [string trim [lrange ${arg} 4 end] :]]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]	&& \
 									${config(init)} == 0
 							} {
@@ -5454,7 +5413,7 @@ proc ::EvaServ::INIT { } {
 							set text		[join [string trim [lrange ${arg} 2 end] :]]
 							refresh ${vpseudo}
 							if {
-								[console 1] == "ok"												&& \
+								[ShowOnPartyLine 1]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Kill" "${pseudo} : ${text}<c>"
@@ -5474,7 +5433,7 @@ proc ::EvaServ::INIT { } {
 						"GLOBOPS" {
 							set text		[join [string trim [lrange ${arg} 2 end] :]]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0										&& \
 									![info exists users(${USER_LOWER})]
 							} {
@@ -5485,7 +5444,7 @@ proc ::EvaServ::INIT { } {
 							set pseudo		[lindex ${arg} 2]
 							set ident		[lindex ${arg} 3]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Chgident" "${user} change l'ident de ${pseudo} en ${ident}"
@@ -5495,7 +5454,7 @@ proc ::EvaServ::INIT { } {
 							set pseudo		[FCT:DATA:TO:NICK [lindex ${arg} 2]]
 							set host		[lindex ${arg} 3]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Chghost" "${user} change l'host de ${pseudo} en ${host}"
@@ -5505,7 +5464,7 @@ proc ::EvaServ::INIT { } {
 							set pseudo		[lindex ${arg} 2]
 							set real		[join [string trim [lrange ${arg} 3 end] :]]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Chgname" "${user} change le realname de ${pseudo} en ${real}"
@@ -5514,7 +5473,7 @@ proc ::EvaServ::INIT { } {
 						"SETHOST" {
 							set host		[lindex ${arg} 2]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Sethost" "Changement de l'host de ${user} en ${host}"
@@ -5523,7 +5482,7 @@ proc ::EvaServ::INIT { } {
 						"SETIDENT" {
 							set ident		[lindex ${arg} 2]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Setident" "Changement de l'ident de ${user} en ${ident}"
@@ -5532,7 +5491,7 @@ proc ::EvaServ::INIT { } {
 						"SETNAME" {
 							set real		[join [string trim [lrange ${arg} 2 end] :]]
 							if {
-								[console 3] == "ok"											&& \
+								[ShowOnPartyLine 3]											&& \
 									${config(init)} == 0
 							} {
 								SHOW:INFO:TO:CHANLOG "Setname" "Changement du realname de ${user} en ${real}"
@@ -5545,7 +5504,7 @@ proc ::EvaServ::INIT { } {
 							set chan		[lindex ${arg} 3]
 							set vchan		[string tolower ${chan}]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]		&& \
 									${config(init)} == 0
 							} {
@@ -5560,7 +5519,7 @@ proc ::EvaServ::INIT { } {
 										${USER_LOWER} != [string tolower ${SERVICE_BOT(name)}]		&& \
 										![info exists users(${USER_LOWER})]							&& \
 										![info exists admins(${USER_LOWER})]						&& \
-										[protection ${USER_LOWER} ${config(protection)}] != "ok"
+										[protection ${USER_LOWER}]
 								} {
 									set config(cmd)		"badchan";
 									FCT:SENT:SERV JOIN ${vchan};
@@ -5568,7 +5527,7 @@ proc ::EvaServ::INIT { } {
 									FCT:SET:TOPIC ${vchan} "<c1>Salon Interdit le [duree [unixtime]]";
 									sent2socket ":${config(link)} NAMES ${vchan}"
 									if {
-										[console 3] == "ok"										&& \
+										[ShowOnPartyLine 3]										&& \
 											${config(init)} == 0
 									} {
 										SHOW:INFO:TO:CHANLOG "Part" "${user} part de ${chan} : Salon Interdit"
@@ -5582,7 +5541,7 @@ proc ::EvaServ::INIT { } {
 							set chan		[string trim [lindex ${arg} 2] :]
 							set vchan		[string tolower ${chan}]
 							if {
-								[console 3] == "ok"												&& \
+								[ShowOnPartyLine 3]												&& \
 									${vchan} != [string tolower ${SERVICE_BOT(channel_logs)}]		&& \
 									${config(init)} == 0
 							} {
@@ -5594,7 +5553,7 @@ proc ::EvaServ::INIT { } {
 							refresh ${USER_LOWER}
 
 							if {
-								[console 2] == "ok"												&& \
+								[ShowOnPartyLine 2]												&& \
 									${config(init)} == 0
 							} {
 								if { ${text} != "" } {

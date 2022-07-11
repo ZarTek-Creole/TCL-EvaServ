@@ -1,3 +1,7 @@
 [submodule "TCL-PKG-IRCServices"]
 	path = TCL-PKG-IRCServices
 	url = https://github.com/ZarTek-Creole/TCL-PKG-IRCServices.git
+
+[submodule "TCL-ZCT"]
+        path = TCL-ZCT
+        url = https://github.com/ZarTek-Creole/TCL-ZCT.git
