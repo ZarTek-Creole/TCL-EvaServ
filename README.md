@@ -253,6 +253,5 @@ Vous pouvez me contacter sur IRC :
 [license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
 [license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
-Distributed under the SoonDecision License. See `LICENSE` for more information.
 
 [product-screenshot]: images/screenshot.png
