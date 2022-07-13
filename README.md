@@ -259,43 +259,4 @@ Dans le fichier configuration vous pouvez configurer chaque commande à un nivea
 [product-screenshot]: images/screenshot.png
 Distributed under the SoonDecision License. See `LICENSE` for more information.
 
-<!-- CONTACT -->
-## Contact
-
-ZarTek - [@ZarTek](github.com/ZarTek-Creole) 
-
-Lien du projet : [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
-
-1. Tickets
-Signalez tout bug, proposez toute idée :
-* [Créez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
-
-2. IRC
-Vous pouvez me contacter sur IRC :
-
-   * [irc.extra-cool.fr:+6697 #Extra-Cool](irc://irc.extra-cool.fr:+6697/#Extra-Cool) 
-   * [irc.libera.chat:+6697 #Zartek](irc://irc.libera.chat:+6697/#Zartek)
-
-<!-- ACKNOWLEDGEMENTS -->
-## Remerciements
-* TiSMA de Exolia.net pour le code d'origine
-* Amandine de eggdrop.Fr pour son aide/idées/tests/..
-* MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
-
-## Infos en vrac
-
-Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[contributors-url]: github.com/ZarTek-Creole/TCL-Eva-Service/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[forks-url]: github.com/ZarTek-Creole/TCL-Eva-Service/network/members
-[stars-shield]: https://img.shields.io/github/stars/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[stars-url]: github.com/ZarTek-Creole/TCL-Eva-Service/stargazers
-[issues-shield]: https://img.shields.io/github/issues/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[issues-url]: github.com/ZarTek-Creole/TCL-Eva-Service/issues
-[license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
