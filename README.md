@@ -57,9 +57,12 @@
 EvaServ est un ensemble de Services IRC écris en TCL et fonctionnant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
 Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
 
-EvaServ est utile pour :
-* La gestion des salons sur votre réseau
-* ...
+Par défaut Evaserv à 4 niveau de rôles  : Utilisateur (niveau 0 : aucun), Helpeur (1), Géofront (2), Ircop (3), Admin (4).
+Chaque niveau supérieur hérite des privilèges des niveaux inférieurs. chaque niveau donne droit à de nouvelles fonctionnalités (commandes) :
+* Gestion des utilisateurs (vhost, interdire, access,...)
+* Gestion des salons (interdire la création, enregistrer...)
+* Gestion des clients (interdire certaines ips; version de client, hostname, ident..)
+*  Gestion des serveurs connectés.
 
 ### Prérequis
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
@@ -174,12 +177,11 @@ Attention afin de réaliser votre link veuillez vérifier que votre configuratio
 Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
 Cela aura comme effet de vous créer un compte de niveau 4 (Admin) par défaut
-
-
 2. Un peu plus loin
-
 2.1. Débug général
-Si Eva Service ne se connecte pas, activez le mode *socket debug* changez la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
+Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line.
+2.2. Debug Socket/Link
+Pour activer le mode *socket debug* changez la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
@@ -213,6 +215,48 @@ Les contributions sont ce qui font de la communauté open source un endroit incr
 <!-- LICENSE -->
 ## License
 
+Distributed under the SoonDecision License. See `LICENSE` for more information.
+
+<!-- CONTACT -->
+## Contact
+
+ZarTek - [@ZarTek](github.com/ZarTek-Creole) 
+
+Lien du projet : [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
+
+1. Tickets
+Signalez tout bug, proposez toute idée :
+* [Créez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
+
+2. IRC
+Vous pouvez me contacter sur IRC :
+
+   * [irc.extra-cool.fr:+6697 #Extra-Cool](irc://irc.extra-cool.fr:+6697/#Extra-Cool) 
+   * [irc.libera.chat:+6697 #Zartek](irc://irc.libera.chat:+6697/#Zartek)
+
+<!-- ACKNOWLEDGEMENTS -->
+## Remerciements
+* TiSMA de Exolia.net pour le code d'origine
+* Amandine de eggdrop.Fr pour son aide/idées/tests/..
+* MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
+
+## Infos en vrac
+
+Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
+[contributors-url]: github.com/ZarTek-Creole/TCL-Eva-Service/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
+[forks-url]: github.com/ZarTek-Creole/TCL-Eva-Service/network/members
+[stars-shield]: https://img.shields.io/github/stars/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
+[stars-url]: github.com/ZarTek-Creole/TCL-Eva-Service/stargazers
+[issues-shield]: https://img.shields.io/github/issues/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
+[issues-url]: github.com/ZarTek-Creole/TCL-Eva-Service/issues
+[license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
+[license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
+[product-screenshot]: images/screenshot.png
 Distributed under the SoonDecision License. See `LICENSE` for more information.
 
 <!-- CONTACT -->
