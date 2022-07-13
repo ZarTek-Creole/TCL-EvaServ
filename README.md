@@ -175,6 +175,7 @@ Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre 
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
 Cela aura comme effet de vous créer un compte de niveau 4 (Admin) par défaut
 
+
 2. Un peu plus loin
 
 2.1. Débug général
