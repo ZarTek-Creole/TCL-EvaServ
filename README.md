@@ -174,9 +174,12 @@ Attention afin de réaliser votre link veuillez vérifier que votre configuratio
 Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
 Cela aura comme effet de vous créer un compte de niveau 4 (Admin) par défaut
+
 2. Un peu plus loin
+
 2.1. Débug général
 Si Eva Service ne se connecte pas, activez le mode debug depuis la party-line.
+
 2.2. Debug Socket/Link
 Pour activer le mode *socket debug* changez la valeur ```SERVICE(mode_debug)``` dans votre fichier ```EvaServ.conf``` en mettant 1 a la place de 0.
 <!-- USAGE EXAMPLES -->
