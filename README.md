@@ -240,10 +240,6 @@ Vous pouvez me contacter sur IRC :
 * Amandine de eggdrop.Fr pour son aide/idées/tests/..
 * MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
 
-## Infos en vrac
-
-Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
-
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
