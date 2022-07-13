@@ -17,37 +17,37 @@
      <br />
     !!! VERSION ALPHA !!!
     <br />
-    <a href="github.com/ZarTek-Creole/TCL-Eva-Service"><strong>Explore the docs / Explorez les documents »</strong></a>
+    <a href="github.com/ZarTek-Creole/TCL-Eva-Service"><strong>Explorez les documents </strong></a>
     <br />
     <br />
-    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/issues">Report Bug</a>
+    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/issues">Reportez un Bug</a>
     ·
-    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/issues">Request Feature</a>
+    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/issues">Proposez une amélioration</a>
     ·
-    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/wiki">Wiki / Documenation</a>
+    <a href="github.com/ZarTek-Creole/TCL-Eva-Service/wiki">Wiki / Documentation</a>
   </p>
 </p>
 
 <!-- TABLE OF CONTENTS -->
 <details open="open">
-  <summary>Table of Contents / Table des matières</summary>
+  <summary>Table des matières</summary>
   <ol>
     <li>
-      <a href="#about-the-project">About The Project / À propos du projet</a>
+      <a href="#about-the-project">À propos du projet</a>
     </li>
     <li>
-      <a href="#getting-started">Getting Started / Commencez</a>
+      <a href="#getting-started"> Commencez</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites / Conditions préalables</a></li>
+        <li><a href="#prerequisites"> Conditions préalables</a></li>
         <li><a href="#installation">Installation / Configuration</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage / Utilisation</a></li>
-    <li><a href="#roadmap">Roadmap / Feuille de route</a></li>
-    <li><a href="#contributing">Contributing / Contributions</a></li>
+    <li><a href="#usage"> Utilisation</a></li>
+    <li><a href="#roadmap"> Feuille de route</a></li>
+    <li><a href="#contributing">Contributions</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgements">Acknowledgements /Remerciements</a></li>
+    <li><a href="#acknowledgements">Remerciements</a></li>
   </ol>
 </details>
 
@@ -63,23 +63,17 @@ EvaServ est utile pour :
 
 ### Prérequis
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
-* [Unrealircd (v5.0+)](http://www.eggheads.org/)
-  * EN: IRC server new protocol
-  * FR: Serveur IRC nouveau protocol
+* [Unrealircd (v5.0+)](http://www.eggheads.org/
+  * Serveur IRC nouveau protocol
 * [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 * [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
-* [Client Git](https://git-scm.com/downloads)
+* [Client Git](https://git-scm.com/downloads) ** Fortement recommandé **
 * [tcllib](https://github.com/tcltk/tcllib)
 * [tcl-tls](https://core.tcl-lang.org/tcltls/home)
 
 ### Installation
 1.1.  Récupérez le code EvaServ
-1.1.1 Première étape, vérifiez que les dépendances sont installées et présentes :
-* [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
-* [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
-* [Client Git](https://git-scm.com/downloads)
-* [tcllib](https://github.com/tcltk/tcllib)
-* [tcl-tls](https://core.tcl-lang.org/tcltls/home)
+1.1.1 Première étape, vérifiez que les dépendances sont installées et présentes : https://github.com/ZarTek-Creole/TCL-EvaServ#pr%C3%A9requis
 
 1.1.2 Téléchargez EvaServ
 Téléchargez le code d'EvaServ dans votre répertoire scripts/ de votre eggdrop
@@ -134,7 +128,7 @@ EvaServ.nom-de-domaine.fr;
 ```
 ### Ajoutez le link
 ```
-link Service.nom-de-domaine.fr {  
+link EvaServ.nom-de-domaine.fr {  
 	username *;  
 	hostname IP-link;  
 	bind-ip *;  
@@ -147,6 +141,35 @@ link Service.nom-de-domaine.fr {
 ```
 Enregistrez le fichier de configuration. N'oubliez pas de _Rehash_ votre serveur.  
 ```/rehash```
+
+## Comment créer un link EvaServ sur InspIRCd
+
+Afin de réaliser votre link Serveur ou Service, veuillez vérifier que vous disposez bien du _bind servers_ ci-dessous :  
+```
+ <bind address="IP-serveur" port="port-dedie" type="servers"> 
+```
+### _Link Serveur_  
+  
+* Serveur 1  
+```
+  <link name="irc2.domaine.tld" ipaddr="10.0.0.2" port="7000" autoconnect="60" hidden="no" sendpass="mot-de-passe" recvpass="mot-de-passe">
+``` 
+* Serveur 2  
+```
+  <link name="irc1.domaine.tld" ipaddr="10.0.0.1" port="7000" hidden="no" sendpass="mot-de-passe" recvpass="mot-de-passe">
+  ```
+
+* Link Service  
+```
+<link name="EvaServ.domaine.tld" ipaddr="10.0.0.1" port="7000" allowmask="10.0.0.1" sendpass="mot-de-passe" recvpass="mot-de-passe">  
+
+<uline server="Service.domaine.tld" silent="no">
+```
+ 
+Attention afin de réaliser votre link veuillez vérifier que votre configuration comporte bien le module ci dessous :  
+```
+<module name="m_spanningtree.so">
+```
 # Premier lancement
 Lors du premier lancement, aucun compte utilisateur n'existe, pour créer votre compte vous devez vous identifier
 ```msg EvaServ auth [Votre pseudo voulu] <votre mot de passe voulu>```
@@ -177,23 +200,11 @@ Pour vous identifier
 <!-- ROADMAP -->
 ## Roadmap
 
-See the [open issues](github.com/ZarTek-Creole/TCL-Eva-Service/issues) for a list of proposed features (and known issues).
-
----
 Voir les [problèmes en suspens](github.com/ZarTek-Creole/TCL-Eva-Service/issues) pour une liste des fonctionnalités proposées (et des problèmes connus).
 
 <!-- CONTRIBUTING -->
-## Contributing
+## Contributions
 
-Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a [Pull Request](github.com/ZarTek-Creole/TCL-Eva-Service/pulls)
-
----
 Les contributions sont ce qui font de la communauté open source un endroit incroyable pour apprendre, inspirer et créer. Toute contribution que vous apportez est ** grandement appréciée **.
 1. Forkez le projet
 2. Créez votre branche de fonctionnalités (`git checkout -b feature/AmazingFeature`)
@@ -209,27 +220,27 @@ Distributed under the SoonDecision License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-ZarTek - [@ZarTek](github.com/ZarTek-Creole) - ZarTek.Creole@GMail.com
+ZarTek - [@ZarTek](github.com/ZarTek-Creole) 
 
-Project Link: [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
+Lien du projet : [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
 
 1. Tickets
-Signalez tout bug, toutes idées :
-* [Creez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
+Signalez tout bug, proposez toute idée :
+* [Créez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
 
 2. IRC
 Vous pouvez me contacter sur IRC :
 
-   * [irc.epiknet.org 6667 #eggdrop](irc://irc.epiknet.org:6667/#eggdrop)
-   * [irc.epiknet.org +6697 #eggdrop](irc://irc.epiknet.org:+6697/#eggdrop)
+   * [irc.extra-cool.fr:+6697 #Extra-Cool](irc://irc.extra-cool.fr:+6697/#Extra-Cool) 
+   * [irc.libera.chat:+6697 #Zartek](irc://irc.libera.chat:+6697/#Zartek)
 
 <!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
+## Remerciements
 * TiSMA de Exolia.net pour le code d'origine
 * Amandine de eggdrop.Fr pour son aide/idées/tests/..
 * MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
 
-## infos en vrac
+## Infos en vrac
 
 Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
 
@@ -246,4 +257,3 @@ Dans le fichier configuration vous pouvez configurer chaque commande à un nivea
 [license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
 [license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
-
