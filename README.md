@@ -200,7 +200,7 @@ Pour vous identifier
 <!-- ROADMAP -->
 ## Roadmap
 
-Voir les [problèmes en suspens](github.com/ZarTek-Creole/TCL-Eva-Service/issues) pour une liste des fonctionnalités proposées (et des problèmes connus).
+Voir les [problèmes en suspens](https://github.com/ZarTek-Creole/TCL-EvaServ/issues) pour une liste des fonctionnalités proposées (et des problèmes connus).
 
 <!-- CONTRIBUTING -->
 ## Contributions
