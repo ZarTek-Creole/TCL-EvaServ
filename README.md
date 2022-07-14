@@ -55,7 +55,7 @@
 ## A propos EvaServ
 
 EvaServ est un ensemble de Services IRC écris en TCL et fonctionnant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
-Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
+Il a été testé sur un [Unrealircd (v5.0+)](https://www.unrealircd.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
 
 Par défaut Evaserv à 4 niveaux de rôles  : Utilisateur (niveau 0 : aucun), Helpeur (1), Géofront (2), Ircop (3), Admin (4).
 Chaque niveau supérieur hérite des privilèges des niveaux inférieurs. chaque niveau donne droit à de nouvelles fonctionnalités (commandes) :
@@ -66,7 +66,7 @@ Chaque niveau supérieur hérite des privilèges des niveaux inférieurs. chaque
 
 ### Prérequis
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
-* [Unrealircd (v5.0+)](http://www.eggheads.org/
+* [Unrealircd (v5.0+)](https://www.unrealircd.org/)
   * Serveur IRC nouveau protocol
 * [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 * [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
