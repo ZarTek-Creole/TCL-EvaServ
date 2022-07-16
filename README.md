@@ -59,7 +59,7 @@ Il a été testé sur un [Unrealircd (v5.0+)](https://www.unrealircd.org/) qui u
 
 Par défaut Evaserv à 4 niveaux de rôles  : Utilisateur (niveau 0 : aucun), Helpeur (1), Géofront (2), Ircop (3), Admin (4).
 Chaque niveau supérieur hérite des privilèges des niveaux inférieurs. chaque niveau donne droit à de nouvelles fonctionnalités (commandes) :
-* Gestion des utilisateurs (vhost, interdire, accès,...)
+* Gestion des utilisateurs (vhost, interdire des accès,...)
 * Gestion des salons (interdire la création, enregistrer...)
 * Gestion des clients (interdire certaines ips; version de client, hostname, ident..)
 * Gestion des serveurs connectés.
