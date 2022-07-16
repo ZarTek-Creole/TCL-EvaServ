@@ -55,18 +55,18 @@
 ## A propos EvaServ
 
 EvaServ est un ensemble de Services IRC écris en TCL et fonctionnant avec un [eggdrop (v1.9+)](http://www.eggheads.org/) pour la gestion de votre réseau IRC.
-Il a été testé sur un [Unrealircd (v5.0+)](http://www.eggheads.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
+Il a été testé sur un [Unrealircd (v5.0+)](https://www.unrealircd.org/) qui utilise les nouveaux protocoles IRC, il est compatible avec la nouvelle génération de serveurs d'IRCD.
 
 Par défaut Evaserv à 4 niveaux de rôles  : Utilisateur (niveau 0 : aucun), Helpeur (1), Géofront (2), Ircop (3), Admin (4).
 Chaque niveau supérieur hérite des privilèges des niveaux inférieurs. chaque niveau donne droit à de nouvelles fonctionnalités (commandes) :
-* Gestion des utilisateurs (vhost, interdire, accès,...)
+* Gestion des utilisateurs (vhost, gérer les accès,...)
 * Gestion des salons (interdire la création, enregistrer...)
 * Gestion des clients (interdire certaines ips; version de client, hostname, ident..)
 * Gestion des serveurs connectés.
 
 ### Prérequis
 * [eggdrop (v1.9+)](http://www.eggheads.org/)
-* [Unrealircd (v5.0+)](http://www.eggheads.org/
+* [Unrealircd (v5.0+)](https://www.unrealircd.org/)
   * Serveur IRC nouveau protocol
 * [Package TCL: IRCServices (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-PKG-IRCServices)
 * [Package TCL: ZCT (v0.0.1+)](https://github.com/ZarTek-Creole/TCL-ZCT)
@@ -83,7 +83,7 @@ Téléchargez le code d'EvaServ dans votre répertoire scripts/ de votre eggdrop
 
 Exemple ```/home/votre-dossier/eggdrop/scripts/EvaServ```
 ```
-git clone --recurse-submodules  github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/EvaServ
+git clone --recurse-submodules  https://github.com/ZarTek-Creole/TCL-Eva-Service /home/votre-dossier/eggdrop/scripts/EvaServ
 ```
 ou 
 ```
@@ -200,7 +200,7 @@ Pour vous identifier
 <!-- ROADMAP -->
 ## Roadmap
 
-Voir les [problèmes en suspens](github.com/ZarTek-Creole/TCL-Eva-Service/issues) pour une liste des fonctionnalités proposées (et des problèmes connus).
+Voir les [problèmes en suspens](https://github.com/ZarTek-Creole/TCL-EvaServ/issues) pour une liste des fonctionnalités proposées (et des problèmes connus).
 
 <!-- CONTRIBUTING -->
 ## Contributions
@@ -210,7 +210,7 @@ Les contributions sont ce qui font de la communauté open source un endroit incr
 2. Créez votre branche de fonctionnalités (`git checkout -b feature/AmazingFeature`)
 3. Validez vos modifications (`git commit -m 'Add some AmazingFeature'`)
 4. Poussez vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une [Pull Request](github.com/ZarTek-Creole/TCL-Eva-Service/pulls)
+5. Ouvrez une [Pull Request](https://github.com/ZarTek-Creole/TCL-Eva-Service/pulls)
 
 <!-- LICENSE -->
 ## License
@@ -222,11 +222,11 @@ Distributed under the SoonDecision License. See `LICENSE` for more information.
 
 ZarTek - [@ZarTek](github.com/ZarTek-Creole) 
 
-Lien du projet : [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
+Lien du projet : [https://github.com/ZarTek-Creole/TCL-Eva-Service](https://github.com/ZarTek-Creole/TCL-Eva-Service)
 
 1. Tickets
 Signalez tout bug, proposez toute idée :
-* [Créez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
+* [Créez un ticket]([#4-configuration-de-unrealircd](https://github.com/ZarTek-Creole/TCL-Eva-Service/issues))
 
 2. IRC
 Vous pouvez me contacter sur IRC :
@@ -240,62 +240,18 @@ Vous pouvez me contacter sur IRC :
 * Amandine de eggdrop.Fr pour son aide/idées/tests/..
 * MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
 
-## Infos en vrac
-
-Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
-
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [contributors-shield]: https://img.shields.io/github/contributors/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[contributors-url]: github.com/ZarTek-Creole/TCL-Eva-Service/graphs/contributors
+[contributors-url]: https://github.com/ZarTek-Creole/TCL-Eva-Service/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[forks-url]: github.com/ZarTek-Creole/TCL-Eva-Service/network/members
+[forks-url]: https://github.com/ZarTek-Creole/TCL-Eva-Service/network/members
 [stars-shield]: https://img.shields.io/github/stars/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[stars-url]: github.com/ZarTek-Creole/TCL-Eva-Service/stargazers
+[stars-url]: https://github.com/ZarTek-Creole/TCL-Eva-Service/stargazers
 [issues-shield]: https://img.shields.io/github/issues/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[issues-url]: github.com/ZarTek-Creole/TCL-Eva-Service/issues
+[issues-url]: https://github.com/ZarTek-Creole/TCL-Eva-Service/issues
 [license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
+[license-url]: https://github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
-Distributed under the SoonDecision License. See `LICENSE` for more information.
 
-<!-- CONTACT -->
-## Contact
-
-ZarTek - [@ZarTek](github.com/ZarTek-Creole) 
-
-Lien du projet : [github.com/ZarTek-Creole/TCL-Eva-Service](github.com/ZarTek-Creole/TCL-Eva-Service)
-
-1. Tickets
-Signalez tout bug, proposez toute idée :
-* [Créez un ticket]([#4-configuration-de-unrealircd](github.com/ZarTek-Creole/TCL-Eva-Service/issues))
-
-2. IRC
-Vous pouvez me contacter sur IRC :
-
-   * [irc.extra-cool.fr:+6697 #Extra-Cool](irc://irc.extra-cool.fr:+6697/#Extra-Cool) 
-   * [irc.libera.chat:+6697 #Zartek](irc://irc.libera.chat:+6697/#Zartek)
-
-<!-- ACKNOWLEDGEMENTS -->
-## Remerciements
-* TiSMA de Exolia.net pour le code d'origine
-* Amandine de eggdrop.Fr pour son aide/idées/tests/..
-* MenzAgitat car dans mes développements il y a toujours des astuces/manière de faire, fournis par MenzAgitat ou bout code de MenzAgitat
-
-## Infos en vrac
-
-Dans le fichier configuration vous pouvez configurer chaque commande à un niveau précis 
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[contributors-url]: github.com/ZarTek-Creole/TCL-Eva-Service/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[forks-url]: github.com/ZarTek-Creole/TCL-Eva-Service/network/members
-[stars-shield]: https://img.shields.io/github/stars/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[stars-url]: github.com/ZarTek-Creole/TCL-Eva-Service/stargazers
-[issues-shield]: https://img.shields.io/github/issues/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[issues-url]: github.com/ZarTek-Creole/TCL-Eva-Service/issues
-[license-shield]: https://img.shields.io/github/license/ZarTek/TCL-Eva-Service.svg?style=for-the-badge
-[license-url]: github.com/ZarTek-Creole/TCL-Eva-Service/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
