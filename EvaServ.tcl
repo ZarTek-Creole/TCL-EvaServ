@@ -184,7 +184,7 @@ proc ::EvaServ::DB_USER::GET_LEVEL { USER_NAME } {
 
 	return [dict get [getuser ${USER_NAME} XTRA EvaServ] NIVEAU]
 }
-proc ::EvaServ::::EvaServ::DB_USER::ADD { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
+proc ::EvaServ::DB_USER::ADD { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
 	variable ::EvaServ::commands
 	variable ::EvaServ::config
 	if ![dict exists ${commands} ${USER_NIVEAU}] {
