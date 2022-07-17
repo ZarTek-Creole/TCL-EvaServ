@@ -175,7 +175,13 @@ proc ::EvaServ::DB_USER::COUNT { } {
 	return ${USER_COUNT}
 }
 proc ::EvaServ::DB_USER::GET_LEVEL { USER_NAME } {
-	if { ![validuser ${USER_NAME}] } { return 0 }
+	if {
+		![validuser ${USER_NAME}]  												|| \
+			![dict exist [getuser ${USER_NAME}] XTRA EvaServ NIVEAU]
+	} {
+		return 0
+	}
+
 	return [dict get [getuser ${USER_NAME} XTRA EvaServ] NIVEAU]
 }
 proc ::EvaServ::DB_USER::ADD { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
@@ -388,9 +394,9 @@ proc ::EvaServ::command::irc::auth { IRC_USER IRC_CMD IRC_VALUE } {
 		# Si aucun utilisateurs Eva, nous creons le compte en tant que ircop supreme
 		if {
 			![validuser ${USER_NAME}]										&& \
-				[getchanhost ${USER_NAME} ${::EvaServ::SERVICE_BOT(channel)}] == ""	&& \
-			} {
-				::EvaServ::SENT::MSG:TO:USER ${IRC_USER} \
+				[getchanhost ${USER_NAME} ${::EvaServ::SERVICE_BOT(channel)}] == ""
+		} {
+			::EvaServ::SENT::MSG:TO:USER ${IRC_USER} \
 				[format "<b>%s</b>, pour creer votre compte ircop, vous devez être operateur sur le salon <b>%s</b>." \
 				${USER_NAME} ${::EvaServ::SERVICE_BOT(channel)}];
 			return 0
