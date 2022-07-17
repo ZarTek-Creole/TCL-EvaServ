@@ -184,7 +184,7 @@ proc ::EvaServ::DB_USER::GET_LEVEL { USER_NAME } {
 
 	return [dict get [getuser ${USER_NAME} XTRA EvaServ] NIVEAU]
 }
-proc ::EvaServ::DB_USER::ADD { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
+proc ::EvaServ::::EvaServ::DB_USER::ADD { USER_ADDER USER_NAME USER_PASS USER_NIVEAU } {
 	variable ::EvaServ::commands
 	variable ::EvaServ::config
 	if ![dict exists ${commands} ${USER_NIVEAU}] {
@@ -401,7 +401,7 @@ proc ::EvaServ::command::irc::auth { IRC_USER IRC_CMD IRC_VALUE } {
 				${USER_NAME} ${::EvaServ::SERVICE_BOT(channel)}];
 			return 0
 		}
-		if ![DB_USER::ADD ${IRC_USER} ${USER_NAME} ${USER_PASS} 4] { return 0 }
+		if ![::EvaServ::DB_USER::ADD ${IRC_USER} ${USER_NAME} ${USER_PASS} 4] { return 0 }
 	}
 
 	if { ![passwdok ${USER_NAME} ${USER_PASS}] } {
@@ -4084,7 +4084,7 @@ proc ::EvaServ::rehash { arg } {
 
 					return 0
 				}
-				return [DB_USER::ADD ${USER_LOWER} ${USER_NAME} ${USER_PASS} ${value8}]
+				return [::EvaServ::DB_USER::ADD ${USER_LOWER} ${USER_NAME} ${USER_PASS} ${value8}]
 			}
 			"accessdel" {
 				if { ${value1} == "" } {
